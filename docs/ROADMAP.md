@@ -1,6 +1,6 @@
 # Membrane Roadmap
 
-PRIO 1:
+## Priority 1
 - docker documentation:
   - Look what is already there somewhere
   - Creating docker image for Membrane
@@ -15,31 +15,28 @@ PRIO 1:
   - production = true
   - not hotreload
 - When released:
-  - Add SqlProtection to README.md
-  - Udate OAuth2 sections in README.md
+  - Update OAuth2 sections in README.md
 - Proxy Server Configuration Sample 
   - explains how to configure a proxy server
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
-- Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
 - Central description of MEMBRANE_* environment variables CG
   - Check https://www.membrane-api.io/gateway-documentation.html #configuration 
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
-- API gateway best practice document TB
-  - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
+- API gateway best practice document TB - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
     - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
     - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
     - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
 
-PRIO 2:
+## Priority 2
 - Add performance tutorial or tuning guide
   - forgetful exchange store
 - Remove MemoryExchangeStore CG
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
 
-PRIO 3:
+## Priority 3
 - OpenAPI: validate `in: cookie` parameters
   - Path, query and header parameters are validated; cookie parameters currently are not.
 - OpenAPI: support `style: matrix` path parameters (#3544)
@@ -89,19 +86,21 @@ PRIO 3:
         remove:
           name: Security
           namespaceUri: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd
-        add: |
-          <ns1:token xmlns:ns1="http://example.com/auth">...</ns1:token>
+        add:
+          src: |
+            <ns1:token xmlns:ns1="http://example.com/auth">${//token}</ns1:token>
+          language: xpath
     ```
   - Parse with the hardened XML parser.
-
+  - Use xmlConfig for Xpath. See how other interceptors use it.
+- ReplaceInterceptor: TB
+  - allow also XPath
+  - allow to use expressions for the replacement
 
 ## Membrane 8.0.0 (Java 25)
 
 - change all maven packages to membrane-api.io
   - Needs changes at maven central
-- ReplaceInterceptor: TB
-  - allow also XPath
-  - allow to use expressions for the replacement
 - global:
   - global runs between client and Membrane. We need a global also between Membrane and the backend.
   - Ideas: 
@@ -112,7 +111,7 @@ PRIO 3:
 - Remove deprecated finalize blocks
 - Remove XML configuration
 - configure log4j with YAML
-- Remove SOAP2REST XSLT Interceptor:
+- Remove SOAP2REST XSLT Interceptor (?):
   - rm HTTP2XMLInterceptor
   - rm com.predic8.membrane.core.http.xml
 - Log harmonization:
@@ -132,7 +131,7 @@ PRIO 3:
     - `coreThreadPoolSize`: meaningless without a pool (virtual threads are not pooled). Deprecate/ignore it with a warning; removing it is a breaking change.
     - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
     - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
-- Read HTTP start lines and header lines in bulk (`HttpUtil.readLine`)
+- Read HTTP start lines and header lines in bulk (`HttpUtil.readLine`) (Is it worth it?)
   - Story: `readLine` calls `read()` once per byte, and every call takes the stream's lock. Reading ahead into an array and scanning it took 23–28 instead of 93–294 ns per line in a JDK 25 micro-benchmark, and saved about 1.8 µs of gateway user CPU per request in the Azure fullproxy test; throughput stayed within noise (measured on an earlier variant of PR #3379).
   - Parked for 8.0: so it never blocks where the byte-by-byte loop would not, the bulk read has to know how many bytes the `BufferedInputStream` holds, which needs a subclass. On Java 21–23 a subclass locks with `synchronized`, so an HTTP/2 virtual thread that reads a backend response pins its carrier thread; with as many slow backend reads as CPU cores, every virtual thread stalls. JEP 491 (Java 24) removed monitor pinning.
   - Do it after the line-parsing fixes in #3378, so the bulk path follows the corrected terminator rules instead of mirroring each fix.
@@ -281,56 +280,5 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - How several destinations (`balancer`, `RetryHandler` failover) and internal routing (`internal:` destinations, `RuleManager` matching internal proxies by the destination's authority) fit.
   - Path normalization and SSRF when combining target and request path (dot segments, `//x` as a network-path reference, encoded slashes `%2F`); checks in the flow (`if`, `openapi` validation, path-based authorization) must see the path that is sent to the backend.
 - **Breaking**: interceptors and Groovy/SpEL scripts that read or write `exc.getDestinations()` in the flow see different values.
-
-## Breaking Changes
-
-- `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 
-- headerFilter YAML format has changed.
-- Choose Interceptor configuration
-- Chain (ChainDef) configuration
-- BasicAuthentication interceptor removes the Authentication header from the request. 
-- OpenApi: rename `specs` to `openapi`
-- **YAML configuration in list elements**:
-    * List items can now be written in *inline form* if the list accepts exactly one concrete element type (no polymorphic candidates) and the element is not `collapsed`, not `noEnvelope`, and not string-like.
-    * Old wrapper form remains supported: `- <kind>: { ... }` (Only when schema validation is deactivated). 
-  
-    Old: 
-     ```yaml
-      properties:
-        - property:
-            name: driverClassName
-            value: org.h2.Driver
-        - property:
-            name: url
-            value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-  ```
-    New:
-    ```yaml
-      properties:
-        - name: driverClassName
-          value: org.h2.Driver
-        - name: url
-          value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-  ```
-- removed `MethodOverrideInterceptor`
-- `APIsJSON` renamed to `apisJson`. It now follows APIs.json 0.24:
-    * `rootDomain` and `url` are replaced by `baseUrl`, the URL clients reach the gateway under. Its host is the domain of every `aid`. Without it, URLs and identifiers come from the Host header of the request.
-    * `humanUrl` and `baseUrl` in the document are now spelled `humanURL` and `baseURL`.
-    * New `maintainers` option. The tags of the listed APIs become the tags of the collection.
-    * A proxy bound to every host is listed under the host the client used instead of `localhost`.
-    * `serviceProxy` and `soapProxy` are listed too, not only `api`.
-    * The default collection `description` is now `APIs served by this gateway`.
-
-## Bug Fixes
-- `xml2json`: Ensuring content type alignment and better exception handling.  
-
-## Improvements
-
-- `xml2json`: Better exception handling.  
-- Updated documentation and comments for clarity and consistency in related classes (`Header`, `MimeType`, etc.). 
-
-- JSONBody
-  - Store body as parsed JsonNode or Document
-    - If JSON is needed by an interceptor use already parsed JSON
 
   
