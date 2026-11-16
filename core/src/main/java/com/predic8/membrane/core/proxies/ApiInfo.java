@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
+import com.predic8.membrane.core.interceptor.jms.JmsConsumerProxy;
+import com.predic8.membrane.core.interceptor.kafka.KafkaConsumerProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import org.slf4j.Logger;
@@ -42,10 +44,41 @@ public class ApiInfo {
     }
 
     static String proxyLabel(Proxy proxy) {
+        if (proxy instanceof JmsConsumerProxy jms) {
+            return jmsConsumerLabel(jms);
+        }
+        if (proxy instanceof KafkaConsumerProxy kafka) {
+            return kafkaConsumerLabel(kafka);
+        }
         if (proxy instanceof AbstractServiceProxy asp && !(proxy instanceof NotPortOpeningProxy)) {
             return proxy.getName() + "  " + buildUrl(asp);
         }
         return proxy.getName();
+    }
+
+    /**
+     * The destination, preceded by the name when it differs from the destination's name.
+     */
+    static String jmsConsumerLabel(JmsConsumerProxy consumer) {
+        final var destinationName = consumer.getQueue() != null ? consumer.getQueue() : consumer.getTopic();
+        final var destination = (consumer.getQueue() != null ? "queue:" : "topic:") + destinationName;
+        final var name = consumer.getName();
+        if (name == null || name.isEmpty() || name.equals(destinationName)) {
+            return destination;
+        }
+        return name + " " + destination;
+    }
+
+    /**
+     * Topic and consumer group, preceded by the name when it differs from the default name topic-group.
+     */
+    static String kafkaConsumerLabel(KafkaConsumerProxy consumer) {
+        final var label = "topic:%s group:%s".formatted(consumer.getTopic(), consumer.getGroupId());
+        final var name = consumer.getName();
+        if (name == null || name.isEmpty() || name.equals(consumer.getTopic() + "-" + consumer.getGroupId())) {
+            return label;
+        }
+        return name + " " + label;
     }
 
     static String buildUrl(AbstractServiceProxy proxy) {
@@ -89,7 +122,7 @@ public class ApiInfo {
                 .collect(joining("\n"));
     }
 
-    private static String proxyKind(Proxy proxy) {
+    static String proxyKind(Proxy proxy) {
         if (proxy instanceof APIProxy) {
             return "";
         }
@@ -101,6 +134,12 @@ public class ApiInfo {
         }
         if (proxy instanceof InternalProxy) {
             return "Internal:";
+        }
+        if (proxy instanceof JmsConsumerProxy) {
+            return "JMSConsumer";
+        }
+        if (proxy instanceof KafkaConsumerProxy) {
+            return "KafkaConsumer";
         }
         return "Proxy:";
     }
