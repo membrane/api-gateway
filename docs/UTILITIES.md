@@ -32,6 +32,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `UrlNormalizer` | Normalize a base URL |
 | `UriIllegalCharacterDetector` | Detect illegal characters in URIs |
 | `WebServerUtil` | Content type by file extension for static serving |
+| `StompUtil` | STOMP CONNECT/STOMP frame check; whether an exchange became a tunnel without an HTTP response |
 | `ip/IPv6Util` | IPv6 address validation |
 
 ## Messages, SOAP, JSON, XML

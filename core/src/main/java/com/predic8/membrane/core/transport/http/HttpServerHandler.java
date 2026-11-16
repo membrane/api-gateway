@@ -44,6 +44,8 @@ import static com.predic8.membrane.core.http.Response.notImplemented;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.*;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
+import static com.predic8.membrane.core.util.StompUtil.isSTOMPConnectFrame;
+import static com.predic8.membrane.core.util.StompUtil.isTunneledWithoutResponse;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.lang.Thread.currentThread;
@@ -269,7 +271,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private @NotNull RequestProcessingResult determineConnectionContinuation() {
 
-        if (srcReq.isCONNECTRequest()) {
+        if (srcReq.isCONNECTRequest() || isSTOMPConnectFrame(srcReq)) {
             log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
             return terminate();
         }
@@ -330,7 +332,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
         try {
             removeBodyFromBuffer();
-            writeResponse(exchange.getResponse());
+            if (!isTunneledWithoutResponse(exchange))
+                writeResponse(exchange.getResponse());
+            // Starts a tunnel set up by StreamPump.setupConnectionForwarding()
             exchange.setCompleted();
             log.debug("exchange set completed");
         } catch (Exception e) {
