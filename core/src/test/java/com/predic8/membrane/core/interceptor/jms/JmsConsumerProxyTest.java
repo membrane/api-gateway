@@ -21,13 +21,17 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
@@ -35,6 +39,8 @@ import static com.predic8.membrane.core.exchange.ExchangeState.FAILED;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.jms.JmsConsumerExtension.Result.ACK;
 import static com.predic8.membrane.core.interceptor.jms.JmsConsumerExtension.Result.ROLLBACK;
+import static com.predic8.membrane.core.interceptor.jms.JmsProducerInterceptorTest.ARTEMIS;
+import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JmsConsumerProxyTest {
@@ -363,5 +369,36 @@ class JmsConsumerProxyTest {
 
         assertTrue(first.stopped);
         assertFalse(second.stopped);
+    }
+
+    @Test
+    void yamlReferencedConnection(@TempDir final Path dir) throws Exception {
+        final var config = dir.resolve("apis.yaml");
+        Files.writeString(config, """
+                components:
+                  orderBroker:
+                    jmsConnection:
+                      connectionFactory: %s
+                      username: alice
+                      brokerURL: tcp://mq.example.com:61616
+                ---
+                jmsConsumer:
+                  $ref: '#/components/orderBroker'
+                  queue: orders
+                  target:
+                    url: https://orders.example.com/orders
+                """.formatted(ARTEMIS));
+
+        final var yamlRouter = new DefaultRouter();
+        try {
+            loadIntoRouter(yamlRouter, config.toString());
+            final var consumer = assertInstanceOf(JmsConsumerProxy.class, yamlRouter.getRuleManager().getRules().getFirst());
+            assertEquals("orders", consumer.getQueue());
+            assertEquals(ARTEMIS, consumer.getConnection().getConnectionFactory());
+            assertEquals("alice", consumer.getConnection().getUsername());
+            assertEquals(Map.of("brokerURL", "tcp://mq.example.com:61616"), consumer.getConnection().getFactoryProperties());
+        } finally {
+            yamlRouter.stop();
+        }
     }
 }
