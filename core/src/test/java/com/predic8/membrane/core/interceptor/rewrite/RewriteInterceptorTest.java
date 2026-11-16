@@ -275,6 +275,96 @@ public class RewriteInterceptorTest {
 	}
 
 	/**
+	 * A captured group must not turn a relative redirect into one to another host, see issue #3589.
+	 */
+	@Test
+	void redirectMustNotLeaveHostThroughCapturedGroup() throws Exception {
+		assertRedirectRejected(new Mapping("^/old(/.*)", "$1", "redirect-temporary"), "/old//evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "$1", "redirect-temporary"), "/old/https://evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "$1", "redirect-temporary"), "/old/https:evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "/$1", "redirect-temporary"), "/old//evil.example/x");
+	}
+
+	/**
+	 * A 'from' without '^' keeps the part of the path in front of the match, which can name another host.
+	 */
+	@Test
+	void redirectMustNotLeaveHostThroughUnmatchedPrefix() throws Exception {
+		assertRedirectRejected(new Mapping("/old", "https://trusted.example/new", "redirect-temporary"), "//evil.example/x/old");
+		assertRedirectRejected(new Mapping("/old", "/new", "redirect-temporary"), "//evil.example/x/old");
+	}
+
+	/**
+	 * A captured group must not change the host that 'to' names.
+	 */
+	@Test
+	void redirectMustNotChangeConfiguredHost() throws Exception {
+		assertRedirectRejected(new Mapping("^/old/(.*)", "https://trusted.example$1", "redirect-temporary"), "/old/@evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "https://trusted.example$1", "redirect-temporary"), "/old/.evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "https://trusted.example$1", "redirect-temporary"), "/old/:8080@evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "https://trusted.example$1", "redirect-temporary"), "/old/%5C@evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "https:$1", "redirect-temporary"), "/old///evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "https://$1.example.com/", "redirect-temporary"), "/old/evil.example/x");
+		assertRedirectRejected(new Mapping("^/old/(.*)", "//trusted.example$1", "redirect-temporary"), "/old/@evil.example/x");
+	}
+
+	/**
+	 * A host that the configuration names is not under the control of the client.
+	 */
+	@Test
+	void redirectToConfiguredHost() throws URISyntaxException {
+		assertEquals("//cdn.example.com//x", redirectLocation(new Mapping("^/old/(.*)", "//cdn.example.com/$1", "redirect-temporary"), "/old//x"));
+		assertEquals("https://new.example.com//x", redirectLocation(new Mapping("^/old/(.*)", "https://new.example.com/$1", null), "/old//x"));
+		assertEquals("/new//x", redirectLocation(new Mapping("^/old/(.*)", "/new/$1", "redirect-temporary"), "/old//x"));
+		assertEquals("https://trusted.example/x", redirectLocation(new Mapping("^/old(.*)", "https://trusted.example$1", "redirect-temporary"), "/old/x"));
+		assertEquals("https://trusted.example?q=1", redirectLocation(new Mapping("^/old(.*)", "https://trusted.example$1", "redirect-temporary"), "/old?q=1"));
+		assertEquals("https://trusted.example", redirectLocation(new Mapping("^/old(.*)", "https://trusted.example$1", "redirect-temporary"), "/old"));
+		assertEquals("/x/new", redirectLocation(new Mapping("/old", "/new", "redirect-temporary"), "/x/old"));
+	}
+
+	@Test
+	void configuredHost() {
+		assertTrue(RewriteInterceptor.isConfiguredHost("/x", "/$1"));
+		assertTrue(RewriteInterceptor.isConfiguredHost("/x", "https://a.example/new"));
+		assertTrue(RewriteInterceptor.isConfiguredHost("https://a.example/x", "https://a.example$1"));
+		assertTrue(RewriteInterceptor.isConfiguredHost("https://a.example?x", "https://a.example$1"));
+		assertFalse(RewriteInterceptor.isConfiguredHost("//b.example/x", "/$1"));
+		assertFalse(RewriteInterceptor.isConfiguredHost("https://a.example.b.example/x", "https://a.example$1"));
+		assertFalse(RewriteInterceptor.isConfiguredHost("https://b.example/x", "https://$1.example/"));
+		assertFalse(RewriteInterceptor.isConfiguredHost("http://a.example/x", "https://a.example$1"));
+		// a browser removes tabs and newlines and skips leading spaces and control characters
+		assertFalse(RewriteInterceptor.isConfiguredHost("/\t/b.example/x", "/$1"));
+		assertFalse(RewriteInterceptor.isConfiguredHost(" //b.example/x", "$1"));
+		assertFalse(RewriteInterceptor.isConfiguredHost("\u0001//b.example/x", "$1"));
+	}
+
+	@Test
+	void literalPrefix() {
+		assertEquals("https://a.example/", RewriteInterceptor.literalPrefix("https://a.example/$1"));
+		assertEquals("https://a.example", RewriteInterceptor.literalPrefix("https://a.example${name}/x"));
+		assertEquals("https://a.example", RewriteInterceptor.literalPrefix("https://a.example\\$1"));
+		assertEquals("", RewriteInterceptor.literalPrefix("$1"));
+		assertEquals("/new", RewriteInterceptor.literalPrefix("/new"));
+	}
+
+	private void assertRedirectRejected(Mapping mapping, String uri) throws Exception {
+		assertNull(redirectLocation(mapping, uri), uri);
+		assertEquals(400, exc.getResponse().getStatusCode(), uri);
+		assertEquals("https://membrane-api.io/problems/user/path", om.readTree(exc.getResponse().getBodyAsStream()).get("type").asText());
+	}
+
+	private String redirectLocation(Mapping mapping, String uri) throws URISyntaxException {
+		exc = new Exchange(null);
+		exc.setRequest(get("/").build());
+		exc.getRequest().setUri(uri); // raw like on the wire
+		exc.setProxy(sp);
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(RETURN, rewriter(mapping).handleRequest(exc));
+		return exc.getResponse().getHeader().getFirstValue("Location");
+	}
+
+	/**
 	 * A leading '//' of the request path is not the start of an authority, 'prefix' must not get lost.
 	 */
 	@Test

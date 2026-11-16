@@ -1,6 +1,6 @@
 # Membrane Roadmap
 
-PRIO 1:
+## Priority 1
 - docker documentation:
   - Look what is already there somewhere
   - Creating docker image for Membrane
@@ -15,31 +15,34 @@ PRIO 1:
   - production = true
   - not hotreload
 - When released:
-  - Add SqlProtection to README.md
-  - Udate OAuth2 sections in README.md
+  - Update OAuth2 sections in README.md
 - Proxy Server Configuration Sample 
   - explains how to configure a proxy server
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
-- Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
 - Central description of MEMBRANE_* environment variables CG
   - Check https://www.membrane-api.io/gateway-documentation.html #configuration 
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
-- API gateway best practice document TB
-  - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
+- API gateway best practice document TB - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
     - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
     - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
     - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
 
-PRIO 2:
+## Priority 2
 - Add performance tutorial or tuning guide
   - forgetful exchange store
 - Remove MemoryExchangeStore CG
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
+- Replace the deprecated Jedis API
+  - Story: since the upgrade to Jedis 8.0.2, `JedisPool` and `JedisSentinelPool` (`RedisConnector`) and `Jedis.setex` (`RedisSessionManager`, `RedisOriginalExchangeStore`) are deprecated. They still work, but may be removed in a later major version.
+  - Move to the client API Jedis recommends now (`RedisClient`, and `RedisSentinelClient` for sentinels; `set` with `SetParams.ex` instead of `setex`).
+  - Keep the `redis` attributes as they are: `host`, `port`, `dbNumber`, `user`, `password`, `ssl`, `timeout`, `connectionNumber`, `minIdleConnection`, `useSentinels`, `masterName`.
+  - Check the sentinel case: `getJedisWithDb()` authenticates sentinel connections by hand and calls `select(dbNumber)` on every borrowed connection; the new API may take both in the client configuration.
+  - Test against a real Redis (plain, password, user + password, TLS, sentinel); the unit tests only use a map-backed fake.
 
-PRIO 3:
+## Priority 3
 - OpenAPI: validate `in: cookie` parameters
   - Path, query and header parameters are validated; cookie parameters currently are not.
 - OpenAPI: support `style: matrix` path parameters (#3544)
@@ -89,19 +92,21 @@ PRIO 3:
         remove:
           name: Security
           namespaceUri: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd
-        add: |
-          <ns1:token xmlns:ns1="http://example.com/auth">...</ns1:token>
+        add:
+          src: |
+            <ns1:token xmlns:ns1="http://example.com/auth">${//token}</ns1:token>
+          language: xpath
     ```
   - Parse with the hardened XML parser.
-
+  - Use xmlConfig for Xpath. See how other interceptors use it.
+- ReplaceInterceptor: TB
+  - allow also XPath
+  - allow to use expressions for the replacement
 
 ## Membrane 8.0.0 (Java 25)
 
 - change all maven packages to membrane-api.io
   - Needs changes at maven central
-- ReplaceInterceptor: TB
-  - allow also XPath
-  - allow to use expressions for the replacement
 - global:
   - global runs between client and Membrane. We need a global also between Membrane and the backend.
   - Ideas: 
@@ -112,7 +117,7 @@ PRIO 3:
 - Remove deprecated finalize blocks
 - Remove XML configuration
 - configure log4j with YAML
-- Remove SOAP2REST XSLT Interceptor:
+- Remove SOAP2REST XSLT Interceptor (?):
   - rm HTTP2XMLInterceptor
   - rm com.predic8.membrane.core.http.xml
 - Log harmonization:
@@ -132,7 +137,7 @@ PRIO 3:
     - `coreThreadPoolSize`: meaningless without a pool (virtual threads are not pooled). Deprecate/ignore it with a warning; removing it is a breaking change.
     - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
     - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
-- Read HTTP start lines and header lines in bulk (`HttpUtil.readLine`)
+- Read HTTP start lines and header lines in bulk (`HttpUtil.readLine`) (Is it worth it?)
   - Story: `readLine` calls `read()` once per byte, and every call takes the stream's lock. Reading ahead into an array and scanning it took 23–28 instead of 93–294 ns per line in a JDK 25 micro-benchmark, and saved about 1.8 µs of gateway user CPU per request in the Azure fullproxy test; throughput stayed within noise (measured on an earlier variant of PR #3379).
   - Parked for 8.0: so it never blocks where the byte-by-byte loop would not, the bulk read has to know how many bytes the `BufferedInputStream` holds, which needs a subclass. On Java 21–23 a subclass locks with `synchronized`, so an HTTP/2 virtual thread that reads a backend response pins its carrier thread; with as many slow backend reads as CPU cores, every virtual thread stalls. JEP 491 (Java 24) removed monitor pinning.
   - Do it after the line-parsing fixes in #3378, so the bulk path follows the corrected terminator rules instead of mirroring each fix.
@@ -192,9 +197,6 @@ PRIO 3:
   - Story: 7.8 can validate SOAP header blocks (#3582) but leaves it off by default, so an update does not start rejecting messages whose headers passed before. With `bound`, the header blocks the WSDL binds with `soap:header` and `soap:headerfault` are validated against the WSDL's schemas.
   - **Breaking**: a message with an invalid bound header block is rejected. Name `headers: none` in the release notes as the way to keep the old behavior.
   - Change the default of the `headers` field and `@default` of `setHeaders` in `ValidatorInterceptor`, and of the `WSDLValidator` constructors without a `HeaderValidation` parameter.
-- Upgrade jedis from 4.4.8 to the current major version (8.x)
-  - Story: `core` is on jedis 4.4.8, the last 4.x release; 8.0.2 is current. Used by `RedisConnector`, `RedisSessionManager` and `RedisOriginalExchangeStore`; check the API changes across 5.x–8.x and test Redis sessions and the OAuth2 exchange store against a real Redis.
-  - Raise the `org.json:json` version in `core/pom.xml` with it (jedis 8.0.2 needs 20260719). `core` declares org.json directly (#3760), so that declaration wins over the one jedis asks for. If org.json is gone from `core` by then (see "Get rid of old JSON parsers"), drop the declaration instead.
 - To discuss: make the regex engine a swappable component, with RE2/J or a comparable linear-time engine as the default
   - Story: configured regular expressions run on `java.util.regex`, which backtracks. Overlapping quantifiers can take quadratic or worse time on crafted requests (ReDoS). Today the operator has to avoid such patterns, see https://www.membrane-api.io/security/membrane-redos-protection.html.
   - A linear-time engine such as RE2/J (`com.google.re2j`, 114 KB, no dependencies) rules this out whatever the pattern.
@@ -317,56 +319,4 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - Incremental forwarding: a body source that holds back its second chunk until the first chunk has reached the backend. `wasStreamed()` alone does not prove this, since it is set before anything is written.
   - `Expect: 100-continue` with a streamed body and default retries.
   - Idempotent request, tee write fails partway, `RetryHandler` retries: with the interim design the failure surfaces, with `Partial` the retry succeeds.
-
-## Breaking Changes
-
-- `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 
-- headerFilter YAML format has changed.
-- Choose Interceptor configuration
-- Chain (ChainDef) configuration
-- BasicAuthentication interceptor removes the Authentication header from the request. 
-- OpenApi: rename `specs` to `openapi`
-- **YAML configuration in list elements**:
-    * List items can now be written in *inline form* if the list accepts exactly one concrete element type (no polymorphic candidates) and the element is not `collapsed`, not `noEnvelope`, and not string-like.
-    * Old wrapper form remains supported: `- <kind>: { ... }` (Only when schema validation is deactivated). 
-  
-    Old: 
-     ```yaml
-      properties:
-        - property:
-            name: driverClassName
-            value: org.h2.Driver
-        - property:
-            name: url
-            value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-  ```
-    New:
-    ```yaml
-      properties:
-        - name: driverClassName
-          value: org.h2.Driver
-        - name: url
-          value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-  ```
-- removed `MethodOverrideInterceptor`
-- `APIsJSON` renamed to `apisJson`. It now follows APIs.json 0.24:
-    * `rootDomain` and `url` are replaced by `baseUrl`, the URL clients reach the gateway under. Its host is the domain of every `aid`. Without it, URLs and identifiers come from the Host header of the request.
-    * `humanUrl` and `baseUrl` in the document are now spelled `humanURL` and `baseURL`.
-    * New `maintainers` option. The tags of the listed APIs become the tags of the collection.
-    * A proxy bound to every host is listed under the host the client used instead of `localhost`.
-    * `serviceProxy` and `soapProxy` are listed too, not only `api`.
-    * The default collection `description` is now `APIs served by this gateway`.
-
-## Bug Fixes
-- `xml2json`: Ensuring content type alignment and better exception handling.  
-
-## Improvements
-
-- `xml2json`: Better exception handling.  
-- Updated documentation and comments for clarity and consistency in related classes (`Header`, `MimeType`, etc.). 
-
-- JSONBody
-  - Store body as parsed JsonNode or Document
-    - If JSON is needed by an interceptor use already parsed JSON
-
   
