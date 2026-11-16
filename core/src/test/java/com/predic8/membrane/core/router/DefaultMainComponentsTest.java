@@ -66,7 +66,7 @@ class DefaultMainComponentsTest {
                 """);
         try {
             router.init();
-            assertEquals(50, assertInstanceOf(HttpTransport.class, router.getTransport()).getBacklog());
+            assertEquals(500, assertInstanceOf(HttpTransport.class, router.getTransport()).getBacklog());
         } finally {
             router.stop();
         }
