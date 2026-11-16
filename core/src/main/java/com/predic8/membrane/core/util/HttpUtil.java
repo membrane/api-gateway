@@ -16,11 +16,14 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,12 +52,17 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 public class HttpUtil {
 
+	private static final Logger log = LoggerFactory.getLogger(HttpUtil.class);
+
+	private static final int CR = '\r';
+	private static final int LF = '\n';
+
 	private static final DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
 	public final static int MAX_LINE_LENGTH;
 
 	static {
 		String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
-		MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
+		MAX_LINE_LENGTH = maxLineLength == null ? 8192 : Integer.parseInt(maxLineLength);
 	}
 
 	/**
@@ -83,8 +91,11 @@ public class HttpUtil {
 	}
 
 	/**
-	 * Reads a line terminated by CR or LF and consumes its terminator: a CR always takes the byte
-	 * after it along, an LF only a CR directly after it. Bytes are converted to chars as ISO-8859-1.
+	 * Reads a line terminated by CRLF or a bare LF and consumes its terminator, RFC 9112 &sect;2.2. Nothing after the
+	 * LF is read, so a peer that ends a line with a bare LF and then waits is not blocked. Bytes are converted to
+	 * chars as ISO-8859-1.
+	 *
+	 * @throws MalformedHeaderException if the line contains a CR that is not followed by LF
 	 */
 	public static String readLine(InputStream in) throws IOException {
 		return readLine(in, MAX_LINE_LENGTH);
@@ -101,17 +112,16 @@ public class HttpUtil {
 		int b;
 		int l = 0;
 		while ((b = in.read()) != -1) {
-			if (b == 13) {
-				//noinspection ResultOfMethodCallIgnored
-				in.read();
-				return line.toString();
+			if (b == CR) {
+				final var next = in.read();
+				if (next == LF)
+					return line.toString();
+				if (next == -1)
+					break;
+				throw bareCr();
 			}
-			if (b == 10) {
-				in.mark(2);
-				if (in.read() != 13)
-					in.reset();
+			if (b == LF)
 				return line.toString();
-			}
 
 			line.append((char) b);
 			if (++l == maxLineLength)
@@ -119,6 +129,15 @@ public class HttpUtil {
 		}
 
 		throw new EOFWhileReadingLineException(line.toString());
+	}
+
+	/**
+	 * RFC 9112 &sect;2.2: a bare CR is rejected rather than read as a line terminator or replaced with SP. The
+	 * exception carries no details.
+	 */
+	private static MalformedHeaderException bareCr() {
+		log.info("Rejected a line with a CR that is not followed by LF.");
+		return new MalformedHeaderException("CR not followed by LF in the start line or a header line.");
 	}
 
 	/**
