@@ -14,14 +14,18 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http2.frame.Frame;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 
+import static com.predic8.membrane.core.http.BodyCollectingMessageObserver.Strategy.ERROR;
+import static com.predic8.membrane.core.transport.http2.frame.DataFrame.FLAG_END_STREAM;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_DATA;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StreamInfoTest {
@@ -41,6 +45,52 @@ class StreamInfoTest {
 
         final var e = assertThrows(ReadingBodyException.class, body::read);
         assertSame(cause, e.getCause());
+    }
+
+    /**
+     * A streamed body is not retained, so exchange stores record what their observer collected from
+     * the chunks passed to it, as for {@code Body} and {@code ChunkedBody}.
+     */
+    @Test
+    void streamedBodyIsPassedToObservers() throws Exception {
+        final var body = streamInfo.createBody();
+        final var observer = new CollectingObserver();
+        body.addObserver(observer);
+        receiveData("Ice ", false);
+        receiveData("cream", true);
+
+        final var out = new ByteArrayOutputStream();
+        body.write(new PlainBodyTransferer(out), false);
+
+        assertEquals("Ice cream", out.toString(UTF_8));
+        assertEquals("Ice cream", observer.collected);
+    }
+
+    /**
+     * Observers get the chunks of a body that is read, too, as from {@code Body} and {@code ChunkedBody}.
+     */
+    @Test
+    void readBodyIsPassedToObservers() throws Exception {
+        final var body = streamInfo.createBody();
+        final var chunks = new StringBuilder();
+        body.addObserver(new AbstractMessageObserver() {
+            @Override
+            public void bodyChunk(Chunk chunk) {
+                chunks.append(new String(chunk.content(), 0, chunk.getLength(), UTF_8));
+            }
+
+            @Override
+            public void bodyChunk(byte[] buffer, int offset, int length) {
+                chunks.append(new String(buffer, offset, length, UTF_8));
+            }
+        });
+        receiveData("Ice ", false);
+        receiveData("cream", true);
+
+        body.read();
+
+        assertEquals("Ice cream", new String(body.getContent(), UTF_8));
+        assertEquals("Ice cream", chunks.toString());
     }
 
     @Test
@@ -112,5 +162,30 @@ class StreamInfoTest {
 
         assertFalse(streamInfo.keepsContentLength(2, false));
         assertTrue(streamInfo.keepsContentLength(2, true));
+    }
+
+    private void receiveData(String data, boolean endStream) throws IOException {
+        final var frame = new Frame();
+        final var bytes = data.getBytes(UTF_8);
+        frame.fill(TYPE_DATA, endStream ? FLAG_END_STREAM : 0, 1, bytes, 0, bytes.length);
+        streamInfo.receivedDataFrame(frame.asData());
+    }
+
+    private static class CollectingObserver extends BodyCollectingMessageObserver {
+
+        String collected;
+
+        CollectingObserver() {
+            super(ERROR, -1);
+        }
+
+        @Override
+        public void bodyRequested(AbstractBody body) {
+        }
+
+        @Override
+        public void bodyComplete(AbstractBody body) {
+            collected = new String(getBody(body).getContent(), UTF_8);
+        }
     }
 }

@@ -38,6 +38,9 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.ResponseBuilder.newInstance;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.maskQueryValues;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.lang.Integer.parseInt;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNullElse;
@@ -407,7 +410,9 @@ public class Response extends Message {
 		Matcher matcher = pattern.matcher(line);
 
 		if (!matcher.find()) {
-			throw new RuntimeException("Invalid server response: " + line);
+			// The backend is not trusted and may echo the request line, so the line is masked like a URI,
+			// truncated and stripped of control characters: the message ends up in logs and problem details.
+			throw new RuntimeException("Invalid server response: " + maskNonPrintableCharacters(truncateAfter(maskQueryValues(line), 80)));
 		}
 		version = matcher.group(1);
 		statusCode = parseInt(matcher.group(2));
@@ -452,8 +457,8 @@ public class Response extends Message {
 	 * A backend response whose <tt>Transfer-Encoding</tt> does not end in <tt>chunked</tt> is
 	 * rejected for the same reason as such a request: its body length is undeterminable. The
 	 * check runs before the redirect shortcut, so a redirect does not skip it. The same goes for a
-	 * response that is chunked-framed and also carries a <tt>Content-Length</tt>, see
-	 * {@link #rejectIfChunkedWithContentLength(String)}.
+	 * response that is chunked-framed and also carries a <tt>Content-Length</tt>, or a transfer
+	 * coding other than <tt>chunked</tt>, see {@link #rejectInvalidFraming()}.
 	 * <p>
 	 * A response that {@link #endsAfterHeaderFields() ends after its header fields} is not
 	 * validated: it has no framing, so the framing fields it carries are ignored. Nor is a 205 that
@@ -478,14 +483,18 @@ public class Response extends Message {
 			return;
 		}
 
-		rejectIfBodyLengthUndeterminable("response");
-		rejectIfChunkedWithContentLength("response");
+		rejectInvalidFraming();
 
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
 		closeDelimited = !header.hasContentLength() && !header.isChunked();
 		super.createBody(in);
+	}
+
+	@Override
+	protected String getMessageType() {
+		return "response";
 	}
 
 	/**

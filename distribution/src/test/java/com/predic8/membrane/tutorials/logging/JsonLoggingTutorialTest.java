@@ -34,7 +34,7 @@ public class JsonLoggingTutorialTest extends AbstractLoggingTutorialTest {
 
     @Override
     protected Map<String, String> getEnvs() {
-        return Map.of("JAVA_OPTS", "-Dlog4j.configurationFile=tutorials/logging/log4j2-json.xml");
+        return log4jConfigurationEnv("log4j2-json.xml");
     }
 
     @Test

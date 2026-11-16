@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.UnsupportedTransferCodingException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -32,6 +33,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.URLParamUtil.uriForLog;
 import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 
 /**
@@ -90,7 +92,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             httpClient.call(exc);
             return RETURN;
         } catch (ConnectException e) {
-            var msg = "Target %s is not reachable.".formatted(getDestination(exc));
+            var msg = "Target %s is not reachable.".formatted(uriForLog(getDestination(exc)));
             log.warn("{} {}", msg, PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Bad Gateway")
@@ -123,7 +125,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             // "is not reachable.", which is also what a refused connection logs, so the three were
             // indistinguishable in the log.
             boolean whileConnecting = e instanceof ConnectTimeoutException;
-            var msg = "Target %s timed out %s.".formatted(getDestination(exc),
+            var msg = "Target %s timed out %s.".formatted(uriForLog(getDestination(exc)),
                     whileConnecting ? "while the connection was being established, no request was sent"
                                     : "while waiting for the response, the request had already been sent");
             log.info("{} Reason: {}", msg, e.getMessage());
@@ -175,10 +177,21 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .internal("url", exc.getRequest().getUri())
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (UnsupportedTransferCodingException e) {
+            // The backend response has a transfer coding Membrane does not decode, e.g. "gzip, chunked".
+            log.warn("Backend {} returned a response with an unsupported transfer coding: {}", uriForLog(getDestination(exc)), escapeControlCharsForLog(e.getMessage()));
+            gateway(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Bad Gateway")
+                    .status(502)
+                    .addSubSee("unsupported-transfer-coding")
+                    .detail(e.getMessage())
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (MalformedHeaderException e) {
             // The backend response has invalid framing (e.g. conflicting Content-Length),
             // RFC 9112 §6.3. We cannot safely forward it, so reject with 502 Bad Gateway.
-            log.warn("Backend {} returned a response with invalid framing: {}", getDestination(exc), e.getMessage());
+            log.warn("Backend {} returned a response with invalid framing: {}", uriForLog(getDestination(exc)), escapeControlCharsForLog(e.getMessage()));
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Bad Gateway")
                     .status(502)
@@ -189,7 +202,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (ReadingBodyException e) {
             // Not a problem with the backend: the request body could not be read, e.g. the client stopped
-            // sending or it exceeded a limit. The flow controller describes it, see ProblemDetails.bodyFailure().
+            // sending or it exceeded a limit. The flow controller describes it, see BodyFailureProblems.bodyFailure().
             throw e;
         } catch (Exception e) {
             log.error("", e);

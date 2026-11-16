@@ -79,10 +79,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
             dynamicRegistration.init(router);
             supportsDynamicRegistration = true;
         }
-        parseSrc(resolve(
+        try (final var wellKnown = resolve(
                 router.getResolverMap(),
                 getBeanBaseLocation(),
-                getWellKnownUrl(internalSrc == null ? src : internalSrc)));
+                getWellKnownUrl(internalSrc == null ? src : internalSrc))) {
+            parseSrc(wellKnown);
+        }
         if(internalSrc != null) {
             publicAuthorizationEndpoint = src + new URI(authorizationEndpoint).getPath();
         }

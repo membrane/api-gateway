@@ -53,6 +53,17 @@ class XMLSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
 		assertEquals("555555", extractor.getSessionId(getExchange(res), RESPONSE));
 	}
 
+	@Test
+	void closesTheDecodedStream() throws Exception {
+		var req = new CloseTrackingRequest("text/xml", getBodyContent());
+
+		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
+		extractor.setLocalName("session");
+
+		assertEquals("555555", extractor.getSessionId(getExchange(req), REQUEST));
+		assertTrue(req.allStreamsClosed());
+	}
+
 	private byte[] getBodyContent() throws IOException {
 		return getClass().getResourceAsStream("/getBankwithSession555555.xml").readAllBytes();
 	}
