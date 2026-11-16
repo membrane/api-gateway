@@ -82,6 +82,8 @@ public class HttpClientConfiguration implements ApplicationContextAware {
      */
     private boolean useExperimentalHttp2;
 
+    private boolean useSystemProxy;
+
     private RetryHandler retryHandler = new RetryHandler();
 
     public HttpClientConfiguration() {
@@ -165,6 +167,30 @@ public class HttpClientConfiguration implements ApplicationContextAware {
         this.useExperimentalHttp2 = useExperimentalHttp2;
     }
 
+    public boolean isUseSystemProxy() {
+        return useSystemProxy;
+    }
+
+    /**
+     * @description Routes outgoing requests through the proxy set outside the configuration, when no
+     * <code>proxy</code> is configured here. The JVM system properties <code>http.proxyHost</code>,
+     * <code>http.proxyPort</code>, <code>https.proxyHost</code>, <code>https.proxyPort</code> and
+     * <code>http.nonProxyHosts</code> are used if set. Otherwise the environment variables <code>HTTP_PROXY</code>,
+     * <code>HTTPS_PROXY</code> and <code>NO_PROXY</code> (or their lowercase variants) are used. The two sources are
+     * not combined: if <code>http.proxyHost</code> or <code>https.proxyHost</code> is set, the environment variables
+     * are ignored, so a scheme without a proxy there is called directly. As in the JDK, localhost and loopback
+     * addresses are called directly in addition to the hosts in <code>http.nonProxyHosts</code>, unless it is set to
+     * an empty value. The scheme of the target selects the HTTP or HTTPS proxy. A proxy URL may contain credentials,
+     * e.g. <code>http://user:password&#64;proxy.example.com:3128</code>. The certificate of an <code>https://</code>
+     * proxy is checked against the default trust store of the JVM.
+     * @default false
+     * @example true
+     */
+    @MCAttribute
+    public void setUseSystemProxy(boolean useSystemProxy) {
+        this.useSystemProxy = useSystemProxy;
+    }
+
     public RetryHandler getRetryHandler() {
         return retryHandler;
     }
@@ -199,6 +225,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
         HttpClientConfiguration that = (HttpClientConfiguration) o;
         return Objects.equals(retryHandler, that.getRetryHandler())
                 && useExperimentalHttp2 == that.useExperimentalHttp2
+                && useSystemProxy == that.useSystemProxy
                 && adjustHostHeader == that.adjustHostHeader
                 && Objects.equals(connection, that.connection)
                 && Objects.equals(proxy, that.proxy)
@@ -216,6 +243,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
                 sslParser,
                 adjustHostHeader,
                 baseLocation,
-                useExperimentalHttp2);
+                useExperimentalHttp2,
+                useSystemProxy);
     }
 }
