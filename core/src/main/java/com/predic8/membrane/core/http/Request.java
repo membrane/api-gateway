@@ -248,12 +248,12 @@ public class Request extends Message {
      * open the door to request smuggling.
      * <p>
      * A request that is chunked-framed and also carries a <tt>Content-Length</tt> is rejected as
-     * well, see {@link #rejectIfChunkedWithContentLength(String)}.
+     * well, and so is one with a transfer coding other than <tt>chunked</tt>, see
+     * {@link #rejectInvalidFraming()}.
      */
     @Override
     protected void createBody(InputStream in) throws IOException {
-        rejectIfBodyLengthUndeterminable("request");
-        rejectIfChunkedWithContentLength("request");
+        rejectInvalidFraming();
         super.createBody(in);
     }
 
@@ -278,6 +278,11 @@ public class Request extends Message {
 
         header.setValue(TRANSFER_ENCODING, CHUNKED);
         return true;
+    }
+
+    @Override
+    protected String getMessageType() {
+        return "request";
     }
 
     @Override

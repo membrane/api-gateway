@@ -132,6 +132,11 @@ public class XOPReconstitutor {
 			public boolean shouldNotContainBody() {
 				return false;
 			}
+
+			@Override
+			protected String getMessageType() {
+				return "message";
+			}
 		};
 		m.setBodyContent(body);
 
