@@ -717,7 +717,9 @@ public class Http2Logic {
             log.info("Rejecting header block on stream {}: it is malformed (RFC 9113 §8.1.1).", streamId1);
             // Queued before anyone waiting on the stream is woken up, as they might reset it with another error code.
             // The block's END_STREAM is not applied: it could close the stream before the reset is sent, and the
-            // frame sender drops frames for closed streams. Writing the reset closes the stream instead.
+            // frame sender drops frames for closed streams. Writing the reset closes the stream instead. Until then,
+            // frames still in flight for the stream are dropped.
+            streamInfo.resetForStreamError();
             sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
             if (isTrailer)
                 streamInfo.abortReceiving(new IOException((trailerWithoutEndStream

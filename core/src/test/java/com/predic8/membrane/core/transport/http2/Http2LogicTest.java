@@ -520,6 +520,24 @@ class Http2LogicTest {
         assertEquals("localhost", handler.message.getHeader().getHost());
     }
 
+    /**
+     * DATA still in flight for a stream reset because its header block is malformed is dropped, not queued for a body
+     * nobody reads. handle() does not start the frame sender, so the reset is never written and the stream stays open.
+     */
+    @Test
+    void dataAfterMalformedHeadersIsDropped() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, new Encoder(4096), withGet("host", "example.com")));
+        in.write(dataFrame(true, "abc"));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(1, handler.malformedStreamId);
+        // Only the abort marker, which handle() adds to every open stream when the input ends.
+        assertEquals(1, handler.malformedStream.getReceivedDataFramesQueued());
+    }
+
     /** Trailers carry no pseudo-headers (RFC 9113 §8.1). The request was already handed over, so its body fails. */
     @Test
     void pseudoHeaderInTrailersFailsTheBody() throws Exception {
@@ -883,6 +901,7 @@ class Http2LogicTest {
         /** If set, every request handed over is reported as being processed, and none as finished. */
         Http2Logic logic;
         int malformedStreamId;
+        StreamInfo malformedStream;
         int oversizedStreamId;
 
         @Override
@@ -906,6 +925,7 @@ class Http2LogicTest {
         @Override
         public void handleMalformedHeaders(StreamInfo streamInfo) {
             malformedStreamId = streamInfo.getStreamId();
+            malformedStream = streamInfo;
         }
     }
 }
