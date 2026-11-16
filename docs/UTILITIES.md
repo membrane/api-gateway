@@ -27,7 +27,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `URI`, `URIFactory` | Membrane's own URI type and its configurable factory (illegal characters, backslashes); use instead of `java.net.URI` where lenient parsing is needed |
 | `URIUtil` | File path ↔ file URI conversion, path-char encoding, normalization |
 | `URIValidationUtil` | RFC 3986 character classes and host/port validation |
-| `URLUtil` | Authority, path+query, name component, port of a URL |
+| `URLUtil` | Authority, path+query, name component, port of a URL; scheme and authority of a URL reference as a browser reads it (`getSchemeAndAuthority`, for open-redirect checks) |
 | `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings; mask query values for logging |
 | `UrlNormalizer` | Normalize a base URL |
 | `UriIllegalCharacterDetector` | Detect illegal characters in URIs |
