@@ -113,6 +113,25 @@ public class ResponseTest {
         assertEquals("1.1", res3.getVersion());
     }
 
+    /**
+     * The backend is not trusted. A backend that echoes the request line must not get the client's query values
+     * into the exception message, which ends up in logs and problem details.
+     */
+    @Test
+    void invalidStatusLineIsReportedWithMaskedQueryValues() {
+        final var e = assertThrows(RuntimeException.class, () -> new Response().parseStartLine(
+                new ByteArrayInputStream("GET /orders?api-key=secret HTTP/1.1\r\n".getBytes(ISO_8859_1))));
+        assertEquals("Invalid server response: GET /orders?api-key=***", e.getMessage());
+    }
+
+    @Test
+    void invalidStatusLineIsReportedTruncatedAndWithoutControlCharacters() {
+        final var line = "SSH-2.0-OpenSSH_9.6\u001b[2J" + "x".repeat(100);
+        final var e = assertThrows(RuntimeException.class, () -> new Response().parseStartLine(
+                new ByteArrayInputStream((line + "\r\n").getBytes(ISO_8859_1))));
+        assertEquals("Invalid server response: " + "SSH-2.0-OpenSSH_9.6_[2J" + "x".repeat(57), e.getMessage());
+    }
+
     @Test
     void testUnchunkedHtmlRead() throws Exception {
         res1.read(in1, true);
@@ -628,19 +647,19 @@ public class ResponseTest {
 
     /**
      * The two field lines combine to "gzip, chunked", whose final coding is "chunked", so the
-     * response is chunked-framed. Reading only the first field line makes Membrane frame it as a
-     * plain body and hand the chunk sizes through as content (#3327).
+     * framing is valid and the response is rejected for its gzip coding, which Membrane does not
+     * decode (#3789). Reading only the first field line would reject it as unframed instead (#3327).
      */
     @Test
-    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsChunkedFramed() throws Exception {
-        assertInstanceOf(ChunkedBody.class, readResponse("""
+    void transferCodingOtherThanChunkedAcrossSeveralFieldsIsRejected() {
+        assertThrowsExactly(UnsupportedTransferCodingException.class, () -> readResponse("""
                 HTTP/1.1 200 Ok
                 Transfer-Encoding: gzip
                 Transfer-Encoding: chunked
 
                 0
 
-                """).getBody());
+                """));
     }
 
     /**
@@ -650,7 +669,7 @@ public class ResponseTest {
      */
     @Test
     void emptyTransferEncodingIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readResponse("""
                 HTTP/1.1 200 Ok
                 Transfer-Encoding:
                 Content-Length: 3
@@ -665,7 +684,7 @@ public class ResponseTest {
      */
     @Test
     void chunkedWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readResponse("""
                 HTTP/1.1 200 Ok
                 Transfer-Encoding: chunked
                 Content-Length: 0
@@ -679,7 +698,7 @@ public class ResponseTest {
 
     @Test
     void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readResponse("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readResponse("""
                 HTTP/1.1 302 Found
                 Location: https://example.com/
                 Transfer-Encoding: gzip

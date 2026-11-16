@@ -15,13 +15,13 @@
 package com.predic8.membrane.core.exceptions;
 
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.xml.XMLUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
@@ -63,9 +63,7 @@ public class ProblemDetailsXML {
 
     private static String document2string(Document document) throws TransformerException {
         StringWriter writer = new StringWriter();
-        TransformerFactory tf = TransformerFactory.newInstance();
-        tf.setFeature(FEATURE_SECURE_PROCESSING, true);
-        Transformer t = tf.newTransformer();
+        Transformer t = XMLUtil.newSerializer();
         t.setOutputProperty(INDENT, "yes");
         t.setOutputProperty(ENCODING, "UTF-8");
         t.setOutputProperty(OMIT_XML_DECLARATION, "no");

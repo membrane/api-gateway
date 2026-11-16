@@ -14,12 +14,14 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.schedule.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.annotation.*;
 
 /**
  * @description A named API that is not exposed on any port and can only be invoked by other APIs
  * within the gateway using the <code>internal://name</code> URL scheme.
- * Use it to factor out shared flow logic that multiple APIs call.
+ * Use it to factor out shared flow logic that multiple APIs call, or with a schedule to call it periodically.
  * @topic 1. Proxies and Flow
  * @yaml
  * <pre><code>
@@ -48,6 +50,8 @@ import com.predic8.membrane.core.util.*;
 @MCElement(name="internal", topLevel = true, component = false)
 public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {
 
+    private Schedule schedule;
+
     public InternalProxy() {
         key = new InternalProxyKey();
     }
@@ -62,5 +66,26 @@ public class InternalProxy extends AbstractServiceProxy implements NotPortOpenin
                     of the port must be removed!
                     """.formatted(name,key.getPort()));
         }
+
+        if (schedule != null)
+            schedule.start(router, this);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (schedule != null)
+            schedule.stop();
+    }
+
+    public Schedule getSchedule() {
+        return schedule;
+    }
+
+    /**
+     * @description Calls this API periodically.
+     */
+    @MCChildElement(order = 30)
+    public void setSchedule(Schedule schedule) {
+        this.schedule = schedule;
     }
 }

@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 import static com.predic8.membrane.core.multipart.MultipartUtil.boundaryOf;
@@ -61,11 +62,17 @@ public class PartRewriter {
      */
     public static byte[] rebuild(Message message, Map<Integer, byte[]> replacements) throws IOException, ParseException {
         var boundary = boundaryOf(message);
+        try (var content = MessageUtil.getContentAsStream(message)) {
+            return rebuild(content, boundary, replacements);
+        }
+        }
+
+        private static byte[] rebuild(InputStream content, String boundary, Map<Integer, byte[]> replacements) throws IOException, ParseException {
         var rebuilt = new ByteArrayOutputStream();
         var startOfPart = startOfPart(boundary);
         var delimiter = delimiter(boundary);
 
-        var ms = multipartStreamOver(message, boundary);
+        var ms = multipartStreamOver(content, boundary);
         var hasNext = ms.skipPreamble();
         var index = -1;
         while (hasNext) {
@@ -84,8 +91,8 @@ public class PartRewriter {
     }
 
     @SuppressWarnings("deprecation")
-    private static @NotNull MultipartStream multipartStreamOver(Message message, String boundary) {
-        var ms = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
+    private static @NotNull MultipartStream multipartStreamOver(InputStream content, String boundary) {
+    var ms = new MultipartStream(content, boundary.getBytes(UTF_8));
         // ISO-8859-1 maps every byte to exactly one char, so the header block written back out is
         // byte for byte the one that was read.
         ms.setHeaderEncoding(ISO_8859_1.name());

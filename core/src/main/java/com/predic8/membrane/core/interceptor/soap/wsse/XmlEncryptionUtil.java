@@ -178,7 +178,7 @@ final class XmlEncryptionUtil {
      * every {@code ds:Reference} covering the affected subtree.
      */
     private static byte[] serializeElement(Element element) throws TransformerException {
-        Transformer transformer = XMLUtil.newHardenedBestEffortTransformerFactory().newTransformer();
+        Transformer transformer = XMLUtil.newSerializer();
         transformer.setOutputProperty(OMIT_XML_DECLARATION, "yes");
         transformer.setOutputProperty(METHOD, "xml");
         transformer.setOutputProperty(ENCODING, UTF_8.name());

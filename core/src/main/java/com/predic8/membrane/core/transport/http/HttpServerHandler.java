@@ -44,8 +44,11 @@ import static com.predic8.membrane.core.http.Response.notImplemented;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.*;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
+import static com.predic8.membrane.core.util.StompUtil.isSTOMPConnectFrame;
+import static com.predic8.membrane.core.util.StompUtil.isTunneledWithoutResponse;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.lang.Thread.currentThread;
 
 public class HttpServerHandler extends AbstractHttpHandler implements Runnable, TwoWayStreaming {
@@ -91,6 +94,39 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         sourceSocket.setTcpNoDelay(endpointListener.getTransport().isTcpNoDelay());
     }
 
+    /**
+     * Runs the TLS handshake before the first read. Done implicitly by that read, a failure would surface as
+     * whatever the JDK throws there, e.g. a SocketException when the client rejects the certificate, and could not
+     * be told apart from a client closing an established connection. Like that read, the handshake counts as idle,
+     * so a reload can close the connection.
+     *
+     * @return false if the handshake failed, which has been logged then
+     */
+    private boolean completeTlsHandshake() throws IOException {
+        if (!(sourceSocket instanceof SSLSocket sslSocket))
+            return true;
+        endpointListener.setIdleStatus(sourceSocket, true);
+        try {
+            sslSocket.startHandshake();
+            return true;
+        } catch (SocketTimeoutException e) {
+            throw e;
+        } catch (IOException e) {
+            if (endpointListener.isClosed()) // the connection was closed by a reload or shutdown, not by the client
+                throw e;
+            logFailedTlsHandshake(e);
+            return false;
+        } finally {
+            endpointListener.setIdleStatus(sourceSocket, false);
+        }
+    }
+
+    private void logFailedTlsHandshake(IOException e) {
+        log.info("TLS handshake with client failed: {}", escapeControlCharsForLog(e.getMessage()));
+        if (showSSLExceptions)
+            log.info("", e);
+    }
+
     private void setupInAndOut() throws IOException {
         if (ByteStreamLogging.isLoggingEnabled()) {
             int id = newConnectionId();
@@ -107,6 +143,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         try {
             updateThreadName(true);
             setup();
+            if (!completeTlsHandshake())
+                return;
             while (true) {
                 var result = processSingleRequest(boundConnection);
 
@@ -124,9 +162,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             if (showSSLExceptions)
                 log.info("{}", e.getMessage());
         } catch (SSLHandshakeException e) {
-            log.info("SSLHandshakeException: {}", e.getMessage());
-            if (showSSLExceptions)
-                log.info("", e);
+            logFailedTlsHandshake(e);
         } catch (SSLException s) {
             if (showSSLExceptions) {
                 if (s.getCause() instanceof SocketException) {
@@ -145,6 +181,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             log.debug("Client connection terminated before first line was read. Line so far: {}", getLineMaskedAndTruncated(e));
         } catch (EOFWhileReadingLineException e) {
             log.debug("Client connection terminated while reading header line: {}", getLineMaskedAndTruncated(e));
+        } catch (UnsupportedTransferCodingException e) {
+            // RFC 9112 §6.1: a transfer coding the server does not understand SHOULD be answered with 501.
+            log.debug("Rejecting request with unsupported transfer coding: {}", e.getMessage());
+            respondWithNotImplementedAndClose(e.getMessage());
         } catch (MalformedHeaderException e) {
             // Invalid message framing (e.g. conflicting Content-Length), RFC 9112 §6.3:
             // respond 400 and close the connection to avoid request smuggling.
@@ -269,7 +309,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private @NotNull RequestProcessingResult determineConnectionContinuation() {
 
-        if (srcReq.isCONNECTRequest()) {
+        if (srcReq.isCONNECTRequest() || isSTOMPConnectFrame(srcReq)) {
             log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
             return terminate();
         }
@@ -330,7 +370,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
         try {
             removeBodyFromBuffer();
-            writeResponse(exchange.getResponse());
+            if (!isTunneledWithoutResponse(exchange))
+                writeResponse(exchange.getResponse());
+            // Starts a tunnel set up by StreamPump.setupConnectionForwarding()
             exchange.setCompleted();
             log.debug("exchange set completed");
         } catch (Exception e) {
@@ -389,6 +431,22 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             srcOut.flush();
         } catch (Exception e) {
             log.debug("Could not send 400 response for request with invalid framing.", e);
+        }
+    }
+
+    private void respondWithNotImplementedAndClose(String message) {
+        try {
+            final var response = user(getTransport().getRouter().getConfiguration().isProduction(), "http-server-handler")
+                    .status(501)
+                    .title("Not Implemented")
+                    .addSubSee("unsupported-transfer-coding")
+                    .detail(message)
+                    .build();
+            response.getHeader().setConnection(Header.CLOSE);
+            response.write(srcOut, false);
+            srcOut.flush();
+        } catch (Exception e) {
+            log.debug("Could not send 501 response for request with unsupported transfer coding.", e);
         }
     }
 

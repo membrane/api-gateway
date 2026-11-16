@@ -30,6 +30,7 @@ import java.util.zip.ZipFile;
 import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static com.predic8.membrane.test.StringAssertions.replaceInFile;
 import static java.io.File.separator;
+import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.io.FileUtils.*;
@@ -48,6 +49,7 @@ public abstract class DistributionExtractingTestcase {
 
     public static final String MEMBRANE_LOG_LEVEL = "info";
     public static final String LOCALHOST_2000 = "http://localhost:2000";
+    private static final long DELETE_TIMEOUT_MS = 10_000;
 
     private File unzipDir;
     private File membraneHome;
@@ -80,10 +82,11 @@ public abstract class DistributionExtractingTestcase {
 
         unzipDir = getUnzipDir(targetDir);
 
-        if (!unzipDir.exists()) {
-            createDir(unzipDir);
-            unzip(getZipFile(targetDir), unzipDir);
-        }
+        // Left over by a test class whose cleanup failed, so it may be incomplete: never reuse it.
+        if (unzipDir.exists())
+            recursiveDelete(unzipDir);
+        createDir(unzipDir);
+        unzip(getZipFile(targetDir), unzipDir);
 
         membraneHome = requireNonNull(unzipDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway")))[0];
 
@@ -155,10 +158,29 @@ public abstract class DistributionExtractingTestcase {
             //noinspection ConstantConditions
             for (File child : file.listFiles())
                 recursiveDelete(child);
-        try {
-            Files.delete(file.toPath());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        deleteWithRetry(file);
+    }
+
+    /**
+     * On Windows, the files and working directory of a killed gateway can stay locked for a moment
+     * after the process has exited (e.g. while a virus scanner inspects them), so retry for a while.
+     */
+    private static void deleteWithRetry(File file) {
+        final var deadline = currentTimeMillis() + DELETE_TIMEOUT_MS;
+        while (true) {
+            try {
+                Files.delete(file.toPath());
+                return;
+            } catch (IOException e) {
+                if (currentTimeMillis() >= deadline)
+                    throw new RuntimeException(e);
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
         }
     }
 

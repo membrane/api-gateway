@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
@@ -73,20 +74,60 @@ public class HttpUtilTest {
     }
 
     /**
-     * Baseline of the current line reading, including its quirks listed in #3378: a CR swallows the
-     * byte after it, whatever it is, and an LF takes a CR directly after it along.
+     * Line reading, RFC 9112 &sect;2.2: a line ends with CRLF or a bare LF, and a bare CR is rejected (#3378).
      */
     @Nested
     class ReadLine {
 
         @Test
-        void lfCrIsOneTerminator() throws IOException {
-            assertEquals(List.of("line:foo", "line:bar", "eof:", "rest:"), readAll("foo\n\rbar\r\n"));
+        void crLf() throws IOException {
+            assertEquals(List.of("line:foo", "line:bar", "eof:", "rest:"), readAll("foo\r\nbar\r\n"));
         }
 
         @Test
-        void crSwallowsTheNextByte() throws IOException {
-            assertEquals(List.of("line:foo", "line:ar", "eof:", "rest:"), readAll("foo\rbar\r\n"));
+        void bareLf() throws IOException {
+            assertEquals(List.of("line:foo", "line:bar", "eof:", "rest:"), readAll("foo\nbar\n"));
+        }
+
+        @Test
+        void bareCrIsRejected() throws IOException {
+            assertEquals(List.of("bareCr", "rest:ar\r\n"), readAll("foo\rbar\r\n"));
+        }
+
+        /**
+         * LF CR is not a line terminator: the LF ends the line and the CR belongs to the next one.
+         */
+        @Test
+        void crAfterLfStartsTheNextLine() throws IOException {
+            assertEquals(List.of("line:foo", "bareCr", "rest:ar\r\n"), readAll("foo\n\rbar\r\n"));
+        }
+
+        @Test
+        void crLfAfterLfIsAnEmptyLine() throws IOException {
+            assertEquals(List.of("line:foo", "line:", "eof:", "rest:"), readAll("foo\n\r\n"));
+        }
+
+        @Test
+        void crAtEndOfStream() throws IOException {
+            assertEquals(List.of("eof:foo", "rest:"), readAll("foo\r"));
+        }
+
+        /**
+         * The terminator is complete once the LF is read. Reading on would block a client that sends a bare LF
+         * line and then waits for the response, e.g. the empty line that ends the header section.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"foo\n", "foo\r\n"})
+        void doesNotReadPastTheTerminator(String content) throws IOException {
+            final var in = new ByteArrayInputStream(content.getBytes(ISO_8859_1)) {
+                @Override
+                public synchronized int read() {
+                    if (available() == 0)
+                        throw new AssertionError("read past the line terminator");
+                    return super.read();
+                }
+            };
+            assertEquals("foo", readLine(in));
         }
 
         @Test
@@ -109,7 +150,13 @@ public class HttpUtilTest {
 
         @Test
         void lineTooLong() throws IOException {
-            assertEquals(List.of("tooLong:" + "a".repeat(8_092), "rest:" + "a".repeat(908) + "\r\n"), readAll("a".repeat(9_000) + "\r\n"));
+            assertEquals(List.of("tooLong:" + "a".repeat(8_192), "rest:" + "a".repeat(808) + "\r\n"), readAll("a".repeat(9_000) + "\r\n"));
+        }
+
+        @Test
+        void defaultLimitIs8192() throws IOException {
+            assertEquals(8_191, readLine(new ByteArrayInputStream(("a".repeat(8_191) + "\r\n").getBytes(ISO_8859_1))).length());
+            assertThrows(LineTooLongException.class, () -> readLine(new ByteArrayInputStream(("a".repeat(8_192) + "\r\n").getBytes(ISO_8859_1))));
         }
 
         @ParameterizedTest
@@ -120,7 +167,7 @@ public class HttpUtilTest {
         }
 
         private static List<String> readAll(String content) throws IOException {
-            return readAll(content, 8092);
+            return readAll(content, 8192);
         }
 
         /**
@@ -136,6 +183,8 @@ public class HttpUtilTest {
                 events.add("eof:" + e.getLineSoFar());
             } catch (LineTooLongException e) {
                 events.add("tooLong:" + e.getMessage());
+            } catch (MalformedHeaderException e) {
+                events.add("bareCr");
             }
             events.add("rest:" + new String(in.readAllBytes(), ISO_8859_1));
             return events;

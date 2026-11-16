@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.interceptor.soap2json.SelectedPort;
+import com.predic8.membrane.core.interceptor.soap2json.WsdlPartsToSchema;
+import com.predic8.membrane.core.util.xml.schema.XsdDomUtil;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.wsdl.parser.*;
@@ -38,8 +41,10 @@ import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.camelToKebab;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.OperationRouter.extractParamNames;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.interceptor.soap2json.SoapFaultProblemDetails.FAULT_DETAILS_FIELD;
+import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 
 /**
@@ -78,16 +83,6 @@ public class Wsdl2OpenApiConverter {
         return hasOutput ? 200 : 204;
     }
 
-    /**
-     * Problem details subtype for a failed operation. Deliberately says nothing about SOAP: the
-     * {@code type} URI reaches the client, and an operator may not want to advertise that a legacy
-     * service sits behind the API.
-     */
-    static final String OPERATION_ERROR_TYPE = "operation-error";
-
-    /** The problem details member carrying the content of a fault the operation declares. */
-    static final String FAULT_DETAILS_FIELD = "details";
-
     /** What {@code info.version} says when the plugin is not configured with one. */
     static final String DEFAULT_VERSION = "1.0.0";
 
@@ -97,7 +92,7 @@ public class Wsdl2OpenApiConverter {
     private final Definitions definitions;
     private final SelectedPort port;
     private final String basePath;
-    private final XsdToSchema converter;
+    private final WsdlPartsToSchema converter;
     private final Map<String, OperationSettings> operations;
     private final ApiInfo info;
 
@@ -124,7 +119,7 @@ public class Wsdl2OpenApiConverter {
         this.definitions = definitions;
         this.port = port;
         this.basePath = stripTrailingSlash(basePath);
-        this.converter = new XsdToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
+        this.converter = new WsdlPartsToSchema(definitions, Set.of(PROBLEM_DETAILS_SCHEMA));
         this.operations = operations;
         this.info = info;
     }
@@ -144,7 +139,7 @@ public class Wsdl2OpenApiConverter {
      * The converter that produced the document's schemas, so a caller converting messages at runtime
      * resolves the same components the document publishes.
      */
-    XsdToSchema getSchemaConverter() {
+    WsdlPartsToSchema getSchemaConverter() {
         return converter;
     }
 
@@ -610,10 +605,8 @@ public class Wsdl2OpenApiConverter {
      * generic error response already covers.
      */
     private static List<DeclaredFault> declaredFaults(Operation wsdlOp) {
-        return wsdlOp.getFaults().stream()
-                .map(fault -> fault.getMessage().getParts())
-                .filter(parts -> !parts.isEmpty())
-                .map(parts -> new DeclaredFault(XsdToSchema.faultDetailKey(parts), parts))
+        return WsdlPartsToSchema.faultDetailKeys(wsdlOp.getFaults()).entrySet().stream()
+                .map(fault -> new DeclaredFault(fault.getKey(), fault.getValue()))
                 .toList();
     }
 
