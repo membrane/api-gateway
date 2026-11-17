@@ -236,6 +236,7 @@ public class JmsConsumerProxy extends AbstractServiceProxy implements NotPortOpe
             assignRule(exc, this);
             final var outcome = router.getFlowController().invokeRequestHandlers(exc, router.getTransport().getFlow());
             final var response = exc.getResponse();
+            // The status decides; a truncated body after a 2xx doesn't undo the backend's success.
             if (response != null)
                 response.discardBody();
             if (response != null && response.getStatusCode() < 400 && outcome != ABORT) {
