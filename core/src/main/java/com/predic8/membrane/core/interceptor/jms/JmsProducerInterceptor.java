@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -44,6 +45,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.ExtensionLoader.load;
+import static com.predic8.membrane.core.util.text.ToJsonSerializer.toJson;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
@@ -310,7 +312,7 @@ public class JmsProducerInterceptor extends AbstractLanguageInterceptor {
 
     /**
      * JMS properties can only hold strings, booleans and numbers of the primitive types. Other numbers are
-     * converted, everything else is sent as text.
+     * converted, lists and maps are sent as JSON, everything else as text.
      */
     static Object toJmsValue(final Object value) {
         return switch (value) {
@@ -325,6 +327,8 @@ public class JmsProducerInterceptor extends AbstractLanguageInterceptor {
             case Double d -> d;
             case BigInteger i when i.bitLength() < 64 -> i.longValue();
             case BigDecimal d -> d.doubleValue();
+            case Collection<?> c -> toJson(c);
+            case Map<?, ?> m -> toJson(m);
             default -> value.toString();
         };
     }

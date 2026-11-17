@@ -216,10 +216,11 @@ class JmsProducerInterceptorTest {
         values.put("tenant", "acme");
         values.put("retries", "3");
         values.put("maxRetries", "${3}");
+        values.put("items", "${json.items}");
         i.setProperties(properties(values));
         i.init(new DummyTestRouter());
 
-        final var exc = post("/orders").header("X-Request-Id", "r-1").json("{\"id\":7,\"express\":true}").buildExchange();
+        final var exc = post("/orders").header("X-Request-Id", "r-1").json("{\"id\":7,\"express\":true,\"items\":[\"a\",\"b\"]}").buildExchange();
         assertEquals(CONTINUE, i.handleRequest(exc));
 
         final var message = producer.message;
@@ -234,6 +235,7 @@ class JmsProducerInterceptorTest {
         assertEquals("acme", message.properties().get("tenant"));
         assertEquals("3", message.properties().get("retries"));
         assertEquals(3, message.properties().get("maxRetries"));
+        assertEquals("[\"a\",\"b\"]", message.properties().get("items"));
     }
 
     @Test
@@ -283,7 +285,8 @@ class JmsProducerInterceptorTest {
         assertEquals(7L, JmsProducerInterceptor.toJmsValue(java.math.BigInteger.valueOf(7)));
         assertEquals(1.5, JmsProducerInterceptor.toJmsValue(new java.math.BigDecimal("1.5")));
         assertEquals("123456789012345678901234567890", JmsProducerInterceptor.toJmsValue(new java.math.BigInteger("123456789012345678901234567890")));
-        assertEquals("[a, b]", JmsProducerInterceptor.toJmsValue(java.util.List.of("a", "b")));
+        assertEquals("[\"a\",1]", JmsProducerInterceptor.toJmsValue(java.util.List.of("a", 1)));
+        assertEquals("{\"city\":\"Bonn\"}", JmsProducerInterceptor.toJmsValue(Map.of("city", "Bonn")));
         assertNull(JmsProducerInterceptor.toJmsValue(null));
     }
 
