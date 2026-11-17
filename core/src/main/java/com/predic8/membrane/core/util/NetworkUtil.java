@@ -29,6 +29,8 @@ public class NetworkUtil {
 
     private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d*");
     private static final Pattern IPV4_LITERAL = Pattern.compile("\\d{1,3}(\\.\\d{1,3}){3}");
+    // InetAddress also parses "a.b.c" (16-bit last part) and "a.b" (24-bit last part) as IPv4.
+    private static final Pattern IPV4_SHORT_LITERAL = Pattern.compile("\\d{1,3}(\\.\\d{1,3})?\\.\\d{1,8}");
 
     public static Pair<byte[], Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
         int available = sourceSocket.getInputStream().available();
@@ -93,10 +95,10 @@ public class NetworkUtil {
 
     /**
      * Tells an IP literal from a host name without a DNS lookup. Any value containing a colon counts as an IPv6
-     * literal, since host names cannot contain one.
+     * literal, since host names cannot contain one. IPv4 includes the two- and three-part forms Java accepts, like "10.1".
      */
     public static boolean isIpLiteral(String host) {
-        return host.contains(":") || isIpv4Literal(host);
+        return host.contains(":") || isIpv4Literal(host) || IPV4_SHORT_LITERAL.matcher(host).matches();
     }
 
 

@@ -59,13 +59,13 @@ class NetworkUtilTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"10.0.0.1", "999.0.0.1", "::1", "2001:db8::1", "fe80::1%eth0", "[::1]", "[2001:db8::1]"})
+    @ValueSource(strings = {"10.0.0.1", "999.0.0.1", "10.0.0", "10.0.65535", "10.1", "10.16777215", "::1", "2001:db8::1", "fe80::1%eth0", "[::1]", "[2001:db8::1]"})
     void isIpLiteral_accepts_ip_literals(String host) {
         assertTrue(isIpLiteral(host));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"example.com", "localhost", "10.0.0", "10.0.0.1.example.com", "1234.0.0.1", "", "[10.0.0.1]", "[example.com]"})
+    @ValueSource(strings = {"example.com", "localhost", "10", "10.0.0.1.example.com", "1234.0.0.1", "1234.0.0", "10.0.example", "", "[10.0.0.1]", "[example.com]"})
     void isIpLiteral_rejects_host_names(String host) {
         assertFalse(isIpLiteral(host));
     }
