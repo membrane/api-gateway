@@ -182,7 +182,7 @@ class ApiInfoTest {
         consumer.setQueue("orders");
         consumer.setName("JMSConsumer: orders");
 
-        assertEquals("JMSConsumer", proxyKind(consumer));
+        assertEquals("JMSConsumer:", proxyKind(consumer));
         assertEquals("queue:orders", proxyLabel(consumer));
     }
 
@@ -204,7 +204,7 @@ class ApiInfoTest {
         consumer.setGroupId("membrane");
         consumer.setName("orders-membrane");
 
-        assertEquals("KafkaConsumer", proxyKind(consumer));
+        assertEquals("KafkaConsumer:", proxyKind(consumer));
         assertEquals("topic:orders group:membrane", proxyLabel(consumer));
     }
 

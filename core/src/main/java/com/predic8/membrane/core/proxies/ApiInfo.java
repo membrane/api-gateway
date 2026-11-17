@@ -136,10 +136,10 @@ public class ApiInfo {
             return "Internal:";
         }
         if (proxy instanceof JmsConsumerProxy) {
-            return "JMSConsumer";
+            return "JMSConsumer:";
         }
         if (proxy instanceof KafkaConsumerProxy) {
-            return "KafkaConsumer";
+            return "KafkaConsumer:";
         }
         return "Proxy:";
     }
