@@ -59,6 +59,23 @@ class NetworkUtilTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"10.0.0.1", "999.0.0.1", "10.0.0", "10.0.65535", "10.1", "10.16777215", "0127.0.0.1", "127.0.0.0001", "10.0.000065535", "10.0016777215", "10", "00010", "2130706433", "::1", "2001:db8::1", "fe80::1%eth0", "[::1]", "[2001:db8::1]"})
+    void isIpLiteral_accepts_ip_literals(String host) {
+        assertTrue(isIpLiteral(host));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"example.com", "localhost", "12345678901", "10.0.0.1.example.com", "1234.0.0.1", "1234.0.0", "10.0.example", "", "[10.0.0.1]", "[example.com]"})
+    void isIpLiteral_rejects_host_names(String host) {
+        assertFalse(isIpLiteral(host));
+    }
+
+    @Test
+    void isIpv4Literal_rejects_ipv6() {
+        assertFalse(isIpv4Literal("::ffff:10.0.0.1"));
+    }
+
+    @ParameterizedTest
     @CsvSource({
             "0.0.0.0,         0x00000000",
             "255.255.255.255, 0xFFFFFFFF",

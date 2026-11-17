@@ -31,6 +31,10 @@
 - Remove MemoryExchangeStore CG
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
+- Rate-limiting tutorial: rateLimiter behind a proxy or load balancer (X-Forwarded-For)
+  - Next step in `distribution/tutorials/rate-limiting`, e.g. `50-Behind-a-Load-Balancer.yaml`: `trustForwardedFor` with `trustedProxyList` or `trustedProxyCount`, testable with `curl -H "X-Forwarded-For: ..."`
+  - Wait for #3744, which changes how `trustedProxyList` is evaluated
+  - Check `trustedProxyCount` first: it takes the entry N+1 from the right of `X-Forwarded-For`, so with one load balancer it has to be 0, not 1
 - Replace the deprecated Jedis API
   - Story: since the upgrade to Jedis 8.0.2, `JedisPool` and `JedisSentinelPool` (`RedisConnector`) and `Jedis.setex` (`RedisSessionManager`, `RedisOriginalExchangeStore`) are deprecated. They still work, but may be removed in a later major version.
   - Move to the client API Jedis recommends now (`RedisClient`, and `RedisSentinelClient` for sentinels; `set` with `SetParams.ex` instead of `setex`).
@@ -95,6 +99,12 @@
     ```
   - Parse with the hardened XML parser.
   - Use xmlConfig for Xpath. See how other interceptors use it.
+- `rateLimiter`: shared store for the request counts, with a Redis implementation
+  - Story: the counts live in memory in each instance (`LazyRateLimit`). With several Membrane instances behind a load balancer, every instance counts on its own, so a client gets the limit once per instance. Reloading the configuration resets the counts.
+  - Idea: an interface for the store, with the in-memory store as the default and a Redis store that uses the existing `RedisConnector`, e.g. `INCR` plus `EXPIRE` per key and period.
+  - `RateLimitStrategy` is an abstract class today; `countRequest(key)`, which returns the count together with the end of its period, is what a store has to provide.
+  - To decide: per-key periods (Redis key expiry) instead of the one period for all keys that `LazyRateLimit` uses; what happens when Redis is unreachable (fail open or closed).
+  - Related: "Replace the deprecated Jedis API" (Priority 2).
 - ReplaceInterceptor: TB
   - allow also XPath
   - allow to use expressions for the replacement

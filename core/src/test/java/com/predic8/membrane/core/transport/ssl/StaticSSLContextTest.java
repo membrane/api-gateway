@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
@@ -23,13 +24,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.net.ssl.SNIHostName;
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.security.KeyStore;
 import java.util.List;
 
-import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.applySNI;
 import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.openKeyStore;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -118,34 +120,29 @@ class StaticSSLContextTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"[::1]", "[2001:db8::1]", "::1", "127.0.0.1"})
-    void applySNISkipsIpLiteralDefaultHost(String host) throws Exception {
-        final var ssls = unconnectedSocket();
-
-        applySNI(ssls, null, host);
-
-        assertNull(ssls.getSSLParameters().getServerNames());
+    @ValueSource(strings = {"127.0.0.1", "[::1]", "::1"})
+    void ipLiteralHostGetsNoAutomaticSni(String host) throws Exception {
+        assertEquals(List.of(), serverNames(host, null));
     }
 
     @Test
-    void applySNIUsesHostnameDefaultHost() throws Exception {
-        final var ssls = unconnectedSocket();
-
-        applySNI(ssls, null, "api.example.com");
-
-        assertEquals(List.of(new SNIHostName("api.example.com")), ssls.getSSLParameters().getServerNames());
+    void dnsHostGetsAutomaticSni() throws Exception {
+        assertEquals(List.of(new SNIHostName("localhost")), serverNames("localhost", null));
     }
 
     @Test
-    void applySNIKeepsExplicitServerNameForIpLiteralHost() throws Exception {
-        final var ssls = unconnectedSocket();
-
-        applySNI(ssls, "api.example.com", "[::1]");
-
-        assertEquals(List.of(new SNIHostName("api.example.com")), ssls.getSSLParameters().getServerNames());
+    void configuredSniIsKeptForIpLiteralHost() throws Exception {
+        assertEquals(List.of(new SNIHostName("api.example.com")), serverNames("127.0.0.1", "api.example.com"));
     }
 
-    private static SSLSocket unconnectedSocket() throws Exception {
-        return (SSLSocket) SSLContext.getDefault().getSocketFactory().createSocket();
+    private static List<SNIServerName> serverNames(String host, String sniServerName) throws Exception {
+        // Connect via IPv4 so IPv6 hosts are tested without requiring an IPv6 loopback.
+        try (var server = new ServerSocket(0);
+             var plain = new Socket("127.0.0.1", server.getLocalPort());
+             var socket = (SSLSocket) new StaticSSLContext(new SSLParser(), javax.net.ssl.SSLContext.getDefault())
+                     .createSocket(plain, host, server.getLocalPort(), 1000, sniServerName, null)) {
+            final var names = socket.getSSLParameters().getServerNames();
+            return names == null ? List.of() : names;
+        }
     }
 }

@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: Rate Limit by Client IP
+#
+# Allow every client 3 requests per minute. Further requests are rejected with
+# 429 Too Many Requests until the counters are reset.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 10-Rate-Limit-by-Client-IP.yaml
+#       Windows:
+#         run-docker.cmd -c 10-Rate-Limit-by-Client-IP.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 10-Rate-Limit-by-Client-IP.yaml
+#       Windows:
+#         membrane.cmd -c 10-Rate-Limit-by-Client-IP.yaml
+#
+# 2.) Send a request and look at the quota in the response headers:
+#       curl -i localhost:2000
+#
+#       HTTP/1.1 200 OK
+#       X-RateLimit-Limit: 3
+#       X-RateLimit-Remaining: 2
+#       X-RateLimit-Reset: 58
+#       X-RateLimit-Duration: PT1M
+#       ...
+#
+# 3.) Send three more requests:
+#       curl -i localhost:2000
+#       curl -i localhost:2000
+#       curl -i localhost:2000
+#
+# 4.) Look at the rejection:
+#
+#       HTTP/1.1 429 Too Many Requests
+#       ...
+#       X-RateLimit-Remaining: 0
+#       ...
+#       Retry-After: 41
+
+api:
+  port: 2000
+  flow:
+    - rateLimiter:
+        requestLimit: 3
+        requestLimitDuration: PT1M
+    - static:
+        src: Hello!
+    - return:
+        status: 200
+
+# NOTE:
+#   - The counters of all clients are reset at the same time, every
+#     requestLimitDuration after Membrane has started. X-RateLimit-Reset and
+#     Retry-After tell the client how many seconds are left until then.
+#   - The counters are kept in memory. Every Membrane instance counts on its own,
+#     and reloading the configuration resets them.
+#
+# See also:
+#   - ../routing/70-Throttling.yaml to limit the number of concurrent requests

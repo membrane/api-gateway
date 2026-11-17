@@ -64,6 +64,12 @@ Configure Membrane's log output, e.g. as JSON for log aggregators, and write acc
 Run and observe Membrane in production. 
 
 
+## [Docker](docker)
+
+Run Membrane in Docker with your own configuration: mount it into the official image, start it
+with Docker Compose, build your own image, and configure it with environment variables.
+
+
 ## [Server-Sent Events](sse)
 
 Proxy a Server-Sent Events (SSE) stream and watch it in a browser-based debugger.
@@ -113,6 +119,12 @@ Issue signed JSON Web Tokens and protect an API by validating them. Covers Beare
 
 Secure an API with API keys. Covers simple key validation, scope-based access control, deriving
 key requirements from an OpenAPI document, and storing keys in PostgreSQL or MongoDB.
+
+
+## [Rate Limiting](rate-limiting)
+
+Limit how many requests a client may send per time period. Covers limits per client IP, API key or
+JSON field, a global limit for all APIs, and different limits per scope.
 
 
 ## [OAuth2](oauth2)
