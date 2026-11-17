@@ -57,13 +57,13 @@ public class ApiInfo {
     }
 
     /**
-     * The destination, preceded by the name when it differs from the destination's name.
+     * The destination, preceded by the name when it differs from the default name.
      */
     static String jmsConsumerLabel(JmsConsumerProxy consumer) {
         final var destinationName = consumer.getQueue() != null ? consumer.getQueue() : consumer.getTopic();
         final var destination = (consumer.getQueue() != null ? "queue:" : "topic:") + destinationName;
         final var name = consumer.getName();
-        if (name == null || name.isEmpty() || name.equals(destinationName)) {
+        if (name == null || name.isEmpty() || name.equals(JmsConsumerProxy.defaultName(destinationName))) {
             return destination;
         }
         return name + " " + destination;

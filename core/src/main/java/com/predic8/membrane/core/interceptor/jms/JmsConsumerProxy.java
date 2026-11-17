@@ -123,7 +123,7 @@ public class JmsConsumerProxy extends AbstractServiceProxy implements NotPortOpe
         if (topic != null && subscription == null && concurrency > 1)
             throw new ConfigurationException("jmsConsumer needs a subscription to read a topic with a concurrency above 1.");
         if (name == null || name.isEmpty())
-            name = topic != null ? topic : queue;
+            name = defaultName(topic != null ? topic : queue);
         ((InternalProxyKey) key).setServiceName(getName());
         checkRouterConfiguration();
         stopConsumer();
@@ -132,6 +132,17 @@ public class JmsConsumerProxy extends AbstractServiceProxy implements NotPortOpe
         consumer.set(created);
         created.init(router, consumerProperties());
         created.start(this::handle);
+    }
+
+    /**
+     * Not the bare destination name: the name is also what <code>internal://name</code> looks up, so a consumer
+     * named <code>orders</code> would hide an internal API <code>orders</code> and could route messages to itself.
+     *
+     * @param destination Name of the queue or topic
+     * @return Name of a jmsConsumer that has none configured
+     */
+    public static String defaultName(final String destination) {
+        return "JMSConsumer: " + destination;
     }
 
     /**

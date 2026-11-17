@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.proxies.InternalProxy;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.Router;
@@ -194,6 +195,37 @@ class JmsConsumerProxyTest {
         assertEquals(ROLLBACK, stub.handler.handle(message()));
     }
 
+    /**
+     * The default name must not capture internal://orders: the consumer would route to itself.
+     */
+    @Test
+    void defaultNameDoesNotHideInternalApiNamedLikeTheQueue() throws Exception {
+        final var stub = new StubConsumer();
+        final var consumer = consumer(stub, "internal://orders");
+
+        final var internal = new InternalProxy();
+        internal.setName("orders");
+        internal.getFlow().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(final Exchange exc) {
+                receivedBody = exc.getRequest().getBodyAsStringDecoded();
+                return CONTINUE;
+            }
+        });
+        final var ret = new ReturnInterceptor();
+        ret.setStatus(200);
+        internal.getFlow().add(ret);
+
+        router = new TestRouter();
+        router.add(consumer);
+        router.add(internal);
+        router.start();
+
+        assertEquals(ACK, stub.handler.handle(message()));
+        assertEquals("order", receivedBody);
+        assertEquals("JMSConsumer: orders", consumer.getName());
+    }
+
     @Test
     void readsResponseAndCompletesExchange() throws Exception {
         final var stub = new StubConsumer();
@@ -246,7 +278,7 @@ class JmsConsumerProxyTest {
 
         assertEquals("order-events", stub.properties.get("topic"));
         assertEquals("membrane", stub.properties.get("subscription"));
-        assertEquals("order-events", consumer.getName());
+        assertEquals("JMSConsumer: order-events", consumer.getName());
     }
 
     /**

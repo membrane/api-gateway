@@ -176,11 +176,11 @@ class ApiInfoTest {
     }
 
     @Test
-    @DisplayName("jmsConsumer named after its queue: kind and destination only")
+    @DisplayName("jmsConsumer with the default name: kind and destination only")
     void jmsConsumerWithDefaultName() {
         final var consumer = new JmsConsumerProxy();
         consumer.setQueue("orders");
-        consumer.setName("orders");
+        consumer.setName("JMSConsumer: orders");
 
         assertEquals("JMSConsumer", proxyKind(consumer));
         assertEquals("queue:orders", proxyLabel(consumer));
