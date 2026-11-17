@@ -38,6 +38,7 @@ import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.util.Utils.isValidIp;
 import static com.predic8.membrane.core.security.KeyStoreUtil.*;
 
 public class StaticSSLContext extends SSLContext {
@@ -488,11 +489,15 @@ public class StaticSSLContext extends SSLContext {
         return createSocket(s, host, port, connectTimeout, sniServerName, applicationProtocols);
     }
 
-    private void applySNI(@NotNull SSLSocket ssls, @Nullable String sniServerName, @NotNull String defaultHost) {
+    static void applySNI(@NotNull SSLSocket ssls, @Nullable String sniServerName, @NotNull String defaultHost) {
         if (sniServerName != null && sniServerName.isEmpty())
             return;
-        if (sniServerName == null)
+        if (sniServerName == null) {
+            // RFC 6066 3: literal IP addresses are not permitted in SNI
+            if (isIpLiteral(defaultHost))
+                return;
             sniServerName = defaultHost;
+        }
 
         SNIHostName name = new SNIHostName(sniServerName.getBytes()); // mvn complains here when not putting in "bytes" even though there is a constructor for "string"
         List<SNIServerName> serverNames = new ArrayList<>(1);
@@ -501,6 +506,11 @@ public class StaticSSLContext extends SSLContext {
         SSLParameters params = ssls.getSSLParameters();
         params.setServerNames(serverNames);
         ssls.setSSLParameters(params);
+    }
+
+    private static boolean isIpLiteral(String host) {
+        // A colon cannot occur in a hostname, so it marks an IPv6 literal (bracketed or not).
+        return host.contains(":") || isValidIp(host);
     }
 
     private void setApplicationProtocols(@NotNull SSLSocket ssls, @NotNull String[] applicationProtocols) {

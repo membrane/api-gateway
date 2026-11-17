@@ -19,10 +19,17 @@ import com.predic8.membrane.core.router.Router;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import java.security.InvalidParameterException;
 import java.security.KeyStore;
+import java.util.List;
 
+import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.applySNI;
 import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.openKeyStore;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -108,5 +115,37 @@ class StaticSSLContextTest {
 
         assertThrows(InvalidParameterException.class, () ->
                 openKeyStore(store, "irrelevant".toCharArray(), router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[::1]", "[2001:db8::1]", "::1", "127.0.0.1"})
+    void applySNISkipsIpLiteralDefaultHost(String host) throws Exception {
+        final var ssls = unconnectedSocket();
+
+        applySNI(ssls, null, host);
+
+        assertNull(ssls.getSSLParameters().getServerNames());
+    }
+
+    @Test
+    void applySNIUsesHostnameDefaultHost() throws Exception {
+        final var ssls = unconnectedSocket();
+
+        applySNI(ssls, null, "api.example.com");
+
+        assertEquals(List.of(new SNIHostName("api.example.com")), ssls.getSSLParameters().getServerNames());
+    }
+
+    @Test
+    void applySNIKeepsExplicitServerNameForIpLiteralHost() throws Exception {
+        final var ssls = unconnectedSocket();
+
+        applySNI(ssls, "api.example.com", "[::1]");
+
+        assertEquals(List.of(new SNIHostName("api.example.com")), ssls.getSSLParameters().getServerNames());
+    }
+
+    private static SSLSocket unconnectedSocket() throws Exception {
+        return (SSLSocket) SSLContext.getDefault().getSocketFactory().createSocket();
     }
 }
