@@ -99,6 +99,11 @@
 
 ## Membrane 8.0.0 (Java 25)
 
+- Make ForgetFulExchangeStore the default 
+  - LimitedMemoryExchangeStore is the default.
+  - It stores every message in memory. And evicts older ones.
+  - It is only used for the calls of the admin console
+  - Maybe we could make so that it is only used when the admin console is configured. By program or by documentation.
 - change all maven packages to membrane-api.io
   - Needs changes at maven central
 - global:
