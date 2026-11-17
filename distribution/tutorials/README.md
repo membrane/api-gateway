@@ -64,6 +64,12 @@ Configure Membrane's log output, e.g. as JSON for log aggregators, and write acc
 Run and observe Membrane in production. 
 
 
+## [Docker](docker)
+
+Run Membrane in Docker with your own configuration: mount it into the official image, start it
+with Docker Compose, build your own image, and configure it with environment variables.
+
+
 ## [Server-Sent Events](sse)
 
 Proxy a Server-Sent Events (SSE) stream and watch it in a browser-based debugger.
