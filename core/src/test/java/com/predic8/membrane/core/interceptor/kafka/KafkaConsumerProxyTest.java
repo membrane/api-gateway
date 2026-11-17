@@ -14,8 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.kafka;
 
+import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.kafka.KafkaConsumerComponentExtension.Result;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
@@ -422,6 +424,39 @@ class KafkaConsumerProxyTest {
         } finally {
             reloadRouter.stop();
         }
+    }
+
+    /**
+     * The consumer is stopped before the HTTP clients are closed, so a message received during shutdown still
+     * reaches its target instead of failing and being delivered again.
+     */
+    @Test
+    void messageReceivedWhileRouterStopsReachesTarget() throws Exception {
+        final var result = new AtomicReference<Result>();
+        final var exc = message();
+        final var stub = new StubConsumer() {
+            @Override
+            public void stop() {
+                if (handler != null && result.get() == null)
+                    result.set(handler.handle(exc));
+                super.stop();
+            }
+        };
+        final var stoppingRouter = new DefaultRouter();
+        try {
+            stoppingRouter.add(backend("/ok", 200));
+            final var consumer = consumer(stub, "http://localhost:2000/ok");
+            stoppingRouter.add(consumer);
+            // Like a consumer from YAML, which the bean registry stops when it is closed
+            assertInstanceOf(BeanLifecycleManager.class, stoppingRouter.getRegistry())
+                    .addPreDestroyCallback(consumer, KafkaConsumerProxy.class.getMethod("destroy"));
+            stoppingRouter.start();
+        } finally {
+            stoppingRouter.stop();
+        }
+
+        assertTrue(stub.stopped);
+        assertEquals(ACK, result.get());
     }
 
     @SuppressWarnings("unchecked")

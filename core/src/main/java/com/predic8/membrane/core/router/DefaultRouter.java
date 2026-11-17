@@ -31,6 +31,7 @@ import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.serviceproxy.DuplicatePathException;
+import com.predic8.membrane.core.proxies.NotPortOpeningProxy;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.RuleManager;
 import com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource;
@@ -58,6 +59,7 @@ import org.springframework.context.support.AbstractRefreshableApplicationContext
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 
 import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
@@ -305,6 +307,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
         if (reinitializer != null)
             reinitializer.stop();
+        stopInbound();
         if (mainComponents.getTransport() != null)
             mainComponents.getTransport().closeAll();
         mainComponents.getHttpClientFactory().closeAll();
@@ -486,6 +489,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     public void stopRuntimeForReload() {
         getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
+        stopInbound();
 
         if (mainComponents.getTransport() != null)
             mainComponents.getTransport().closeAll();
@@ -494,6 +498,23 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         synchronized (lock) {
             running = false;
             lock.notifyAll();
+        }
+    }
+
+    /**
+     * Closing the ports stops the inbound of the APIs with a port. APIs without a port get their exchanges in other
+     * ways, e.g. from a broker or a schedule, so they are stopped here. Runs before the HTTP clients are closed: an
+     * exchange started after that could not reach its target, and a broker would deliver its message again at once.
+     */
+    private void stopInbound() {
+        for (final var proxy : List.copyOf(getRuleManager().getRules())) {
+            if (proxy instanceof NotPortOpeningProxy portless) {
+                try {
+                    portless.stopInbound();
+                } catch (RuntimeException e) {
+                    log.warn("Could not stop the inbound of API {}.", proxy.getName(), e);
+                }
+            }
         }
     }
 

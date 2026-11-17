@@ -14,8 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.jms;
 
+import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.jms.JmsConsumerExtension.Result;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
@@ -34,6 +36,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
 import static com.predic8.membrane.core.exchange.ExchangeState.FAILED;
@@ -224,6 +228,52 @@ class JmsConsumerProxyTest {
         assertEquals(ACK, stub.handler.handle(message()));
         assertEquals("order", receivedBody);
         assertEquals("JMSConsumer: orders", consumer.getName());
+    }
+
+    /**
+     * The consumer is stopped before the HTTP clients are closed, so a message received during shutdown still
+     * reaches its target. Otherwise it would be rolled back, and the broker would redeliver it at once until it lands
+     * in the dead-letter queue.
+     */
+    @Test
+    void messageReceivedWhileRouterStopsReachesTarget() throws Exception {
+        assertEquals(ACK, deliverWhileStopping(DefaultRouter::stop));
+    }
+
+    @Test
+    void messageReceivedWhileRouterReloadsReachesTarget() throws Exception {
+        assertEquals(ACK, deliverWhileStopping(DefaultRouter::stopRuntimeForReload));
+    }
+
+    /**
+     * @return What the consumer returned for a message the extension received while it was being stopped
+     */
+    private Result deliverWhileStopping(final Consumer<DefaultRouter> stopRouter) throws Exception {
+        final var result = new AtomicReference<Result>();
+        final var exc = message();
+        final var stub = new StubConsumer() {
+            @Override
+            public void stop() {
+                if (handler != null && result.get() == null)
+                    result.set(handler.handle(exc));
+                super.stop();
+            }
+        };
+        final var stoppingRouter = new DefaultRouter();
+        try {
+            stoppingRouter.add(backend("/ok", 200));
+            final var consumer = consumer(stub, "http://localhost:2000/ok");
+            stoppingRouter.add(consumer);
+            // Like a consumer from YAML, which the bean registry stops when it is closed
+            assertInstanceOf(BeanLifecycleManager.class, stoppingRouter.getRegistry())
+                    .addPreDestroyCallback(consumer, JmsConsumerProxy.class.getMethod("destroy"));
+            stoppingRouter.start();
+            stopRouter.accept(stoppingRouter);
+        } finally {
+            stoppingRouter.stop();
+        }
+        assertTrue(stub.stopped);
+        return result.get();
     }
 
     @Test

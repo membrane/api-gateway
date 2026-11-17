@@ -158,6 +158,14 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
         stopConsumer();
     }
 
+    /**
+     * Called when the router stops, before the HTTP clients are closed.
+     */
+    @Override
+    public void stopInbound() {
+        stopConsumer();
+    }
+
     private void stopConsumer() {
         final var running = consumer.getAndSet(null);
         if (running != null)
