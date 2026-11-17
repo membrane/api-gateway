@@ -43,13 +43,26 @@ public abstract class RateLimitStrategy {
 		return requestLimitDuration.toString();
 	}
 
-	public String getLimitReset(String key) {
-		return Long.toString(getServiceAvailableAgainTime(key).toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
+	/**
+	 * @return seconds from now until the deadline, 0 if it has passed
+	 */
+	public static String secondsUntil(LocalDateTime deadline) {
+		return Long.toString(Math.max(0, deadline.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)));
 	}
 
-	public abstract boolean isRequestLimitReached(String ip);
+	/**
+	 * Counts a request for the key.
+	 *
+	 * @return number of requests for the key in the current period, including this one, and the end of that period
+	 */
+	public abstract RequestCount countRequest(String key);
 
-	public abstract LocalDateTime getServiceAvailableAgainTime(String key);
+	/**
+	 * @param count   number of requests for the key in the period, including the counted one
+	 * @param resetAt end of the period the request was counted in
+	 */
+	public record RequestCount(int count, LocalDateTime resetAt) {
+	}
 
 	public abstract void updateAfterConfigChange();
 }

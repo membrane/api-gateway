@@ -1,0 +1,310 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
+package com.predic8.membrane.core.http;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.stream.Stream;
+
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.annot.Constants.MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT;
+import static com.predic8.membrane.core.http.ChunkedDecoder.*;
+import static com.predic8.membrane.core.util.HttpUtil.MAX_LINE_LENGTH;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.jupiter.api.Assertions.*;
+
+class ChunkedDecoderTest {
+
+    @Test
+    void decodesChunksAndReadsNothingAfterTheBody() throws IOException {
+        final var in = stream("3\r\nabc\r\n10\r\n0123456789abcdef\r\n0\r\n\r\nNEXT");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertEquals("abc", text(decoder.next()));
+        assertEquals("0123456789abcdef", text(decoder.next()));
+        assertNull(decoder.next());
+        assertNull(decoder.getTrailer());
+        assertEquals("NEXT", new String(in.readAllBytes(), US_ASCII), "the next message must stay in the stream");
+    }
+
+    @Test
+    void nextAfterTheEndReadsNothing() throws IOException {
+        final var in = stream("1\r\na\r\n0\r\nX: y\r\n\r\nDELETE /next HTTP/1.1\r\n");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertEquals("a", text(decoder.next()));
+        assertNull(decoder.next());
+        assertNull(decoder.next());
+        assertNull(decoder.next());
+        assertEquals("y", decoder.getTrailer().getFirstValue("X"));
+        assertEquals("DELETE /next HTTP/1.1\r\n", new String(in.readAllBytes(), US_ASCII), "the next message must stay in the stream");
+    }
+
+    @Test
+    void chunkExtensionIsIgnored() throws IOException {
+        final var decoder = new ChunkedDecoder(stream("3;name=value\r\nabc\r\n0\r\n\r\n"));
+
+        assertEquals("abc", text(decoder.next()));
+        assertNull(decoder.next());
+    }
+
+    @Test
+    void trailerIsReadAfterTheLastChunk() throws IOException {
+        final var in = stream("3\r\nabc\r\n0\r\nX-Checksum: 42\r\n\r\nNEXT");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertEquals("abc", text(decoder.next()));
+        assertNull(decoder.getTrailer(), "the trailer is only known at the end");
+        assertNull(decoder.next());
+        assertEquals("42", decoder.getTrailer().getFirstValue("X-Checksum"));
+        assertEquals("NEXT", new String(in.readAllBytes(), US_ASCII));
+    }
+
+    @Test
+    void trailerWithSeveralFieldsReadsNothingAfterTheBody() throws IOException {
+        final var in = stream("0\r\nX-A: 1\r\nX-B: 2\r\n\r\nGET /next HTTP/1.1\r\n");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertNull(decoder.next());
+        assertEquals("1", decoder.getTrailer().getFirstValue("X-A"));
+        assertEquals("2", decoder.getTrailer().getFirstValue("X-B"));
+        assertEquals("GET /next HTTP/1.1\r\n", new String(in.readAllBytes(), US_ASCII));
+    }
+
+    @Test
+    void oversizedTrailerLineIsRejected() {
+        final var decoder = new ChunkedDecoder(stream("0\r\nX: " + "a".repeat(MAX_LINE_LENGTH) + "\r\n\r\n"));
+
+        assertThrows(IOException.class, decoder::next);
+    }
+
+    @Test
+    void trailerLineAtTheLimitIsRejected() {
+        assertThrows(IOException.class, () -> readTrailer(stream("X: yz\r\n\r\n"), 5));
+    }
+
+    /**
+     * Like {@link com.predic8.membrane.core.util.HttpUtil#readLine(java.io.InputStream)}, a line length
+     * limit of zero or less means no limit.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void nonPositiveLineLengthLimitMeansNoLimit(int maxLineLength) throws IOException {
+        final var trailer = readTrailer(stream("X: y\r\n\r\n"), maxLineLength);
+
+        assertNotNull(trailer);
+        assertEquals("y", trailer.getFirstValue("X"));
+    }
+
+    @Test
+    void oversizedChunkIsRejected() {
+        final var decoder = new ChunkedDecoder(stream("7FFFFFFF\r\n"));
+
+        assertThrows(IOException.class, decoder::next);
+    }
+
+    @Test
+    void testReadChunkSize() throws Exception {
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(("3d2F" + CRLF).getBytes())));
+    }
+
+    @Test
+    void testReadChunkSizeWithExtension() throws Exception {
+        String s = "3d2F" + CRLF + ";gfgfgfg" + CRLF;
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
+    }
+
+    @Test
+    void testReadChunkSizeWithExtensionValue() throws Exception {
+        String s = "3d2F" + CRLF + ";gfgf=gfg" + CRLF;
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
+    }
+
+    @Test
+    void readTrailerTest() throws IOException {
+        byte[] trailer = ("3D" + CRLF + CRLF).getBytes();
+        ByteArrayInputStream is = new ByteArrayInputStream(trailer);
+        assertEquals(61, readChunkSize(is)); // 3D = 61
+        readTrailer(is);
+        assertEquals(0, is.available()); // Check that everything is read
+    }
+
+    @Test
+    void whitespaceBeforeChunkExtensionIsAccepted() throws IOException {
+        final var decoder = new ChunkedDecoder(stream("3 \t;name=\"quoted value\"\r\nabc\r\n0\r\n\r\n"));
+
+        assertEquals("abc", text(decoder.next()));
+        assertNull(decoder.next());
+    }
+
+    /**
+     * Not allowed by RFC 9112, but sent by old servers that pad the chunk size. The chunk is
+     * re-encoded when it is forwarded, so the padding does not reach the next hop.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"3 \r\nabc\r\n0 \t\r\n\r\n", "3\t\r\nabc\r\n0\r\n\r\n"})
+    void whitespaceAfterChunkSizeIsAccepted(String raw) throws IOException {
+        final var decoder = new ChunkedDecoder(stream(raw));
+
+        assertEquals("abc", text(decoder.next()));
+        assertNull(decoder.next());
+    }
+
+    /**
+     * RFC 9112 §7.1: every chunk-size line, chunk data and the last chunk end with CRLF, and the
+     * chunk size is 1*HEXDIG.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "1\r\naXX0\r\n\r\n",        // data not followed by CRLF
+            "1\r\na\n0\r\n\r\n",        // data followed by bare LF
+            "1\r\na\r",                 // EOF after the CR following the data
+            "1\na\r\n0\r\n\r\n",        // chunk-size line ends with bare LF
+            "1\rXa\r\n0\r\n\r\n",       // CR in chunk-size line followed by something else than LF
+            "1;ext\na\r\n0\r\n\r\n",    // chunk extension ends with bare LF
+            "1;e\rx\r\na\r\n0\r\n\r\n", // bare CR inside a chunk extension
+            "1;e\u0000x\r\na\r\n0\r\n\r\n", // control character inside a chunk extension
+            "1;ext",                    // EOF inside a chunk extension
+            "+1\r\na\r\n0\r\n\r\n",     // signed chunk size
+            "-0\r\n\r\n",               // signed last chunk
+            " 1\r\na\r\n0\r\n\r\n",     // leading whitespace
+            "1 1\r\na\r\n0\r\n\r\n",    // whitespace inside the chunk size
+            "0",                        // EOF inside the chunk-size line
+            "0\r",                      // EOF after the CR of the chunk-size line
+            "0\r\n",                    // EOF instead of the trailer
+            "0\r\n\r",                  // EOF after the CR of the last line
+            "0\r\n\rX",                 // CR of the last line followed by something else than LF
+            "0\r\n\n",                  // last line is a bare LF
+            "0\r\nX: y\r\n\r",          // EOF after the CR of the line that ends the trailer
+            "0\r\nX: y\r\n\rG",         // CR of the line that ends the trailer followed by something else than LF
+            "0\r\nX: y\r\n\n",          // trailer ends with a bare LF
+            "0\r\nX: y\n\r\n",          // trailer field line ends with a bare LF
+            "0\r\nX: y\n\n",            // trailer with bare LFs only
+            "0\r\nX: y\rZ\r\n\r\n",     // bare CR inside a trailer field line
+            "0\r\nX: y",                // EOF inside a trailer field line
+            "0\r\nX: y\r\n",            // EOF instead of the line that ends the trailer
+            "0\r\nX y\r\n\r\n",         // trailer field line without a colon
+    })
+    void invalidFramingIsRejected(String raw) {
+        final var decoder = new ChunkedDecoder(stream(raw));
+
+        assertThrows(IOException.class, () -> {
+            //noinspection StatementWithEmptyBody
+            while (decoder.next() != null) ;
+        });
+    }
+
+    private static ByteArrayInputStream stream(String raw) {
+        return new ByteArrayInputStream(raw.getBytes(US_ASCII));
+    }
+
+    private static String text(Chunk chunk) {
+        return new String(chunk.content(), US_ASCII);
+    }
+
+    // -------------------------------------------------------------------------
+    // parseChunkSize unit tests
+    // -------------------------------------------------------------------------
+
+    @Nested
+    class ParseChunkSizeTest {
+
+        // -- valid inputs ------------------------------------------------------
+
+        @ParameterizedTest
+        @MethodSource("validChunkSizes")
+        void validInputsParseCorrectly(String input, int expected) throws IOException {
+            assertEquals(expected, parseChunkSize(buf(input)));
+        }
+
+        static Stream<Arguments> validChunkSizes() {
+            return Stream.of(
+                    Arguments.of("0",    0),          // terminating chunk
+                    Arguments.of("1",    1),
+                    Arguments.of("ff",   255),        // lowercase hex
+                    Arguments.of("FF",   255),        // uppercase hex
+                    Arguments.of("3d2F", 15663),      // mixed case
+                    Arguments.of(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT),
+                                 MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT)  // exactly at limit
+            );
+        }
+
+        // -- too large --------------------------------------------------------
+
+        @Test
+        void oneByteOverLimitIsRejected() {
+            assertThrows(IOException.class,
+                    () -> parseChunkSize(buf(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT + 1))));
+        }
+
+        @Test
+        void integerMaxValueIsRejected() {
+            // 7FFFFFFF = Integer.MAX_VALUE = 2 GiB — parses without NumberFormatException but exceeds cap
+            assertThrows(IOException.class, () -> parseChunkSize(buf("7fffffff")));
+        }
+
+        @Test
+        void overflowsIntegerParseIsRejectedAsInvalidValue() {
+            // 80000000 exceeds Integer.MAX_VALUE → Integer.parseInt throws NumberFormatException
+            assertThrows(IOException.class, () -> parseChunkSize(buf("80000000")));
+        }
+
+        @Test
+        void maxUnsignedHexIsRejectedAsInvalidValue() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("ffffffff")));
+        }
+
+        // -- negative (sign prefix accepted by Integer.parseInt) --------------
+
+        @Test
+        void negativeValueIsRejected() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("-1")));
+        }
+
+        // -- empty / blank ----------------------------------------------------
+
+        @Test
+        void emptyBufferIsRejected() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("")));
+        }
+
+        @Test
+        void blankBufferIsRejected() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("   ")));
+        }
+
+        // -- non-hex characters -----------------------------------------------
+
+        @ParameterizedTest
+        @ValueSource(strings = {"xyz", "1g", "0x1a", "12 34", "1.0", "  a  ", "+1", "-0"})
+        void nonHexInputIsRejected(String input) {
+            assertThrows(IOException.class, () -> parseChunkSize(buf(input)));
+        }
+
+        // -- helper -----------------------------------------------------------
+
+        private static StringBuilder buf(String s) {
+            return new StringBuilder(s);
+        }
+    }
+
+}

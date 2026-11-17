@@ -163,7 +163,7 @@ public class RedisSessionManager extends SessionManager{
      */
     Optional<String> readAndRefreshTtl(String key) {
         try (Jedis jedis = connector.getJedisWithDb()) {
-            return Optional.ofNullable(jedis.getEx(key, connector.getParams()));
+            return Optional.ofNullable(jedis.getEx(key, new GetExParams().ex(getExpiresAfterSeconds())));
         }
     }
 
