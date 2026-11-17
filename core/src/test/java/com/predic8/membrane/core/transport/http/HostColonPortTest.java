@@ -207,6 +207,19 @@ public class HostColonPortTest {
             assertEquals(8443, https.port());
         }
 
+            @Test
+        void ipv6LoopbackRoundTrip() throws Exception {
+            final var hcp = parse("http://[::1]:8080/path");
+            assertFalse(hcp.useSSL());
+            assertEquals("[::1]", hcp.host());
+            assertEquals(8080, hcp.port());
+            assertEquals("http://[::1]:8080", hcp.getUrl());
+
+            final var uri = hcp.toURI();
+            assertEquals("[::1]", uri.getHost());
+            assertEquals(8080, uri.getPort());
+        }
+
         @Test
         void ipv6WithDefaultPort() throws Exception {
             final var http = parse("http://[2001:db8::1]/foo");
