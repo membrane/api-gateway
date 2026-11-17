@@ -147,9 +147,11 @@ public class ProxyConfiguration {
 	 *              header of the request and replace a <code>Proxy-Authorization</code> header sent by the client.
 	 *              For an HTTPS target, they are sent only with the <code>CONNECT</code> request that opens the tunnel,
 	 *              and the request inside the tunnel carries the client's original header, if any.
-	 *              The credentials are never passed to the backend. A retry that does not go through the proxy
-	 *              in plain HTTP sends the client's original header again, and after the call the request
-	 *              holds the client's original header.
+	 *              After a plain HTTP attempt through the proxy, the client's original header is restored,
+	 *              so a retry through an HTTPS tunnel or without the proxy does not carry the credentials,
+	 *              and after the call the request holds the client's original header.
+	 *              Whether a plain HTTP proxy removes the <code>Proxy-Authorization</code> header before
+	 *              forwarding the request is up to the proxy.
 	 * @default false
 	 */
 	@MCAttribute
