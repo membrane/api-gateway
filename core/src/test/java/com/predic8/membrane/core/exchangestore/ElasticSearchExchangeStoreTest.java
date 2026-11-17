@@ -55,6 +55,11 @@ class ElasticSearchExchangeStoreTest {
 
     private final List<JsonNode> insertedObjects = new ArrayList<>();
 
+    /**
+     * Delay of the backend, read by its request thread.
+     */
+    private volatile long backendDelayMs;
+
     @BeforeEach
     public void start() throws IOException {
         initializeElasticSearchMock();
@@ -93,7 +98,7 @@ class ElasticSearchExchangeStoreTest {
         gateway = new TestRouter();
         es = new ElasticSearchExchangeStore();
         es.setLocation("http://localhost:3066");
-        es.setUpdateIntervalMs(100);
+        es.setUpdateIntervalMs(10);
         gateway.setExchangeStore(es);
         gateway.add(new ServiceProxy(new ServiceProxyKey(3064), "localhost", 3065));
         gateway.start();
@@ -107,6 +112,7 @@ class ElasticSearchExchangeStoreTest {
     private void initializeBackend() throws IOException {
         back = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
+        sp.getFlow().add(createDelayInterceptor());
         StaticInterceptor si = new StaticInterceptor();
         si.setSrc(RESPONSE_BODY);
         sp.getFlow().add(si);
@@ -115,6 +121,20 @@ class ElasticSearchExchangeStoreTest {
         sp.getFlow().add(ri);
         back.add(sp);
         back.start();
+    }
+
+    private Interceptor createDelayInterceptor() {
+        return new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    Thread.sleep(backendDelayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return CONTINUE;
+            }
+        };
     }
 
     private Interceptor createElasticSearchMockInterceptor() {
@@ -174,6 +194,16 @@ class ElasticSearchExchangeStoreTest {
         runTest(true);
     }
 
+    /**
+     * The store writes the exchange when the request arrives and again when it completes. A backend
+     * slower than the update interval puts these writes into separate bulk requests.
+     */
+    @Test
+    void exchangeWrittenInSeveralBulkRequests() throws Exception {
+        backendDelayMs = 100;
+        runTest(false);
+    }
+
     private void runTest(boolean addLoggingInterceptors) throws Exception {
         initializeGateway(addLoggingInterceptors);
 
@@ -183,22 +213,37 @@ class ElasticSearchExchangeStoreTest {
 
         waitForExchangeStoreToFlush();
 
-        List<JsonNode> insertedObjects = getInsertedObjectsAndClearList();
-        assertEquals(2, insertedObjects.size());
-        assertNotNull(insertedObjects.get(0).get("index")); // assert first inserted object is the 'index'
+        final var documents = documentsById(getInsertedObjectsAndClearList());
+        assertEquals(1, documents.size());
+        final var exchange = documents.sequencedValues().getFirst();
 
-        assertArrayEquals(REQUEST_BODY.getBytes(UTF_8), Base64.decode(insertedObjects.get(1).get("request").get("body").textValue()));
-        assertArrayEquals(RESPONSE_BODY.getBytes(UTF_8), Base64.decode(insertedObjects.get(1).get("response").get("body").textValue()));
+        assertArrayEquals(REQUEST_BODY.getBytes(UTF_8), Base64.decode(exchange.get("request").get("body").textValue()));
+        assertArrayEquals(RESPONSE_BODY.getBytes(UTF_8), Base64.decode(exchange.get("response").get("body").textValue()));
 
-        assertEquals("Demo", insertedObjects.get(1).get("request").get("header").get(AUTHORIZATION).textValue());
-        assertEquals(TEXT_PLAIN, insertedObjects.get(1).get("response").get("header").get(CONTENT_TYPE).textValue());
+        assertEquals("Demo", exchange.get("request").get("header").get(AUTHORIZATION).textValue());
+        assertEquals(TEXT_PLAIN, exchange.get("response").get("header").get(CONTENT_TYPE).textValue());
 
-        assertEquals("COMPLETED", insertedObjects.get(1).get("status").textValue());
-        assertTrue(insertedObjects.get(1).get("time").longValue() > 1740000000000L);
-        assertTrue(insertedObjects.get(1).get("timeReqReceived").longValue() > 1740000000000L);
-        assertTrue(insertedObjects.get(1).get("timeReqSent").longValue() > 1740000000000L);
-        assertTrue(insertedObjects.get(1).get("timeResReceived").longValue() > 1740000000000L);
-        assertTrue(insertedObjects.get(1).get("timeResSent").longValue() > 1740000000000L);
+        assertEquals("COMPLETED", exchange.get("status").textValue());
+        assertTrue(exchange.get("time").longValue() > 1740000000000L);
+        assertTrue(exchange.get("timeReqReceived").longValue() > 1740000000000L);
+        assertTrue(exchange.get("timeReqSent").longValue() > 1740000000000L);
+        assertTrue(exchange.get("timeResReceived").longValue() > 1740000000000L);
+        assertTrue(exchange.get("timeResSent").longValue() > 1740000000000L);
+    }
+
+    /**
+     * Pairs each bulk action line with the document after it and keeps the last document per
+     * {@code _id}, as Elasticsearch does when the same id is indexed again.
+     */
+    private static SequencedMap<String, JsonNode> documentsById(List<JsonNode> bulkLines) {
+        assertEquals(0, bulkLines.size() % 2, "Bulk lines must come in action/document pairs");
+        final var documents = new LinkedHashMap<String, JsonNode>();
+        for (var i = 0; i < bulkLines.size(); i += 2) {
+            final var action = bulkLines.get(i).get("index");
+            assertNotNull(action, "Expected an index action, got " + bulkLines.get(i));
+            documents.put(action.get("_id").textValue(), bulkLines.get(i + 1));
+        }
+        return documents;
     }
 
     private void waitForExchangeStoreToFlush() {
