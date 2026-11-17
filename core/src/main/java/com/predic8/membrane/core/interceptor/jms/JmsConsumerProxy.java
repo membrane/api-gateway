@@ -244,13 +244,24 @@ public class JmsConsumerProxy extends AbstractServiceProxy implements NotPortOpe
             }
             final var status = response == null ? "no response" : "status " + response.getStatusCode();
             exc.finishExchange(true, status);
-            log.info("Delivering message from {} by jmsConsumer {} failed with {}. The broker delivers it again.", destination, getName(), status);
+            log.info("Delivering message from {} by jmsConsumer {} failed with {}{}. The broker delivers it again.", destination, getName(), status, deliveryCount(exc));
             return ROLLBACK;
         } catch (Exception e) {
             log.warn("Error delivering message from {} by jmsConsumer {}. The broker delivers it again.", destination, getName(), e);
             exc.finishExchange(true, e.getMessage());
             return ROLLBACK;
         }
+    }
+
+    /**
+     * Shows how close a message is to the broker's limit of deliveries, after which it goes to the dead-letter queue.
+     *
+     * @return e.g. <code> (delivery 3)</code>, or an empty string if the broker does not report the count
+     */
+    private static String deliveryCount(final Exchange exc) {
+        if (exc.getProperty(JmsConsumerExtension.JMS_PROPERTY) instanceof JmsMessageInfo info && info.getDeliveryCount() != null)
+            return " (delivery %d)".formatted(info.getDeliveryCount());
+        return "";
     }
 
     /**

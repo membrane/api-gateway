@@ -46,6 +46,7 @@ import static com.predic8.membrane.core.interceptor.jms.JmsConsumerExtension.Res
 import static com.predic8.membrane.core.interceptor.jms.JmsConsumerExtension.Result.ROLLBACK;
 import static com.predic8.membrane.core.interceptor.jms.JmsProducerInterceptorTest.ARTEMIS;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JmsConsumerProxyTest {
@@ -181,6 +182,21 @@ class JmsConsumerProxyTest {
         startRouter(consumer(stub, "http://localhost:2000/fail"));
 
         assertEquals(ROLLBACK, stub.handler.handle(message()));
+    }
+
+    /**
+     * Shows how close the message is to the broker's limit of deliveries and its dead-letter queue.
+     */
+    @Test
+    void failedDeliveryLogsDeliveryCount() throws Exception {
+        final var stub = new StubConsumer();
+        startRouter(consumer(stub, "http://localhost:2000/fail"));
+        final var exc = message();
+        exc.setProperty(JmsConsumerExtension.JMS_PROPERTY, JmsMessageInfo.builder().deliveryCount(3).build());
+
+        final var log = captureLog(() -> stub.handler.handle(exc));
+
+        assertTrue(log.contains("failed with status 500 (delivery 3)"), log.getMessages().toString());
     }
 
     @Test
