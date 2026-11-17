@@ -23,7 +23,7 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 * IP and host-based **Access Control Lists**
 * Form login
 * NTLM
-* [Rate limiting](rate-limiting#rate-limiter) 
+* [Rate limiting](../tutorials/rate-limiting)
 
 ### [Message Validation](validation#message-validation)
 

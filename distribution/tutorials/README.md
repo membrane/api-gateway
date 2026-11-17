@@ -115,6 +115,12 @@ Secure an API with API keys. Covers simple key validation, scope-based access co
 key requirements from an OpenAPI document, and storing keys in PostgreSQL or MongoDB.
 
 
+## [Rate Limiting](rate-limiting)
+
+Limit how many requests a client may send per time period. Covers limits per client IP, API key or
+JSON field, a global limit for all APIs, and different limits per scope.
+
+
 ## [OAuth2](oauth2)
 
 Run a complete OAuth2 setup with Membrane acting as both the authorization server and the
