@@ -59,7 +59,7 @@ class NetworkUtilTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"10.0.0.1", "999.0.0.1", "10.0.0", "10.0.65535", "10.1", "10.16777215", "::1", "2001:db8::1", "fe80::1%eth0", "[::1]", "[2001:db8::1]"})
+    @ValueSource(strings = {"10.0.0.1", "999.0.0.1", "10.0.0", "10.0.65535", "10.1", "10.16777215", "0127.0.0.1", "127.0.0.0001", "10.0.000065535", "10.0016777215", "::1", "2001:db8::1", "fe80::1%eth0", "[::1]", "[2001:db8::1]"})
     void isIpLiteral_accepts_ip_literals(String host) {
         assertTrue(isIpLiteral(host));
     }
