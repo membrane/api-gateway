@@ -39,7 +39,9 @@ public class JmsProducerProperties {
 
     /**
      * @description Name and value of a JMS property. The name must be a Java identifier and must not start with
-     * <code>JMS</code>.
+     * <code>JMS</code>. A value that is a single expression keeps its type, e.g. a number or a boolean. Any other
+     * value is sent as text, also a literal like <code>3</code>; write <code>${3}</code> or <code>${true}</code> to
+     * send a number or a boolean.
      * @example orderId: ${json.id}
      */
     @MCOtherAttributes

@@ -214,6 +214,8 @@ class JmsProducerInterceptorTest {
         values.put("label", "order-${json.id}");
         values.put("express", "${json.express}");
         values.put("tenant", "acme");
+        values.put("retries", "3");
+        values.put("maxRetries", "${3}");
         i.setProperties(properties(values));
         i.init(new DummyTestRouter());
 
@@ -230,6 +232,8 @@ class JmsProducerInterceptorTest {
         assertEquals("order-7", message.properties().get("label"));
         assertEquals(true, message.properties().get("express"));
         assertEquals("acme", message.properties().get("tenant"));
+        assertEquals("3", message.properties().get("retries"));
+        assertEquals(3, message.properties().get("maxRetries"));
     }
 
     @Test
