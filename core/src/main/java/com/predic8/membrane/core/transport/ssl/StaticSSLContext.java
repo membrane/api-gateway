@@ -40,7 +40,6 @@ import java.util.*;
 
 import static com.predic8.membrane.core.security.KeyStoreUtil.*;
 import static com.predic8.membrane.core.util.NetworkUtil.isIpLiteral;
-import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 
 public class StaticSSLContext extends SSLContext {
 
@@ -495,7 +494,7 @@ public class StaticSSLContext extends SSLContext {
             return;
         if (sniServerName == null) {
             // RFC 6066 forbids IP literals as SNI host names.
-            if (isIpLiteral(removeBracketsIfPresent(defaultHost)))
+            if (isIpLiteral(defaultHost))
                 return;
             sniServerName = defaultHost;
         }

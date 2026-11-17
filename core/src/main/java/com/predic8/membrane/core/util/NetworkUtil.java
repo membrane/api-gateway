@@ -92,8 +92,8 @@ public class NetworkUtil {
     }
 
     /**
-     * Tells an IP literal from a host name without a DNS lookup. Brackets must already be removed. Any value
-     * containing a colon counts as an IPv6 literal, since host names cannot contain one.
+     * Tells an IP literal from a host name without a DNS lookup. Any value containing a colon counts as an IPv6
+     * literal, since host names cannot contain one.
      */
     public static boolean isIpLiteral(String host) {
         return host.contains(":") || isIpv4Literal(host);
