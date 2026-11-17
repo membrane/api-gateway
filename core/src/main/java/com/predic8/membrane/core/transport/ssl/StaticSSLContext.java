@@ -39,6 +39,8 @@ import java.security.cert.Certificate;
 import java.util.*;
 
 import static com.predic8.membrane.core.security.KeyStoreUtil.*;
+import static com.predic8.membrane.core.util.NetworkUtil.isIpLiteral;
+import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 
 public class StaticSSLContext extends SSLContext {
 
@@ -491,8 +493,12 @@ public class StaticSSLContext extends SSLContext {
     private void applySNI(@NotNull SSLSocket ssls, @Nullable String sniServerName, @NotNull String defaultHost) {
         if (sniServerName != null && sniServerName.isEmpty())
             return;
-        if (sniServerName == null)
+        if (sniServerName == null) {
+            // RFC 6066 forbids IP literals as SNI host names.
+            if (isIpLiteral(removeBracketsIfPresent(defaultHost)))
+                return;
             sniServerName = defaultHost;
+        }
 
         SNIHostName name = new SNIHostName(sniServerName.getBytes()); // mvn complains here when not putting in "bytes" even though there is a constructor for "string"
         List<SNIServerName> serverNames = new ArrayList<>(1);
