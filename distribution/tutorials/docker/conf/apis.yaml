@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Configuration for the Docker tutorial. The steps are in ../README.md.
+
+api:
+  name: Gateway
+  port: 2000
+  flow:
+    - request:
+        - log:
+            message: "Got: ${path}"
+  target:
+    # Without BACKEND_URL, requests go to the mock below, so the tutorial works offline
+    url: "#{env.BACKEND_URL ?: 'http://localhost:2001'}"
+
+---
+
+api:
+  name: Mock Backend
+  port: 2001
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "backend": "mock" }'
+    - return:
+        status: 200

@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: Rate Limit by JSON Field
+#
+# Allow 3 password resets per user and minute. The user is read from the JSON
+# body, so an attacker cannot flood one account from many addresses.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 30-Rate-Limit-by-JSON-Field.yaml
+#       Windows:
+#         run-docker.cmd -c 30-Rate-Limit-by-JSON-Field.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 30-Rate-Limit-by-JSON-Field.yaml
+#       Windows:
+#         membrane.cmd -c 30-Rate-Limit-by-JSON-Field.yaml
+#
+# 2.) Request four password resets for Alice:
+#       curl -i -H "Content-Type: application/json" -d "{\"user\":\"alice\"}" localhost:2000/reset-password
+#       curl -i -H "Content-Type: application/json" -d "{\"user\":\"alice\"}" localhost:2000/reset-password
+#       curl -i -H "Content-Type: application/json" -d "{\"user\":\"alice\"}" localhost:2000/reset-password
+#       curl -i -H "Content-Type: application/json" -d "{\"user\":\"alice\"}" localhost:2000/reset-password
+#
+# 3.) Look at the rejection:
+#
+#       HTTP/1.1 429 Too Many Requests
+#
+# 4.) Bob is counted separately:
+#       curl -H "Content-Type: application/json" -d "{\"user\":\"bob\"}" localhost:2000/reset-password
+#
+#       Password reset link sent
+#
+# 5.) A body that is not JSON is rejected:
+#       curl -i -H "Content-Type: application/json" -d "{" localhost:2000/reset-password
+#
+#       HTTP/1.1 400 Bad Request
+
+api:
+  port: 2000
+  path:
+    uri: /reset-password
+  flow:
+    - rateLimiter:
+        requestLimit: 3
+        requestLimitDuration: PT1M
+        language: jsonpath
+        keyExpression: $.user
+    - static:
+        src: Password reset link sent
+    - return:
+        status: 200
+
+# NOTE:
+#   - If the keyExpression yields no value, e.g. for a body without a user
+#     field, the request is counted by its client IP.
+#   - Put authentication before rateLimiter, to make the data available:
+#       - API key:
+#           language: spel
+#           keyExpression: headers['X-Api-Key']
+#       - User of basicAuthentication:
+#           language: spel
+#           keyExpression: user()
+#       - Claim of a JWT, e.g. the subject:
+#           language: spel
+#           keyExpression: properties.jwt.sub
+#
+# See also:
+#   - 40-Tiered-Rate-Limits.yaml for a limit per API key
+#   - ../json for JSONPath

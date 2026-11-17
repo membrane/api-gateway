@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.ratelimit;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
@@ -27,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -34,29 +34,29 @@ import java.util.Objects;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.Header.RETRY_AFTER;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitStrategy.secondsUntil;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
 import static java.lang.String.join;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 /**
- * @description <p>The <i>rateLimiter</i> plugin limits the number of requests of a client in a period of time.
- * As a default the client requests are grouped by client-Ip address and then counted. There are lots of
- * possibilities to group the requests using the keyExpression. The requests can even be counted from different
- * clients together.</p>
- * <p>When the gateway is located behind a loadbalancer then
- * the client-Ip address is not the one from the client but the address from the balancer. To get the real Ip-address loadbalancers,
- * <i>Web Application Firewalls</i> and reverse proxies set the ip from the original client into the <i>X-Forwarded-For</i> HTTP
- * header field. The limiter plugin can take the Ip-address from the header.</p>
- * <p>
- * The X-Forwarded-For header can only be trusted when a trustworthy reverse proxy or load balancer is between the client and server. The gateway not should be
- * reachable directly. Only activate this feature when you know what you are doing.
- * </p>
- * <p>Used as an example in <a href="https://github.com/membrane/api-gateway/blob/master/distribution/tutorials/operation/70-Production-Settings.yaml">tutorials/operation/70-Production-Settings.yaml</a>.</p>
- * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For &#64;Mozilla</a>
+ * @description <p>Limits how many requests a client may send in a period of time. Further requests are rejected with
+ * 429 Too Many Requests until the period has elapsed. Requests are counted per client IP address, or by a value
+ * computed from the request, e.g. an API key, a user or a field of the body. The value can be computed with SpEL,
+ * JSONPath, XPath or Groovy.</p>
+ * <p>Responses carry the quota in the headers <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>,
+ * <code>X-RateLimit-Reset</code> (seconds until the counts are reset) and <code>X-RateLimit-Duration</code>. A rejected
+ * request also gets <code>Retry-After</code>. When several limiters apply to a request, the headers describe the one
+ * with the fewest requests left.</p>
+ * <p>The counts of all clients are reset together. They are kept in memory, so every Membrane instance counts on its
+ * own.</p>
+ * <p>Behind a load balancer or reverse proxy, the client address can be taken from the <code>X-Forwarded-For</code>
+ * header. Trust it only if Membrane cannot be reached directly; otherwise a client can choose its own address.</p>
+ * <p>See tutorials/rate-limiting/10-Rate-Limit-by-Client-IP.yaml.</p>
  * @topic 3. Security and Validation
  * @yaml
  * <pre><code>
@@ -85,6 +85,16 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
      */
     public static final String X_RATELIMIT_RESET = "X-RateLimit-Reset";
 
+    /**
+     * Number of requests left in the current period.
+     */
+    public static final String X_RATELIMIT_REMAINING = "X-RateLimit-Remaining";
+
+    /**
+     * Holds the {@link Quota} that is reported in the response headers.
+     */
+    private static final String QUOTA_PROPERTY = "membrane.ratelimit.quota";
+
     private static final String KEY_PREFIX_EXPRESSION = "key:";
     private static final String KEY_PREFIX_CLIENT_IP = "ip:";
 
@@ -107,7 +117,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
         strategy = new LazyRateLimit(requestLimitDuration, requestLimit);
         name = "rate limiter";
-        setAppliedFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_RESPONSE_FLOW);
     }
 
     @Override
@@ -132,11 +142,17 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
                     .buildAndSetResponse(exc);
             return RETURN;
         }
-        if (!strategy.isRequestLimitReached(key))
+        final var requestCount = strategy.countRequest(key);
+        final var quota = new Quota(getRequestLimit(), Math.max(0, getRequestLimit() - requestCount.count()), requestCount.resetAt(), strategy.getLimitDurationPeriod());
+        if (requestCount.count() <= getRequestLimit()) {
+            reportIfMostRestrictive(exc, quota);
             return CONTINUE;
+        }
 
+        // The limiter that rejects the request reports its own quota, even if another one has as few requests left
+        exc.setProperty(QUOTA_PROPERTY, quota);
         log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", key, getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
-        final var reset = strategy.getLimitReset(key);
+        final var reset = secondsUntil(quota.resetAt());
         user(router.getConfiguration().isProduction(), getDisplayName())
                 .status(429)
                 .title("Rate limit is exceeded.")
@@ -145,9 +161,46 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
                 .topLevel("limit", getRequestLimit())
                 .topLevel("duration", getRequestLimitDuration())
                 .buildAndSetResponse(exc);
-        setHeaderRateLimitFieldsOnResponse(exc, reset);
+        setQuotaHeaders(exc, quota, reset);
+        exc.getResponse().getHeader().setValue(RETRY_AFTER, reset);
 
         return RETURN;
+    }
+
+    /**
+     * Adds the quota headers to responses that passed the limiter. Called for the rejection of
+     * a later limiter as well, which then reports its own quota.
+     */
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        // The reset time is computed now, as the backend may have taken a while
+        if (exc.getProperty(QUOTA_PROPERTY) instanceof Quota quota)
+            setQuotaHeaders(exc, quota, secondsUntil(quota.resetAt()));
+        return CONTINUE;
+    }
+
+    /**
+     * With several limiters on the way of a request, e.g. a global one and one in the API,
+     * the client is told about the one with the fewest requests left.
+     */
+    private static void reportIfMostRestrictive(Exchange exc, Quota quota) {
+        if (exc.getProperty(QUOTA_PROPERTY) instanceof Quota reported && reported.remaining() <= quota.remaining())
+            return;
+        exc.setProperty(QUOTA_PROPERTY, quota);
+    }
+
+    private static void setQuotaHeaders(Exchange exc, Quota quota, String reset) {
+        final var h = exc.getResponse().getHeader();
+        h.setValue(X_RATELIMIT_LIMIT, Integer.toString(quota.limit()));
+        h.setValue(X_RATELIMIT_REMAINING, Integer.toString(quota.remaining()));
+        h.setValue(X_RATELIMIT_RESET, reset);
+        h.setValue(X_RATELIMIT_DURATION, quota.duration());
+    }
+
+    /**
+     * @param resetAt when the counts are reset. The seconds until then are computed when the headers are written.
+     */
+    private record Quota(int limit, int remaining, LocalDateTime resetAt, String duration) {
     }
 
     /**
@@ -254,22 +307,15 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         return l.get(l.size() - count - 1).trim();
     }
 
-    private void setHeaderRateLimitFieldsOnResponse(Exchange exc, String reset) {
-        Header h = exc.getResponse().getHeader();
-        h.add(X_RATELIMIT_DURATION, strategy.getLimitDurationPeriod());
-        h.add(X_RATELIMIT_LIMIT, Integer.toString(strategy.requestLimit));
-        h.add(X_RATELIMIT_RESET, reset);
-        h.add(RETRY_AFTER, reset);
-    }
-
     @SuppressWarnings("unused")
     public int getRequestLimit() {
         return strategy.requestLimit;
     }
 
     /**
-     * @description Number of requests within the period of measurement.
+     * @description Number of requests a client may send per period.
      * @default 1000
+     * @example 100
      */
     @MCAttribute
     public void setRequestLimit(int limit) {
@@ -281,10 +327,10 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @description Duration after the limit is reset in the <i>ISO 8600 Duration</i> format, e.g. PT10S for 10 seconds,
-     * PT5M for 5 minutes or PT8H for eight hours.
-     * @default PT3600S
-     * <p>see: <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a></p>
+     * @description Length of the period as an ISO 8601 duration, e.g. <code>PT10S</code> for 10 seconds,
+     * <code>PT5M</code> for 5 minutes or <code>PT8H</code> for 8 hours.
+     * @default PT1H
+     * @example PT1M
      */
     @MCAttribute
     public void setRequestLimitDuration(String duration) {
@@ -296,11 +342,11 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @description The expression the ratelimiter should use to group the requests before counting. The Spring Expression Language (SpEL)
-     * is used as language. In the expression the build-in variables request, header, properties can be used.
-     * If the expression fails or evaluates to an empty value, the request is counted by its client IP address instead.
-     * <p>With XPath or JSONPath, a body that should be XML or JSON but does not parse is rejected with 400.</p>
-     * @default ip-address
+     * @description Expression whose value the requests are counted by, e.g. <code>headers['X-Api-Key']</code> in SpEL
+     * or <code>$.user</code> in JSONPath. If the expression fails or yields no value, the request is counted by its
+     * client IP address. A body the expression cannot parse as JSON or XML is rejected with 400.
+     * @default client IP address
+     * @example headers['X-Api-Key']
      */
     @MCAttribute
     public void setKeyExpression(String expression) {
@@ -333,10 +379,12 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @description Number of trusted proxy servers and loadbalancers. Used to evaluate the X-Forwarded-For header.
-     * If both <pre>trustedProxyList</pre> and <pre>trustedProxyCount</pre> is specified, the trustedProxyList is used to
-     * determine the client ip address. To make this configuration active set <pre>isTrustForwardedFor</pre> to true.
-     * @default 0
+     * @description Number of entries at the end of <code>X-Forwarded-For</code> that were added by trusted proxies.
+     * The entry to the left of them is the client address. If there is none, the address of the connection is used.
+     * Behind a single load balancer that appends the client address, this is 0. Applies only when
+     * <code>trustForwardedFor</code> is true; <code>trustedProxyList</code> takes precedence.
+     * @default not set
+     * @example 0
      */
     @MCAttribute
     public void setTrustedProxyCount(int trustedProxyCount) {
@@ -349,7 +397,10 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @description Set this only to true if you know that are you doing. The function of the ratelimter relays on current 'X-ForwaredFor' header values.
+     * @description Takes the client address from the <code>X-Forwarded-For</code> header instead of the connection.
+     * Enable it only if all requests come through trusted proxies, because a client can set the header itself.
+     * Without <code>trustedProxyList</code> or <code>trustedProxyCount</code>, the header is used only if it has
+     * exactly one entry.
      * @default false
      */
     @MCAttribute
