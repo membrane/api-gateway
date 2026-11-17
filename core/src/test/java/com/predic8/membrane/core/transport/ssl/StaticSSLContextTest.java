@@ -27,6 +27,7 @@ import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLSocket;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.security.KeyStore;
 import java.util.List;
@@ -135,9 +136,11 @@ class StaticSSLContextTest {
     }
 
     private static List<SNIServerName> serverNames(String host, String sniServerName) throws Exception {
+        // Connect via IPv4 so IPv6 hosts are tested without requiring an IPv6 loopback.
         try (var server = new ServerSocket(0);
+             var plain = new Socket("127.0.0.1", server.getLocalPort());
              var socket = (SSLSocket) new StaticSSLContext(new SSLParser(), javax.net.ssl.SSLContext.getDefault())
-                     .createSocket(host, server.getLocalPort(), 1000, sniServerName, null)) {
+                     .createSocket(plain, host, server.getLocalPort(), 1000, sniServerName, null)) {
             final var names = socket.getSSLParameters().getServerNames();
             return names == null ? List.of() : names;
         }
