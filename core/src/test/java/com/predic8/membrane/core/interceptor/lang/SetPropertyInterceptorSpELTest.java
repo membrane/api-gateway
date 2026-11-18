@@ -62,7 +62,7 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
         interceptor.setValue("");
         interceptor.init(router);
         interceptor.handleRequest(exc);
-        assertNull(exc.getProperty("order"));
+        assertEquals("", exc.getProperty("order"));
     }
 
     @Test
