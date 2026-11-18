@@ -101,7 +101,11 @@ final class MessageText {
     static String curl(AbstractExchange exc, boolean backend) throws Exception {
         final var req = exc.getRequest();
         // --globoff: brackets and braces in the URL are literal, not a range of URLs.
-        final var sb = new StringBuilder("curl --globoff");
+        final var sb = new StringBuilder();
+        // curl rejects --head with --data, and -X HEAD makes it wait for a body that never comes.
+        if ("HEAD".equals(req.getMethod()) && !req.isBodyEmpty())
+            sb.append("# A HEAD request with a body: curl waits for a response body, so stop it with Ctrl+C or --max-time.\n");
+        sb.append("curl --globoff");
         // -X HEAD would make curl wait for a body that never comes.
         if ("HEAD".equals(req.getMethod()) && req.isBodyEmpty())
             sb.append(" --head");

@@ -94,6 +94,23 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void listedExchangesKnowTheBodyLengthOfMessagesWithoutContentLength() throws Exception {
+        final var store = store();
+        final var exc = Request.post("/chunked").contentType("text/plain").body("hello").buildExchange();
+        exc.setProxy(new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80));
+        store.snap(exc, REQUEST);
+        final var res = Response.ok().contentType("text/plain").body("response body").build();
+        res.getHeader().removeFields("Content-Length");
+        exc.setResponse(res);
+        store.snap(exc, RESPONSE);
+
+        final var listed = store.getAllExchangesAsList().getFirst();
+
+        assertEquals(13L, listed.getProperty(FileExchangeStore.RESPONSE_BODY_LENGTH));
+        assertEquals(5L, listed.getProperty(FileExchangeStore.REQUEST_BODY_LENGTH));
+    }
+
+    @Test
     void openBodyOfBodyOnlyFiles() throws Exception {
         final var store = store();
         store.setSaveBodyOnly(true);

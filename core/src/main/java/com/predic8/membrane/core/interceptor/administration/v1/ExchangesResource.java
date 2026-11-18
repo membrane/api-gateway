@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.proxies.*;
 
 import java.io.*;
@@ -284,7 +285,7 @@ final class ExchangesResource {
         for (final var exc : snapshot)
             if (filter.test(exc))
                 matching.add(exc);
-        matching.sort(getAbstractExchangeComparator("instance".equals(sort) ? "time" : sort, order));
+        matching.sort(comparator(sort, order));
         final var page = matching.subList(Math.min(offset, matching.size()), (int) Math.min((long) offset + limit, matching.size()));
         return new ExchangeQueryResult(List.copyOf(page), matching.size(), lastModified);
     }
@@ -340,11 +341,37 @@ final class ExchangesResource {
                 exc.getServer(),
                 proxy instanceof AbstractServiceProxy asp && asp.getTargetPort() != -1 ? asp.getTargetPort() : null,
                 req == null ? null : exc.getRequestContentType(),
-                req == null || exc.getRequestContentLength() == -1 ? null : (long) exc.getRequestContentLength(),
+                contentLength(exc, false),
                 res == null ? null : exc.getResponseContentType(),
-                res == null || !completed || exc.getResponseContentLength() == -1 ? null : (long) exc.getResponseContentLength(),
+                completed ? contentLength(exc, true) : null,
                 completed,
                 ExchangeFilter.duration(exc));
+    }
+
+    /**
+     * @return the Content-Length, or the length the store recorded for a message without one (e.g. chunked); null if
+     * unknown
+     */
+    static Long contentLength(AbstractExchange exc, boolean response) {
+        final Message msg = response ? exc.getResponse() : exc.getRequest();
+        if (msg == null)
+            return null;
+        final var declared = msg.getHeader().getContentLength();
+        if (declared != -1)
+            return declared;
+        if (exc.getProperty(response ? FileExchangeStore.RESPONSE_BODY_LENGTH : FileExchangeStore.REQUEST_BODY_LENGTH) instanceof Long recorded)
+            return recorded;
+        if (response && msg.getBody().isRead())
+            return msg.getBody().getLength();
+        return null;
+    }
+
+    private static Comparator<AbstractExchange> comparator(String sort, String order) {
+        return switch (sort) {
+            case "reqContentLength" -> new PropertyComparator<>(order, exc -> contentLength(exc, false));
+            case "respContentLength" -> new PropertyComparator<>(order, exc -> contentLength(exc, true));
+            default -> getAbstractExchangeComparator("instance".equals(sort) ? "time" : sort, order);
+        };
     }
 
     private static List<NodeStatus> nodeStatus(AbstractExchange exc) {

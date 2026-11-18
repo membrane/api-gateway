@@ -61,6 +61,13 @@ public class FileExchangeStore extends AbstractExchangeStore {
     static final String RESPONSE_SUFFIX = "Response.msg";
     static final String EXCHANGE_SUFFIX = "Exchange.json";
 
+    /**
+     * Exchange properties with the original body lengths of the request and response, as {@link Long}, for exchanges
+     * read from the store, as the store does not read bodies when it lists exchanges.
+     */
+    public static final String REQUEST_BODY_LENGTH = "membrane.fileExchangeStore.requestBodyLength";
+    public static final String RESPONSE_BODY_LENGTH = "membrane.fileExchangeStore.responseBodyLength";
+
     private static final ObjectMapper om = new ObjectMapper();
     private static final byte[] END_OF_HEADER = "\r\n\r\n".getBytes(US_ASCII);
 
@@ -92,7 +99,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
     /**
      * The newest exchanges, oldest first. Guarded by {@code this}.
      */
-    private final LinkedHashMap<Long, IndexEntry> index = new LinkedHashMap<>();
+    // Ordered by ID: the oldest ID is evicted first and admission uses the same order.
+    private final TreeMap<Long, IndexEntry> index = new TreeMap<>();
     private boolean indexLoaded;
     private long lastModification = System.currentTimeMillis();
 
@@ -150,11 +158,23 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (base == null)
             return;
         try {
+            // A message without Content-Length, e.g. chunked, has its length only here. The properties of the
+            // exchange are not thread safe, and request and response are snapped on different threads: use its lock.
+            if (body != null)
+                synchronized (exc) {
+                    exc.setProperty(flow == Flow.REQUEST ? REQUEST_BODY_LENGTH : RESPONSE_BODY_LENGTH, body.getLength());
+                }
             switch (flow) {
                 case REQUEST -> {
                     writeFile(exc.getRequest(), base + "-" + REQUEST_SUFFIX, body);
                     // The response was snapped before the request body completed: reference the request file now.
-                    if (exc.getProperty(indexIdProperty) != null)
+                    // writeExchangeFile() sets the ID and checks for the request file under the same lock, so
+                    // either it saw the file or this sees the ID.
+                    final boolean indexed;
+                    synchronized (exc) {
+                        indexed = exc.getProperty(indexIdProperty) != null;
+                    }
+                    if (indexed)
                         writeExchangeFile(exc);
                 }
                 case ABORT, RESPONSE -> {
@@ -391,19 +411,21 @@ public class FileExchangeStore extends AbstractExchangeStore {
     /**
      * Passes the exchange files to {@code visitor}, newest first, until it returns false.
      *
-     * @param batchSize how many files of a day are selected at once. A busy day can hold many more files than the
+     * @param batchSize how many files of a day are selected at first. A busy day can hold many more files than the
      *                  visitor needs, so they are not all kept in memory and sorted. If the visitor wants more, e.g.
-     *                  because some files were unreadable, the next batch of older files is selected.
+     *                  because some files were unreadable, the next batch of older files is selected, twice as large
+     *                  as the previous one, so that many unreadable files do not cause many scans of the directory.
      */
     private static void visitNewestExchangeFiles(Path root, int batchSize, java.util.function.Predicate<Path> visitor) {
         for (final var year : numericSubdirsDescending(root))
             for (final var month : numericSubdirsDescending(year))
                 for (final var day : numericSubdirsDescending(month)) {
                     Path olderThan = null;
+                    var size = batchSize;
                     while (true) {
                         final List<Path> batch;
                         try {
-                            batch = newestExchangeFilesOfDay(day, olderThan, batchSize);
+                            batch = newestExchangeFilesOfDay(day, olderThan, size);
                         } catch (IOException e) {
                             log.warn("Could not list {}: {}", day, e.getMessage());
                             break;
@@ -411,9 +433,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
                         for (final var f : batch)
                             if (!visitor.test(f))
                                 return;
-                        if (batch.size() < batchSize)
+                        if (batch.size() < size)
                             break;
                         olderThan = batch.getLast();
+                        size = (int) Math.min(2L * size, Integer.MAX_VALUE - 8);
                     }
                 }
     }
@@ -479,7 +502,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
     private synchronized void addToIndex(long id, StoredExchange stored, Path file) {
         if (index.containsKey(id))
-            index.put(id, new IndexEntry(id, stored, file)); // keeps the position of the entry
+            index.put(id, new IndexEntry(id, stored, file));
         else if (index.size() >= maxIndexed && id < index.firstEntry().getKey())
             return; // a later snapshot of an exchange that was evicted already: it must not evict a newer one
         else
@@ -489,11 +512,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
     private void add(long id, StoredExchange stored, Path file) {
         index.put(id, new IndexEntry(id, stored, file));
-        final var it = index.values().iterator();
-        while (index.size() > maxIndexed && it.hasNext()) {
-            it.next();
-            it.remove();
-        }
+        while (index.size() > maxIndexed)
+            index.pollFirstEntry();
     }
 
     /**
@@ -574,6 +594,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
                 req.setUri(s.request().uri());
                 fill(req, s.request(), entry.file(), withBodies);
                 exc.setRequest(req);
+                if (s.request().bodyLength() != null)
+                    exc.setProperty(REQUEST_BODY_LENGTH, s.request().bodyLength());
             }
             if (s.response() != null) {
                 final var res = new Response();
@@ -581,6 +603,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
                 res.setStatusMessage(s.response().statusMessage());
                 fill(res, s.response(), entry.file(), withBodies);
                 exc.setResponse(res);
+                if (s.response().bodyLength() != null)
+                    exc.setProperty(RESPONSE_BODY_LENGTH, s.response().bodyLength());
             }
         } catch (IOException e) {
             log.warn("Could not read the messages of {}: {}", entry.file(), e.getMessage());
@@ -765,9 +789,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
                     proxy == null ? null : proxy.getName(), proxy == null ? -1 : proxy.getKey().getPort(),
                     FakeProxy.isInboundTls(proxy), exc.getServer(),
                     req == null ? null : StoredMessage.of(req, req.getMethod(), req.getUri(), null, null,
-                            requestWritten ? baseName + "-" + REQUEST_SUFFIX : null, raw, saveBodyOnly),
+                            requestWritten ? baseName + "-" + REQUEST_SUFFIX : null, raw, saveBodyOnly,
+                            (Long) exc.getProperty(REQUEST_BODY_LENGTH)),
                     res == null ? null : StoredMessage.of(res, null, null, res.getStatusCode(), res.getStatusMessage(),
-                            responseWritten ? baseName + "-" + RESPONSE_SUFFIX : null, raw, saveBodyOnly));
+                            responseWritten ? baseName + "-" + RESPONSE_SUFFIX : null, raw, saveBodyOnly,
+                            (Long) exc.getProperty(RESPONSE_BODY_LENGTH)));
         }
     }
 
@@ -777,17 +803,18 @@ public class FileExchangeStore extends AbstractExchangeStore {
      * @param bodyFormatted whether the body was pretty-printed (and decoded) when it was written
      */
     record StoredMessage(String method, String uri, Integer statusCode, String statusMessage, String version,
-                         List<StoredHeader> headers, String file, boolean headersInFile, boolean bodyFormatted) {
+                         List<StoredHeader> headers, String file, boolean headersInFile, boolean bodyFormatted,
+                         Long bodyLength) {
 
         static StoredMessage of(Message msg, String method, String uri, Integer statusCode, String statusMessage,
-                                String file, boolean raw, boolean saveBodyOnly) {
+                                String file, boolean raw, boolean saveBodyOnly, Long bodyLength) {
             final var withHeaders = raw || !saveBodyOnly;
             // saveBodyOnly: header fields (e.g. Authorization) are not stored anywhere, also not in the metadata.
             final var headers = !withHeaders ? List.<StoredHeader>of() : Arrays.stream(msg.getHeader().getAllHeaderFields())
                     .map(f -> new StoredHeader(f.getHeaderName().toString(), f.getValue()))
                     .toList();
             return new StoredMessage(method, uri, statusCode, statusMessage, msg.getVersion(), headers, file,
-                    withHeaders, !raw && msg.isXML());
+                    withHeaders, !raw && msg.isXML(), bodyLength);
         }
     }
 

@@ -114,6 +114,16 @@ class MessageTextTest {
     }
 
     @Test
+    void curlWarnsAboutHeadWithABody() throws Exception {
+        final var exc = new Request.Builder().method("HEAD").url(new com.predic8.membrane.core.util.URIFactory(), "/q")
+                .header("Host", "gw.example.com").contentType("text/plain").body("b").buildExchange();
+        final var curl = MessageText.curl(exc, false);
+        assertTrue(curl.startsWith("# A HEAD request with a body"), curl);
+        assertTrue(curl.contains("curl --globoff -X 'HEAD' "), curl);
+        assertTrue(curl.contains("--data-raw 'b'"), curl);
+    }
+
+    @Test
     void curlReadsTextInAnotherCharsetFromTheBodyFile() throws Exception {
         final var exc = Request.post("/q").header("Host", "gw.example.com").contentType("text/plain; charset=ISO-8859-1")
                 .body(new byte[]{'c', 'a', 'f', (byte) 0xE9}).buildExchange();

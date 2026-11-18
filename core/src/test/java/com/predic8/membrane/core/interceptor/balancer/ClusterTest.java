@@ -52,16 +52,19 @@ class ClusterTest {
         final var start = new CountDownLatch(1);
         final var added = new AtomicInteger();
         try (final var executor = Executors.newFixedThreadPool(threads)) {
+            final var results = new java.util.ArrayList<java.util.concurrent.Future<?>>();
             for (var i = 0; i < threads; i++)
-                executor.submit(() -> {
+                results.add(executor.submit(() -> {
                     start.await();
                     if (cluster.addNode(new Node("backend.example.com", 8080)))
                         added.incrementAndGet();
                     return null;
-                });
+                }));
             start.countDown();
             executor.shutdown();
             assertTrue(executor.awaitTermination(10, SECONDS));
+            for (final var result : results)
+                result.get(); // fails the test if a call threw
         }
 
         assertEquals(1, added.get());
