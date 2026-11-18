@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -142,6 +143,40 @@ class ZstdDecodingInputStreamTest {
             corrupt[i] ^= 0x55;
             assertThrows(IOException.class, decoding(corrupt), "byte " + i);
         }
+    }
+
+    /**
+     * A JVM that denies sun.misc.Unsafe memory access (<code>--sun-misc-unsafe-memory-access=deny</code>)
+     * makes the decoder fail its class initialization: the first read throws
+     * ExceptionInInitializerError, every later one NoClassDefFoundError.
+     */
+    @Test
+    void reportsUnusableDecoderAsIOException() {
+        for (final var error : new Error[]{
+                new ExceptionInInitializerError(new UnsupportedOperationException("objectFieldOffset")),
+                new NoClassDefFoundError("Could not initialize class io.airlift.compress.zstd.UnsafeUtil")}) {
+            final var e = assertThrows(IOException.class, () -> {
+                try (final var in = new ZstdDecodingInputStream(new ByteArrayInputStream(zstd("abc")), compressed -> failingStream(error))) {
+                    in.readAllBytes();
+                }
+            });
+            assertSame(error, e.getCause());
+            assertTrue(e.getMessage().contains("--sun-misc-unsafe-memory-access"), e.getMessage());
+        }
+    }
+
+    private static InputStream failingStream(Error error) {
+        return new InputStream() {
+            @Override
+            public int read() {
+                throw error;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) {
+                throw error;
+            }
+        };
     }
 
     @Test
