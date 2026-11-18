@@ -34,6 +34,12 @@ final class ApiJson {
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
+    /**
+     * Admin request bodies are small JSON objects. The limit applies to the decoded body, as a small compressed body
+     * can expand to a large one.
+     */
+    static final int MAX_REQUEST_BODY_BYTES = 64 * 1024;
+
     private ApiJson() {
     }
 
@@ -73,7 +79,13 @@ final class ApiJson {
         if (message.isBodyEmpty())
             return Map.of();
         try {
-            final var node = MAPPER.readTree(message.getBodyAsStreamDecoded());
+            final byte[] body;
+            try (final var in = message.getBodyAsStreamDecoded()) {
+                body = in.readNBytes(MAX_REQUEST_BODY_BYTES + 1);
+            }
+            if (body.length > MAX_REQUEST_BODY_BYTES)
+                throw ApiException.payloadTooLarge("The request body must not exceed %d bytes.".formatted(MAX_REQUEST_BODY_BYTES));
+            final var node = MAPPER.readTree(body);
             if (node == null || !node.isObject())
                 throw ApiException.badRequest("The request body must be a JSON object.");
             //noinspection unchecked

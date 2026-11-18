@@ -64,6 +64,20 @@ public class Cluster {
 		getNodeCreateIfNeeded(n).setStatus(Status.UP);
 	}
 
+	/**
+	 * Adds the node with status UP.
+	 *
+	 * @return false if the cluster has the node already; it is left unchanged then
+	 */
+	public boolean addNode(Node n) {
+		synchronized (nodes) {
+			if (nodes.contains(n))
+				return false;
+			nodeUp(n);
+			return true;
+		}
+	}
+
 	public void nodeDown(Node n) {
 		log.debug("node: " + n +" down");
 		getNodeCreateIfNeeded(n).setStatus(Status.DOWN);
@@ -107,12 +121,15 @@ public class Cluster {
 	}
 
 	private Node getNodeCreateIfNeeded(Node ep) {
-		if ( nodes.contains(ep) ) {
+		// Concurrent calls for a new node must not add it twice.
+		synchronized (nodes) {
+			if ( nodes.contains(ep) ) {
+				return getNode(ep);
+			}
+			log.debug("creating endpoint: "+ep);
+			nodes.add(new Node(ep.getHost(), ep.getPort()));
 			return getNode(ep);
 		}
-		log.debug("creating endpoint: "+ep);
-		nodes.add(new Node(ep.getHost(), ep.getPort()));
-		return getNode(ep);
 	}
 
 	public List<Node> getNodes() {

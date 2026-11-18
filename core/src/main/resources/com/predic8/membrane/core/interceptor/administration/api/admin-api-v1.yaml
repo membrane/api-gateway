@@ -639,7 +639,11 @@ paths:
     get:
       tags: [exchanges]
       operationId: downloadMessageBody
-      summary: Original (decoded) body with its content type, always as attachment.
+      summary: The stored body with its content type, always as attachment.
+      description: >-
+        Returns everything the store kept, see requestBodyStored/responseBodyStored of the exchange. The body keeps its
+        Content-Encoding. A fileExchangeStore streams the body from its file, so also very large bodies are downloaded
+        completely.
       responses:
         '200':
           description: Body.
@@ -648,7 +652,8 @@ paths:
             X-Content-Type-Options: { schema: { type: string, const: nosniff } }
             Content-Security-Policy: { schema: { type: string, const: sandbox } }
           content:
-            application/octet-stream:
+            # The recorded content type of the message, application/octet-stream if it has none.
+            '*/*':
               schema: { type: string, format: binary }
         '204': { description: "The message has no body." }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -1628,6 +1633,17 @@ components:
             error: { type: string, description: "Error/exception of the exchange, if any." }
             requestBodyFormat: { type: string }
             responseBodyFormat: { type: string }
+            requestBodyStored: { $ref: '#/components/schemas/BodyStored' }
+            responseBodyStored: { $ref: '#/components/schemas/BodyStored' }
+
+    BodyStored:
+      type: string
+      enum: [complete, truncated, formatted]
+      description: >-
+        How much of the body the exchange store kept. complete: the whole body, as received; the body download returns
+        all of it. truncated: only the beginning, as the body exceeded the store's maxBodySize. formatted: the whole
+        body, but pretty-printed when it was stored (fileExchangeStore without raw), so its bytes differ from the
+        original. Missing if the message has no body or the store does not tell.
 
     Header:
       type: object

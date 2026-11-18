@@ -84,15 +84,64 @@ class MessageTextTest {
     }
 
     @Test
+    void truncatedFormBodyIsShownAsIs() throws Exception {
+        final var msg = Request.post("/").contentType("application/x-www-form-urlencoded").body("a=%20").build();
+        final var body = MessageText.formatted(msg, "application/x-www-form-urlencoded", 4);
+        assertTrue(body.truncated());
+        assertEquals("a=%2", body.text());
+    }
+
+    @Test
+    void malformedFormBodyIsShownAsIs() throws Exception {
+        final var msg = Request.post("/").contentType("application/x-www-form-urlencoded").body("a=%2").build();
+        assertEquals("a=%2", MessageText.formatted(msg, "application/x-www-form-urlencoded", 1024).text());
+    }
+
+    @Test
+    void curlDoesNotReadABodyStartingWithAtFromAFile() throws Exception {
+        final var exc = Request.post("/q").header("Host", "gw.example.com").contentType("text/plain")
+                .body("@/etc/passwd").buildExchange();
+        final var curl = MessageText.curl(exc, false);
+        assertTrue(curl.contains("--data-raw '@/etc/passwd'"), curl);
+        assertFalse(curl.contains("--data-binary"), curl);
+    }
+
+    @Test
+    void curlReplaysHeadWithoutWaitingForABody() throws Exception {
+        final var exc = new Request.Builder().method("HEAD").url(new com.predic8.membrane.core.util.URIFactory(), "/q")
+                .header("Host", "gw.example.com").buildExchange();
+        assertTrue(MessageText.curl(exc, false).startsWith("curl --globoff --head 'http://gw.example.com/q'"));
+    }
+
+    @Test
+    void curlWarnsAboutHeadWithABody() throws Exception {
+        final var exc = new Request.Builder().method("HEAD").url(new com.predic8.membrane.core.util.URIFactory(), "/q")
+                .header("Host", "gw.example.com").contentType("text/plain").body("b").buildExchange();
+        final var curl = MessageText.curl(exc, false);
+        assertTrue(curl.startsWith("# A HEAD request with a body"), curl);
+        assertTrue(curl.contains("curl --globoff -X 'HEAD' "), curl);
+        assertTrue(curl.contains("--data-raw 'b'"), curl);
+    }
+
+    @Test
+    void curlReadsTextInAnotherCharsetFromTheBodyFile() throws Exception {
+        final var exc = Request.post("/q").header("Host", "gw.example.com").contentType("text/plain; charset=ISO-8859-1")
+                .body(new byte[]{'c', 'a', 'f', (byte) 0xE9}).buildExchange();
+        final var curl = MessageText.curl(exc, false);
+        assertTrue(curl.contains("--data-binary @request-body.bin"), curl);
+        assertFalse(curl.contains("--data-raw"), curl);
+    }
+
+    @Test
     void curlQuotesShellMetacharacters() throws Exception {
         final var exc = Request.post("/q?a=1").header("Host", "gw.example.com").header("X-Evil", "'; rm -rf / #")
                 .contentType("text/plain").body("it's").buildExchange();
 
         final var curl = MessageText.curl(exc, false);
 
-        assertTrue(curl.startsWith("curl -X 'POST' 'http://gw.example.com/q?a=1'"));
+        assertTrue(curl.startsWith("curl --globoff -X 'POST' 'http://gw.example.com/q?a=1'"));
         assertTrue(curl.contains("-H 'X-Evil: '\\''; rm -rf / #'"));
-        assertTrue(curl.contains("--data-binary 'it'\\''s'"));
+        assertTrue(curl.contains("--data-raw 'it'\\''s'"));
         assertFalse(curl.contains("Host:"));
     }
 
@@ -109,14 +158,14 @@ class MessageTextTest {
     void curlKeepsGetWithBody() throws Exception {
         final var exc = new Request.Builder().method("GET").url(new com.predic8.membrane.core.util.URIFactory(), "/q")
                 .header("Host", "gw.example.com").contentType("text/plain").body("b").buildExchange();
-        assertTrue(MessageText.curl(exc, false).startsWith("curl -X 'GET' "));
+        assertTrue(MessageText.curl(exc, false).startsWith("curl --globoff -X 'GET' "));
     }
 
     @Test
     void curlDropsContentEncodingOfDecodedTextBodies() throws Exception {
         final var exc = gzipped("text/plain");
         final var curl = MessageText.curl(exc, false);
-        assertTrue(curl.contains("--data-binary 'hello'"), curl);
+        assertTrue(curl.contains("--data-raw 'hello'"), curl);
         assertFalse(curl.toLowerCase().contains("content-encoding"), curl);
     }
 
