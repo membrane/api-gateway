@@ -1,0 +1,64 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+package com.predic8.membrane.core.http;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.OutputStream;
+
+import static com.predic8.membrane.core.http.BodyCollectingMessageObserver.Strategy.TRUNCATE;
+import static org.junit.jupiter.api.Assertions.*;
+
+class MessageTest {
+
+    private static final int LENGTH = 1_000_000;
+
+    @Test
+    void snapshotOfAStreamedBodyOverTheLimitIsTruncated() throws Exception {
+        final var snapshot = streamedSnapshot(10);
+
+        assertTrue(snapshot.isBodyTruncated());
+        assertTrue(snapshot.getBody().getLength() < LENGTH);
+    }
+
+    @Test
+    void snapshotOfAStreamedBodyWithinTheLimitIsComplete() throws Exception {
+        final var snapshot = streamedSnapshot(2 * LENGTH);
+
+        assertFalse(snapshot.isBodyTruncated());
+        assertEquals(LENGTH, snapshot.getBody().getLength());
+    }
+
+    @Test
+    void snapshotOfABodyInMemoryIsComplete() throws Exception {
+        final var req = new Request();
+        req.setBody(new Body(new byte[LENGTH]));
+
+        final Request snapshot = req.createSnapshot(() -> {
+        }, TRUNCATE, 10);
+
+        assertFalse(snapshot.isBodyTruncated());
+        assertEquals(LENGTH, snapshot.getBody().getLength());
+    }
+
+    private static Request streamedSnapshot(long limit) throws Exception {
+        final var req = new Request();
+        req.setBody(new Body(new ByteArrayInputStream(new byte[LENGTH]), LENGTH));
+        final Request snapshot = req.createSnapshot(() -> {
+        }, TRUNCATE, limit);
+        req.getBody().write(new PlainBodyTransferer(OutputStream.nullOutputStream()), false);
+        return snapshot;
+    }
+}

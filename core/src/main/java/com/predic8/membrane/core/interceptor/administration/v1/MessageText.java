@@ -72,11 +72,11 @@ final class MessageText {
     }
 
     private static String pretty(String format, String contentType, byte[] bytes, Charset charset, boolean truncated) {
-        if ("form".equals(format))
-            return formLines(new String(bytes, charset));
         if (truncated || "yaml".equals(format) || "text".equals(format))
             return new String(bytes, charset);
         try {
+            if ("form".equals(format))
+                return formLines(new String(bytes, charset));
             return new String(Prettifier.getInstance(contentType).prettify(bytes, charset), charset);
         } catch (Exception e) {
             return new String(bytes, charset);
@@ -100,13 +100,23 @@ final class MessageText {
      */
     static String curl(AbstractExchange exc, boolean backend) throws Exception {
         final var req = exc.getRequest();
-        final var sb = new StringBuilder("curl");
+        // --globoff: brackets and braces in the URL are literal, not a range of URLs.
+        final var sb = new StringBuilder();
+        // curl rejects --head with --data, and -X HEAD makes it wait for a body that never comes.
+        if ("HEAD".equals(req.getMethod()) && !req.isBodyEmpty())
+            sb.append("# A HEAD request with a body: curl waits for a response body, so stop it with Ctrl+C or --max-time.\n");
+        sb.append("curl --globoff");
+        // -X HEAD would make curl wait for a body that never comes.
+        if ("HEAD".equals(req.getMethod()) && req.isBodyEmpty())
+            sb.append(" --head");
         // With a body and no -X, curl would send POST.
-        if (!"GET".equals(req.getMethod()) || !req.isBodyEmpty())
+        else if (!"GET".equals(req.getMethod()) || !req.isBodyEmpty())
             sb.append(" -X ").append(quote(req.getMethod()));
         sb.append(' ').append(quote(url(exc, backend)));
-        // A text body is emitted decoded; a binary body file keeps the recorded (encoded) bytes.
-        final var decodedBody = !req.isBodyEmpty() && !"binary".equals(format(exc.getRequestContentType()));
+        // A UTF-8 text body is emitted decoded. Binary bodies, and text in another charset, which the shell would
+        // send as UTF-8, are read from the body file with the recorded (encoded) bytes.
+        final var decodedBody = !req.isBodyEmpty() && !"binary".equals(format(exc.getRequestContentType()))
+                                && isUtf8Compatible(req.getCharsetOrDefault());
         for (final var field : req.getHeader().getAllHeaderFields()) {
             final var name = field.getHeaderName().toString().toLowerCase(Locale.ROOT);
             if (CURL_SKIPPED_HEADERS.contains(name) || (decodedBody && "content-encoding".equals(name)))
@@ -117,9 +127,14 @@ final class MessageText {
             if (!decodedBody)
                 sb.append(" \\\n  --data-binary @request-body.bin");
             else
-                sb.append(" \\\n  --data-binary ").append(quote(req.getBodyAsStringDecoded()));
+                // --data-raw: unlike --data-binary, a body starting with @ is not read from a local file.
+                sb.append(" \\\n  --data-raw ").append(quote(req.getBodyAsStringDecoded()));
         }
         return sb.append('\n').toString();
+    }
+
+    private static boolean isUtf8Compatible(Charset charset) {
+        return StandardCharsets.UTF_8.equals(charset) || StandardCharsets.US_ASCII.equals(charset);
     }
 
     private static String url(AbstractExchange exc, boolean backend) {

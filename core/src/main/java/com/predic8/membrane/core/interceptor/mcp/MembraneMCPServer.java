@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.mcp.MCPUtil.InvalidToolArgumentsException;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.predic8.membrane.annot.Constants.VERSION;
@@ -248,10 +250,13 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall call, Exchange exc) {
         ExchangeToolSupport.ExchangeQuery query = exchangeToolSupport.parseQuery(call, maxExchanges);
-        ExchangeToolSupport.ExchangePage page = exchangeToolSupport.findPage(
-                getRouter().getExchangeStore().getAllExchangesAsList(),
-                query
-        );
+        final var store = getRouter().getExchangeStore();
+        ExchangeToolSupport.ExchangePage page = exchangeToolSupport.findPage(store.getAllExchangesAsList(), query);
+        // The file store lists exchanges without their bodies: read the bodies of the selected ones.
+        if (query.includeBodies() && store instanceof FileExchangeStore)
+            page = new ExchangeToolSupport.ExchangePage(page.exchanges().stream()
+                    .map(e -> Objects.requireNonNullElse(store.getExchangeById(e.getId()), e))
+                    .toList(), page.hasMore(), page.offset());
 
         return query.maxResponseSize() == null
                 ? exchangeToolSupport.buildFullPageResponse(call, page, query.includeBodies())
