@@ -19,6 +19,9 @@ import com.predic8.membrane.core.util.*;
 import redis.clients.jedis.exceptions.*;
 
 import java.time.*;
+import java.util.*;
+
+import static org.apache.commons.codec.digest.DigestUtils.sha256Hex;
 
 /**
  * @description <p>Keeps the request counts of a <code>rateLimiter</code> in Redis, so that several Membrane instances
@@ -67,7 +70,8 @@ public class RedisRateLimitStore implements RateLimitStore {
 		final var periodStart = now - now % periodMillis;
 		final var periodEnd = periodStart + periodMillis;
 		try {
-			final var count = increment("%s:%d:%d:%s".formatted(prefix, periodMillis, periodStart, key), periodEnd);
+			// The key may be a credential, e.g. an API key, which must not be readable in Redis
+			final var count = increment(String.format(Locale.ROOT, "%s:%d:%d:%s", prefix, periodMillis, periodStart, sha256Hex(key)), periodEnd);
 			return new RequestCount((int) Math.min(count, Integer.MAX_VALUE), LocalDateTime.ofInstant(Instant.ofEpochMilli(periodEnd), ZoneId.systemDefault()));
 		} catch (JedisException e) {
 			throw new RateLimitStoreException("Cannot count request in Redis.", e);
