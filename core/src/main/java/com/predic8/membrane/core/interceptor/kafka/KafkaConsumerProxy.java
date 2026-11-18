@@ -55,8 +55,7 @@ import static com.predic8.membrane.core.util.ExtensionLoader.load;
  * it can be delivered more than once and the target should handle duplicates. With automatic acknowledgement, Kafka
  * commits received messages in the background instead.</p>
  *
- * <p>The API does not support hot deployment and retryInit. Hot deployment is on by default, so turn it off with
- * <code>hotDeploy: false</code> under <code>configuration</code>; retryInit is off by default.</p>
+ * <p>The API does not support retryInit, which is off by default.</p>
  *
  * <p>The API needs the Membrane Kafka Extension. Without the extension Membrane does not start.
  * Contact predic8 for the extension.</p>
@@ -141,24 +140,29 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
     }
 
     /**
-     * Until Membrane 8 has a lifecycle for APIs, both options would leave a consumer running:
-     * <ul>
-     * <li>hotDeploy: the consumer is only stopped through @PreDestroy, which runs when the router stops. Changing or
-     * removing the API leaves the old consumer receiving messages.</li>
-     * <li>retryInit: the consumer starts before the interceptors of the flow are initialized. If one of them fails,
-     * the API stays inactive with a running consumer that does not deliver, and every retry restarts it.</li>
-     * </ul>
+     * retryInit would leave a consumer running: the consumer starts before the interceptors of the flow are
+     * initialized. If one of them fails, the API stays inactive with a running consumer that does not deliver, and
+     * every retry restarts it.
+     * <p>
+     * Hot deployment of YAML is supported: a reload closes the bean registry, which calls {@link #destroy()} of the
+     * old API before the new one starts. Hot deployment of XML is not, since Spring does not call @PreDestroy.
      */
     private void checkRouterConfiguration() {
         final var configuration = router.getConfiguration();
-        if (configuration.isHotDeploy())
-            throw new ConfigurationException("kafkaConsumer %s does not support hot deployment: a changed or removed consumer would keep receiving messages until Membrane stops. Set hotDeploy to false and restart Membrane after changes.".formatted(getName()));
         if (configuration.isRetryInit())
             throw new ConfigurationException("kafkaConsumer %s does not support retryInit: while the API is inactive its consumer would keep reading without delivering. Set retryInit to false.".formatted(getName()));
     }
 
     @PreDestroy
     public void destroy() {
+        stopConsumer();
+    }
+
+    /**
+     * Called when the router stops, before the HTTP clients are closed.
+     */
+    @Override
+    public void stopInbound() {
         stopConsumer();
     }
 
