@@ -19,6 +19,11 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 
+import com.predic8.membrane.core.util.MessageUtil;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +64,22 @@ public final class McpPayloadSanitizer {
         return SENSITIVE_HEADERS.contains(name.toLowerCase(ROOT)) ? REDACTED : field.getValue();
     }
 
+    /**
+     * @return at most {@code maxChars} characters of the body, with the Content-Encoding removed, like
+     * {@link Message#getBodyAsStringDecoded()}
+     */
+    private static String readAtMost(Message message, int maxChars) throws IOException {
+        try (Reader reader = new InputStreamReader(MessageUtil.getContentAsStream(message), message.getCharsetOrDefault())) {
+            char[] buffer = new char[maxChars];
+            int filled = 0;
+            int n;
+            while (filled < maxChars && (n = reader.read(buffer, filled, maxChars - filled)) != -1) {
+                filled += n;
+            }
+            return new String(buffer, 0, filled);
+        }
+    }
+
     public String sanitizeBody(Message message) {
         if (message == null) {
             return BODY_UNAVAILABLE;
@@ -75,7 +96,8 @@ public final class McpPayloadSanitizer {
                 return BINARY_BODY_OMITTED;
             }
 
-            String body = message.getBodyAsStringDecoded();
+            // Read and decode only the preview: a stored body can be very large.
+            String body = readAtMost(message, MAX_BODY_LENGTH + 1);
             if (body.length() <= MAX_BODY_LENGTH) {
                 return body;
             }

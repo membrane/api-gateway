@@ -78,6 +78,74 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void openBodyStreamsTheCompleteBody() throws Exception {
+        final var store = store();
+        final var body = "x".repeat(3_000_000);
+        snap(store, "/big", body, 200);
+        final var id = store.getAllExchangesAsList().getFirst().getId();
+
+        try (var in = store.openBody(id, false)) {
+            assertEquals(body, new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        try (var in = store.openBody(id, true)) {
+            assertEquals("response-of-/big", new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        assertNull(store.openBody(id + 1000, false));
+    }
+
+    @Test
+    void listedExchangesKnowTheBodyLengthOfMessagesWithoutContentLength() throws Exception {
+        final var store = store();
+        final var exc = Request.post("/chunked").contentType("text/plain").body("hello").buildExchange();
+        exc.setProxy(new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80));
+        store.snap(exc, REQUEST);
+        final var res = Response.ok().contentType("text/plain").body("response body").build();
+        res.getHeader().removeFields("Content-Length");
+        exc.setResponse(res);
+        store.snap(exc, RESPONSE);
+
+        final var listed = store.getAllExchangesAsList().getFirst();
+
+        assertEquals(13L, listed.getProperty(FileExchangeStore.RESPONSE_BODY_LENGTH));
+        assertEquals(5L, listed.getProperty(FileExchangeStore.REQUEST_BODY_LENGTH));
+    }
+
+    @Test
+    void openBodyOfBodyOnlyFiles() throws Exception {
+        final var store = store();
+        store.setSaveBodyOnly(true);
+        snap(store, "/a", "plain", 200);
+
+        try (var in = store.openBody(store.getAllExchangesAsList().getFirst().getId(), false)) {
+            assertEquals("plain", new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
+    void reportsFormattedBodies() throws Exception {
+        final var store = store();
+        snap(store, "/xml", "<a><b>1</b></a>", 200, "text/xml");
+        snap(store, "/text", "plain", 200);
+        final var all = store.getAllExchangesAsList();
+
+        assertTrue(store.isBodyFormatted(all.get(0).getId(), false));
+        assertFalse(store.isBodyFormatted(all.get(1).getId(), false));
+    }
+
+    @Test
+    void rawBodiesAreNotFormatted() throws Exception {
+        final var store = store();
+        store.setRaw(true);
+        snap(store, "/xml", "<a><b>1</b></a>", 200, "text/xml");
+
+        final var id = store.getAllExchangesAsList().getFirst().getId();
+        assertFalse(store.isBodyFormatted(id, false));
+        try (var in = store.openBody(id, false)) {
+            assertEquals("<a><b>1</b></a>", new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
     void readsBodyOnlyFiles() throws Exception {
         final var store = store();
         store.setSaveBodyOnly(true);
@@ -253,6 +321,112 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void repeatedSnapshotOfAnEvictedExchangeDoesNotEvictANewerOne() throws Exception {
+        final var store = store();
+        store.setMaxIndexed(1);
+        final var older = Request.post("/older").body("x").buildExchange();
+        older.setProxy(new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80));
+        store.snap(older, REQUEST);
+        older.setResponse(Response.ok("y").build());
+        store.snap(older, RESPONSE);
+        snap(store, "/newer", "x", 200);
+
+        older.setStatus(ExchangeState.COMPLETED);
+        store.snap(older, RESPONSE);
+
+        assertEquals(List.of("/newer"), store.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
+    void indexKeepsTheNewestExchangeAlsoIfAnOlderOneCompletesLater() throws Exception {
+        final var store = store();
+        store.setMaxIndexed(1);
+        final var older = exchange("/older");
+        Thread.sleep(5);
+        final var newer = exchange("/newer");
+        complete(store, newer);
+        complete(store, older);
+
+        assertEquals(List.of("/newer"), store.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+
+        final var reader = new FileExchangeStore();
+        reader.setDir(dir.toString());
+        reader.setMaxIndexed(1);
+        reader.init(null);
+        assertEquals(List.of("/newer"), reader.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
+    void streamingAStoredBodyDoesNotReadItIntoMemory() throws Exception {
+        final var store = store();
+        snap(store, "/a", "0123456789".repeat(100_000), 200);
+        final var exc = store.getExchangeById(store.getAllExchangesAsList().getFirst().getId());
+
+        try (var in = exc.getRequest().getBodyAsStream()) {
+            assertEquals("0123456789", new String(in.readNBytes(10), java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        assertFalse(exc.getRequest().getBody().isRead());
+        assertEquals(1_000_000, exc.getRequest().getBodyAsStringDecoded().length());
+    }
+
+    @Test
+    void readingABodyReleasesItsFile() throws Exception {
+        final var store = store();
+        snap(store, "/a", "x".repeat(100_000), 200);
+        final var exc = store.getExchangeById(store.getAllExchangesAsList().getFirst().getId());
+
+        assertEquals(100_000, exc.getRequest().getBodyAsStringDecoded().length());
+
+        try (var files = Files.walk(dir)) {
+            // fails on Windows while the file is still open
+            for (final var f : files.filter(f -> f.toString().endsWith("-Request.msg")).toList())
+                Files.delete(f);
+        }
+    }
+
+    private static Exchange exchange(String path) throws Exception {
+        final var exc = Request.post(path).contentType("text/plain").body("x").buildExchange();
+        exc.setProxy(new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80));
+        return exc;
+    }
+
+    private static void complete(FileExchangeStore store, Exchange exc) {
+        store.snap(exc, REQUEST);
+        exc.setResponse(Response.ok("y").build());
+        exc.setStatus(ExchangeState.COMPLETED);
+        store.snap(exc, RESPONSE);
+    }
+
+    @Test
+    void indexingSkipsUnreadableFilesBeyondTheFirstBatch() throws Exception {
+        final var writer = store();
+        for (int i = 0; i < 5; i++)
+            snap(writer, "/" + i, "x", 200);
+        try (var files = Files.walk(dir)) {
+            final var newestTwo = files.filter(f -> f.toString().endsWith("-Exchange.json"))
+                    .sorted(FileExchangeStore.NEWEST_FIRST).limit(2).toList();
+            for (final var f : newestTwo)
+                Files.writeString(f, "{\"trunc");
+        }
+
+        final var reader = new FileExchangeStore();
+        reader.setDir(dir.toString());
+        reader.setMaxIndexed(2);
+        reader.init(null);
+
+        assertEquals(List.of("/1", "/2"), reader.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
+    void writesNoTemporaryFilesThatOutliveASnapshot() throws Exception {
+        snap(store(), "/a", "x", 200);
+        try (var files = Files.walk(dir)) {
+            assertTrue(files.noneMatch(f -> f.toString().endsWith(".tmp")));
+        }
+    }
+
+    @Test
     void deletingOldFoldersRemovesTheWholeCutoffDayFromTheIndex() throws Exception {
         final var store = store();
         store.setMaxDays(1);
@@ -313,7 +487,11 @@ class FileExchangeStoreTest {
     }
 
     private static void snap(FileExchangeStore store, String path, String body, int status) throws Exception {
-        final var exc = Request.post(path).contentType(path.equals("/a") && body.startsWith("{") ? "application/json" : "text/plain")
+        snap(store, path, body, status, path.equals("/a") && body.startsWith("{") ? "application/json" : "text/plain");
+    }
+
+    private static void snap(FileExchangeStore store, String path, String body, int status, String contentType) throws Exception {
+        final var exc = Request.post(path).contentType(contentType)
                 .body(body).buildExchange();
         final var proxy = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80);
         proxy.setName("shop");
