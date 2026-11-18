@@ -357,6 +357,20 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void streamingAStoredBodyDoesNotReadItIntoMemory() throws Exception {
+        final var store = store();
+        snap(store, "/a", "0123456789".repeat(100_000), 200);
+        final var exc = store.getExchangeById(store.getAllExchangesAsList().getFirst().getId());
+
+        try (var in = exc.getRequest().getBodyAsStream()) {
+            assertEquals("0123456789", new String(in.readNBytes(10), java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        assertFalse(exc.getRequest().getBody().isRead());
+        assertEquals(1_000_000, exc.getRequest().getBodyAsStringDecoded().length());
+    }
+
+    @Test
     void readingABodyReleasesItsFile() throws Exception {
         final var store = store();
         snap(store, "/a", "x".repeat(100_000), 200);

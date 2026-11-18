@@ -662,7 +662,32 @@ public class FileExchangeStore extends AbstractExchangeStore {
             return new EmptyBody();
         final var offset = headersInFile ? bodyOffset(file) : 0;
         final var length = Files.size(file) - offset;
-        return length <= 0 ? new EmptyBody() : new Body(new LazyFileInputStream(file, offset, length), length);
+        return length <= 0 ? new EmptyBody() : new FileBody(file, offset, length);
+    }
+
+    /**
+     * A stored body. As long as nothing has read it into memory, {@link #getContentAsStream()} streams it from its
+     * file on every call, so a reader that needs only the beginning, or streams it, does not load the whole body.
+     * Other accessors, e.g. {@link #getContent()}, read it into memory as usual.
+     */
+    private static final class FileBody extends Body {
+        private final Path file;
+        private final long offset;
+        private final long length;
+
+        FileBody(Path file, long offset, long length) {
+            super(new LazyFileInputStream(file, offset, length), length);
+            this.file = file;
+            this.offset = offset;
+            this.length = length;
+        }
+
+        @Override
+        public InputStream getContentAsStream() {
+            if (isRead())
+                return super.getContentAsStream();
+            return new LazyFileInputStream(file, offset, length);
+        }
     }
 
     /**
