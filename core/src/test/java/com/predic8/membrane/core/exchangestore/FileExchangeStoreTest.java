@@ -78,6 +78,57 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void openBodyStreamsTheCompleteBody() throws Exception {
+        final var store = store();
+        final var body = "x".repeat(3_000_000);
+        snap(store, "/big", body, 200);
+        final var id = store.getAllExchangesAsList().getFirst().getId();
+
+        try (var in = store.openBody(id, false)) {
+            assertEquals(body, new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        try (var in = store.openBody(id, true)) {
+            assertEquals("response-of-/big", new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        assertNull(store.openBody(id + 1000, false));
+    }
+
+    @Test
+    void openBodyOfBodyOnlyFiles() throws Exception {
+        final var store = store();
+        store.setSaveBodyOnly(true);
+        snap(store, "/a", "plain", 200);
+
+        try (var in = store.openBody(store.getAllExchangesAsList().getFirst().getId(), false)) {
+            assertEquals("plain", new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
+    void reportsFormattedBodies() throws Exception {
+        final var store = store();
+        snap(store, "/xml", "<a><b>1</b></a>", 200, "text/xml");
+        snap(store, "/text", "plain", 200);
+        final var all = store.getAllExchangesAsList();
+
+        assertTrue(store.isBodyFormatted(all.get(0).getId(), false));
+        assertFalse(store.isBodyFormatted(all.get(1).getId(), false));
+    }
+
+    @Test
+    void rawBodiesAreNotFormatted() throws Exception {
+        final var store = store();
+        store.setRaw(true);
+        snap(store, "/xml", "<a><b>1</b></a>", 200, "text/xml");
+
+        final var id = store.getAllExchangesAsList().getFirst().getId();
+        assertFalse(store.isBodyFormatted(id, false));
+        try (var in = store.openBody(id, false)) {
+            assertEquals("<a><b>1</b></a>", new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
     void readsBodyOnlyFiles() throws Exception {
         final var store = store();
         store.setSaveBodyOnly(true);
@@ -358,7 +409,11 @@ class FileExchangeStoreTest {
     }
 
     private static void snap(FileExchangeStore store, String path, String body, int status) throws Exception {
-        final var exc = Request.post(path).contentType(path.equals("/a") && body.startsWith("{") ? "application/json" : "text/plain")
+        snap(store, path, body, status, path.equals("/a") && body.startsWith("{") ? "application/json" : "text/plain");
+    }
+
+    private static void snap(FileExchangeStore store, String path, String body, int status, String contentType) throws Exception {
+        final var exc = Request.post(path).contentType(contentType)
                 .body(body).buildExchange();
         final var proxy = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80);
         proxy.setName("shop");

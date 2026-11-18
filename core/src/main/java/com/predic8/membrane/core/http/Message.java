@@ -56,6 +56,11 @@ public abstract class Message {
 
 	private boolean released = false;
 
+	/**
+	 * Whether a snapshot of the message kept only the beginning of the body.
+	 */
+	private boolean bodyTruncated;
+
 	private String errorMessage = "";
 
 	public Message() {
@@ -514,6 +519,18 @@ public abstract class Message {
 		return result;
 	}
 
+	/**
+	 * @return whether this is a snapshot that kept only the beginning of the body, because the body exceeded the
+	 *         limit of the snapshot
+	 */
+	public boolean isBodyTruncated() {
+		return bodyTruncated;
+	}
+
+	public void setBodyTruncated(boolean bodyTruncated) {
+		this.bodyTruncated = bodyTruncated;
+	}
+
 	public boolean isReleased() {
 		return released;
 	}
@@ -560,6 +577,8 @@ public abstract class Message {
 		public void bodyComplete(AbstractBody body2) {
 			try {
 				result.setBody(getBody(body2));
+				// getBody() returns the whole body unless it was streamed
+				result.setBodyTruncated(isTruncated() && body2.wasStreamed());
 			} catch (ReadingBodyException e) {
 				throw new RuntimeException(e);
 			}

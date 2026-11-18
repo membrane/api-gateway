@@ -614,26 +614,129 @@ public class FileExchangeStore extends AbstractExchangeStore {
         return sb.append("; charset=UTF-8").toString();
     }
 
+    /**
+     * The body is read from the file only when it is used, so looking at an exchange with a large body does not load
+     * the body into memory.
+     */
     private static AbstractBody readBody(Path file, boolean headersInFile) throws IOException {
         if (!Files.exists(file))
             return new EmptyBody();
-        var bytes = Files.readAllBytes(file);
-        if (headersInFile) {
-            final var end = indexOf(bytes, END_OF_HEADER);
-            bytes = end < 0 ? new byte[0] : Arrays.copyOfRange(bytes, end + END_OF_HEADER.length, bytes.length);
-        }
-        return bytes.length == 0 ? new EmptyBody() : new Body(bytes);
+        final var offset = headersInFile ? bodyOffset(file) : 0;
+        final var length = Files.size(file) - offset;
+        return length <= 0 ? new EmptyBody() : new Body(new LazyFileInputStream(file, offset), length);
     }
 
-    private static int indexOf(byte[] data, byte[] pattern) {
-        outer:
-        for (int i = 0; i <= data.length - pattern.length; i++) {
-            for (int j = 0; j < pattern.length; j++)
-                if (data[i + j] != pattern[j])
-                    continue outer;
-            return i;
+    /**
+     * @return the position of the body in a file that starts with the start line and header fields; the file size if
+     * the header fields do not end
+     */
+    private static long bodyOffset(Path file) throws IOException {
+        try (var in = new BufferedInputStream(Files.newInputStream(file))) {
+            long position = 0;
+            var matched = 0;
+            int b;
+            while ((b = in.read()) != -1) {
+                position++;
+                matched = b == END_OF_HEADER[matched] ? matched + 1 : (b == END_OF_HEADER[0] ? 1 : 0);
+                if (matched == END_OF_HEADER.length)
+                    return position;
+            }
+            return position;
         }
-        return -1;
+    }
+
+    /**
+     * Opens the stored body of a message for streaming. Unlike {@link #getExchangeById(long)}, nothing is read into
+     * memory, so also very large bodies can be downloaded.
+     *
+     * @return null if the exchange is not indexed or the message has no stored body
+     */
+    public InputStream openBody(long id, boolean response) throws IOException {
+        final var file = bodyFile(id, response);
+        if (file == null)
+            return null;
+        final var offset = file.headersInFile() ? bodyOffset(file.path()) : 0;
+        if (Files.size(file.path()) <= offset)
+            return null;
+        return new LazyFileInputStream(file.path(), offset);
+    }
+
+    /**
+     * @return whether the body was pretty-printed when it was written, so it differs from the original body
+     */
+    public boolean isBodyFormatted(long id, boolean response) {
+        final var file = bodyFile(id, response);
+        return file != null && file.formatted();
+    }
+
+    private record BodyFile(Path path, boolean headersInFile, boolean formatted) {
+    }
+
+    private BodyFile bodyFile(long id, boolean response) {
+        ensureIndexLoaded();
+        final IndexEntry entry;
+        synchronized (this) {
+            entry = index.get(id);
+        }
+        if (entry == null)
+            return null;
+        final var stored = response ? entry.stored().response() : entry.stored().request();
+        if (stored == null || stored.file() == null)
+            return null;
+        final var path = entry.file().resolveSibling(stored.file());
+        return Files.exists(path) ? new BodyFile(path, stored.headersInFile(), stored.bodyFormatted()) : null;
+    }
+
+    /**
+     * Opens the file on the first read and closes it at its end.
+     */
+    private static final class LazyFileInputStream extends InputStream {
+        private final Path file;
+        private final long offset;
+        private InputStream in;
+        private boolean closed;
+
+        LazyFileInputStream(Path file, long offset) {
+            this.file = file;
+            this.offset = offset;
+        }
+
+        private InputStream in() throws IOException {
+            if (closed)
+                throw new IOException("Stream closed.");
+            if (in == null) {
+                in = Files.newInputStream(file);
+                in.skipNBytes(offset);
+            }
+            return in;
+        }
+
+        @Override
+        public int read() throws IOException {
+            final var b = in().read();
+            if (b == -1)
+                close();
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (closed)
+                return -1;
+            final var n = in().read(b, off, len);
+            if (n == -1)
+                close();
+            return n;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (closed)
+                return;
+            closed = true;
+            if (in != null)
+                in.close();
+        }
     }
 
     /**

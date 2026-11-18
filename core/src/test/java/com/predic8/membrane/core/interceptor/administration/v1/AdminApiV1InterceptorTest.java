@@ -301,6 +301,37 @@ class AdminApiV1InterceptorTest {
     }
 
     @Test
+    void exchangeDetailTellsHowMuchOfTheBodyIsStored() throws Exception {
+        final var exc = Request.post("/foo").contentType("text/plain").body("hello").buildExchange();
+        store.snap(exc, REQUEST);
+
+        final var detail = json(get(API + "/exchanges/node-a/" + exc.getId()));
+
+        assertEquals("complete", detail.get("requestBodyStored").asText());
+        assertNull(detail.get("responseBodyStored"));
+    }
+
+    @Test
+    void fileStoreDownloadsLargeBodiesCompletely(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir) throws Exception {
+        final var fileStore = new FileExchangeStore();
+        fileStore.setDir(dir.toString());
+        fileStore.init(router);
+        router.setExchangeStore(fileStore);
+        final var body = "x".repeat(3_000_000);
+        final var exc = Request.post("/foo").contentType("text/plain").body(body).buildExchange();
+        exc.setProxy(victim);
+        fileStore.snap(exc, REQUEST);
+        exc.setResponse(Response.ok("y").build());
+        fileStore.snap(exc, RESPONSE);
+        final var id = fileStore.getAllExchangesAsList().getFirst().getId();
+
+        assertEquals("complete", json(get(API + "/exchanges/node-a/" + id)).get("requestBodyStored").asText());
+        final var res = get(API + "/exchanges/node-a/" + id + "/request/body");
+        assertEquals(200, res.getStatusCode());
+        assertEquals(body, res.getBodyAsStringDecoded());
+    }
+
+    @Test
     void unknownExchangeIsNotFound() throws Exception {
         assertEquals(404, get(API + "/exchanges/node-a/123456789").getStatusCode());
         assertEquals(404, get(API + "/exchanges/node-a/abc").getStatusCode());
