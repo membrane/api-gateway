@@ -41,6 +41,11 @@
   - Keep the `redis` attributes as they are: `host`, `port`, `dbNumber`, `user`, `password`, `ssl`, `timeout`, `connectionNumber`, `minIdleConnection`, `useSentinels`, `masterName`.
   - Check the sentinel case: `getJedisWithDb()` authenticates sentinel connections by hand and calls `select(dbNumber)` on every borrowed connection; the new API may take both in the client configuration.
   - Test against a real Redis (plain, password, user + password, TLS, sentinel); the unit tests only use a map-backed fake.
+- Remove the `-XX:-UseBASE64Intrinsics` workaround for CVE-2026-114938 ("Java4Shell") (#3814)
+  - Story: #3814 turns off the Base64 intrinsics of the JVM, a mitigation for a memory corruption in the AVX-512 Base64 decoder of JDK 17, 21, 25 and 27 on x86-64. It costs Base64 performance on CPUs with AVX-512 and is not needed once the JDK is fixed (Oracle JDK 17.0.21.1, 21.0.13.1, 25.0.5.1, 27.0.1.1, Corretto 17.0.21.1.2, Temurin builds to follow).
+  - When: the Docker images ship a fixed JDK (`eclipse-temurin:25-jdk` in `distribution/docker/Dockerfile`, `amazoncorretto-21` in `Dockerfile`), and fixed builds of all Java versions Membrane supports have been out long enough to be widely installed.
+  - Undo #3814: the flag in `distribution/scripts/start_router.sh` and `start_router.cmd` (including their comments), `wrapper.java.additional.1` in `distribution/examples/deployment/windows-service/wrapper.conf`, and the `java` calls in `distribution/examples/security/oauth2/{github,google}/service-proxySSL.{sh,ps1}`.
+  - Add a release note saying the flag was removed, and that operators on an unpatched JDK can keep it with `-XX:-UseBASE64Intrinsics` in `JAVA_OPTS`.
 
 ## Priority 3
 - OpenAPI: validate `in: cookie` parameters
