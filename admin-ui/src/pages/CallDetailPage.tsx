@@ -3,7 +3,7 @@ import { api, download, path, type ApiError, type ExchangeDetail, type Header } 
 import { useLoad } from "../hooks";
 import { ErrorBox } from "../components/ErrorBox";
 import { href } from "../router";
-import { bytes, statusClass, time } from "../util/format";
+import { bodyDownload, bytes, statusClass, time } from "../util/format";
 
 type Message = "request" | "response";
 
@@ -50,13 +50,19 @@ export function CallDetailPage({ instance, id }: { instance: string; id: string 
           </button>
         ))}
       </div>
-      <MessageView key={message + (e?.completed ? "/completed" : "")} instance={instance} id={id} message={message} />
+      <MessageView
+        key={message + (e?.completed ? "/completed" : "")}
+        instance={instance}
+        id={id}
+        message={message}
+        stored={message === "request" ? e?.requestBodyStored : e?.responseBodyStored}
+      />
       <Curl instance={instance} id={id} />
     </section>
   );
 }
 
-function MessageView({ instance, id, message }: { instance: string; id: string; message: Message }) {
+function MessageView({ instance, id, message, stored }: { instance: string; id: string; message: Message; stored?: string }) {
   const base = path("exchanges", instance, id, message);
   const headers = useLoad((signal) => api.get<{ startLine?: string; headers: Header[] }>(base + "/headers", undefined, signal), [base]);
   const body = useLoad(
@@ -64,6 +70,7 @@ function MessageView({ instance, id, message }: { instance: string; id: string; 
     [base],
   );
   const [downloadError, setDownloadError] = useState<ApiError>();
+  const downloadInfo = bodyDownload(stored);
 
   if (headers.error) return <ErrorBox error={headers.error} />;
   return (
@@ -85,8 +92,9 @@ function MessageView({ instance, id, message }: { instance: string; id: string; 
         <>
           <div className="body-bar">
             <span className="muted">{body.data.format}, {bytes(body.data.originalLength)}{body.data.truncated ? " (truncated)" : ""}</span>
-            <button type="button" className="button" onClick={() => download(base + "/body").then(() => setDownloadError(undefined), setDownloadError)}>Download</button>
+            <button type="button" className="button" onClick={() => download(base + "/body").then(() => setDownloadError(undefined), setDownloadError)}>{downloadInfo.label}</button>
           </div>
+          {downloadInfo.note && <p className="muted">{downloadInfo.note}</p>}
           {downloadError && <ErrorBox error={downloadError} />}
           {body.data.format === "binary" ? <p className="muted">Binary content.</p> : <pre className="body">{body.data.text}</pre>}
         </>

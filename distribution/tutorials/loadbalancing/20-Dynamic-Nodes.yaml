@@ -37,7 +37,7 @@
 #       Node 2
 #
 # 7.) Open the admin console and look at the nodes:
-#       http://localhost:9000/admin/clusters/show?cluster=Default
+#       http://localhost:9000/console/#/balancers
 
 api:
   port: 2000

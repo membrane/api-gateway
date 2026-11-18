@@ -20,7 +20,7 @@ import java.util.Set;
 
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.post;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DynamicNodesTutorialTest extends AbstractLoadbalancingTutorialTest {
@@ -44,11 +44,11 @@ public class DynamicNodesTutorialTest extends AbstractLoadbalancingTutorialTest 
         assertEquals(Set.of("Node 2"), callTimes("http://localhost:2000", 4));
 
         // @formatter:off
-        get("http://localhost:9000/admin/clusters/show?cluster=Default")
+        // the data of the load balancer page of the console
+        get("http://localhost:9000/admin/api/v1/balancers")
         .then()
             .statusCode(200)
-            .body(containsString("localhost:3001"))
-            .body(containsString("localhost:3002"));
+            .body("balancers[0].clusters[0].nodes.port", hasItems(3001, 3002));
         // @formatter:on
     }
 }

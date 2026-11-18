@@ -1,4 +1,4 @@
-import { bytes, duration, statusClass, time } from "./format";
+import { bodyDownload, bytes, duration, statusClass, time } from "./format";
 
 describe("format", () => {
   it("bytes", () => {
@@ -26,5 +26,15 @@ describe("format", () => {
     expect(statusClass(204)).toBe("status-2xx");
     expect(statusClass(503)).toBe("status-5xx");
     expect(statusClass(null)).toBe("status-none");
+  });
+});
+
+describe("bodyDownload", () => {
+  it("labels the download by how much of the body is stored", () => {
+    expect(bodyDownload("complete")).toEqual({ label: "Download complete body" });
+    expect(bodyDownload("truncated").label).toBe("Download stored part");
+    expect(bodyDownload("truncated").note).toContain("beginning");
+    expect(bodyDownload("formatted").note).toContain("pretty-printed");
+    expect(bodyDownload(undefined)).toEqual({ label: "Download" });
   });
 });

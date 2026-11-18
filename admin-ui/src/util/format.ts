@@ -38,3 +38,20 @@ export function statusClass(code: number | null | undefined): string {
   if (!code) return "status-none";
   return `status-${Math.floor(code / 100)}xx`;
 }
+
+/**
+ * The label of the body download and a note about it, from how much of the body the exchange store kept
+ * (requestBodyStored/responseBodyStored of an exchange).
+ */
+export function bodyDownload(stored: string | null | undefined): { label: string; note?: string } {
+  switch (stored) {
+    case "complete":
+      return { label: "Download complete body" };
+    case "truncated":
+      return { label: "Download stored part", note: "The exchange store kept only the beginning of this body (maxBodySize)." };
+    case "formatted":
+      return { label: "Download", note: "The exchange store saved this body pretty-printed, so it differs from the original bytes." };
+    default:
+      return { label: "Download" };
+  }
+}
