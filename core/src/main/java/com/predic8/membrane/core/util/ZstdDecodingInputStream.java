@@ -15,6 +15,7 @@ package com.predic8.membrane.core.util;
 
 import io.airlift.compress.zstd.ZstdInputStream;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -183,11 +184,28 @@ final class ZstdDecodingInputStream extends InputStream {
 
             contentChecksum = (descriptor & 0x04) != 0;
             inFrame = true;
-            header = new byte[magicBytes.length + 1 + rest.length];
-            System.arraycopy(magicBytes, 0, header, 0, magicBytes.length);
-            header[magicBytes.length] = (byte) descriptor;
-            System.arraycopy(rest, 0, header, magicBytes.length + 1, rest.length);
+            header = forwardedFrameHeader(magicBytes, descriptor, rest, windowDescriptorSize, dictionaryIdSize);
             headerPosition = 0;
+        }
+
+        /**
+         * The frame header as the decoder gets it. RFC 8878 section 3.1.1.1.3: a Dictionary_ID of 0
+         * means the same as no Dictionary_ID field. The decoder rejects every Dictionary_ID field, so
+         * a zero one is left out. Any other Dictionary_ID is forwarded, and the decoder rejects it.
+         */
+        private static byte[] forwardedFrameHeader(byte[] magicBytes, int descriptor, byte[] fields, int dictionaryIdOffset, int dictionaryIdSize) {
+            final var out = new ByteArrayOutputStream(magicBytes.length + 1 + fields.length);
+            out.writeBytes(magicBytes);
+            if (dictionaryIdSize == 0 || littleEndian(fields, dictionaryIdOffset, dictionaryIdSize) != 0) {
+                out.write(descriptor);
+                out.writeBytes(fields);
+                return out.toByteArray();
+            }
+            out.write(descriptor & ~0x03); // Dictionary_ID_Flag: no field
+            out.write(fields, 0, dictionaryIdOffset);
+            final int afterDictionaryId = dictionaryIdOffset + dictionaryIdSize;
+            out.write(fields, afterDictionaryId, fields.length - afterDictionaryId);
+            return out.toByteArray();
         }
 
         /**

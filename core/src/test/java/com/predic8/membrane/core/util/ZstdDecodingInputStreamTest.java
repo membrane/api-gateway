@@ -92,6 +92,25 @@ class ZstdDecodingInputStreamTest {
         assertWindowTooLarge(frame(0xe0, new byte[]{-1, -1, -1, -1, -1, -1, -1, -1}, rleBlocks(100)));
     }
 
+    /**
+     * RFC 8878 section 3.1.1.1.3: a Dictionary_ID of 0 means the same as no Dictionary_ID field.
+     */
+    @Test
+    void acceptsZeroDictionaryId() throws Exception {
+        // Window_Descriptor 0 (1 KiB), then a zero Dictionary_ID of 1, 2 and 4 bytes
+        assertEquals("abc", new String(decode(frame(0x01, new byte[]{0, 0}, rawBlock("abc"))), UTF_8));
+        assertEquals("abc", new String(decode(frame(0x02, new byte[]{0, 0, 0}, rawBlock("abc"))), UTF_8));
+        assertEquals("abc", new String(decode(frame(0x03, new byte[]{0, 0, 0, 0, 0}, rawBlock("abc"))), UTF_8));
+        // Single segment: a zero 1-byte Dictionary_ID, then a 1-byte Frame_Content_Size of 3
+        assertEquals("abc", new String(decode(frame(0x21, new byte[]{0, 3}, rawBlock("abc"))), UTF_8));
+    }
+
+    @Test
+    void rejectsDictionaryOtherThanZero() {
+        assertThrows(IOException.class, decoding(frame(0x01, new byte[]{0, 7}, rawBlock("abc"))));
+        assertThrows(IOException.class, decoding(frame(0x23, new byte[]{0, 0, 0, 1, 3}, rawBlock("abc"))));
+    }
+
     @Test
     void rejectsWindowTooLargeInLaterFrame() {
         assertWindowTooLarge(concat(zstd("first"), frame(0x00, new byte[]{(byte) (20 << 3)}, rleBlocks(100))));
