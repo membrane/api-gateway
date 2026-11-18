@@ -38,19 +38,33 @@ public class MessageUtil {
 	 * @see #getContent(Message)
 	 */
 	public static InputStream getContentAsStream(Message msg) {
+		final var body = msg.getBodyAsStream();
 		try {
 			if (msg.isGzip()) {
-				return associateDecodingFailures(new GZIPInputStream(msg.getBodyAsStream()), msg);
+				return associateDecodingFailures(new GZIPInputStream(body), msg);
 			}
 			if (msg.isDeflate()) {
-				return associateDecodingFailures(inflating(msg.getBodyAsStream()), msg);
+				return associateDecodingFailures(inflating(body), msg);
 			}
 			if (msg.isBrotli()) {
-				return associateDecodingFailures(new BrotliInputStream(msg.getBodyAsStream()), msg);
+				return associateDecodingFailures(new BrotliInputStream(body), msg);
 			}
-			return msg.getBodyAsStream();
+			return body;
 		} catch (IOException e) {
+			// A decoder that cannot be created does not own the body stream, which can hold a file open.
+			closeAfterFailure(body, e);
 			throw decodingFailure(msg, e);
+		} catch (RuntimeException e) {
+			closeAfterFailure(body, e);
+			throw e;
+		}
+	}
+
+	private static void closeAfterFailure(InputStream in, Exception failure) {
+		try {
+			in.close();
+		} catch (IOException e) {
+			failure.addSuppressed(e);
 		}
 	}
 	
@@ -69,7 +83,8 @@ public class MessageUtil {
 				}
 			}
 			if (msg.isDeflate()) {
-				try (var decoded = inflating(msg.getBodyAsStream())) {
+				try (var is = msg.getBodyAsStream();
+					 var decoded = inflating(is)) {
 					return decoded.readAllBytes();
 				}
 			}

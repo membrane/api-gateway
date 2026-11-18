@@ -85,9 +85,8 @@ final class BalancersResource {
         final var body = ApiJson.readObject(req.exchange().getRequest());
         final var host = requiredString(body, "host");
         final var port = port(body.get("port"));
-        if (balancer.hasNode(cluster, host, port))
+        if (!balancer.addNode(cluster, host, port))
             throw new ApiException(409, "Conflict.", "The node exists already.");
-        balancer.up(cluster, host, port);
         return created(nodeInfo(balancer, cluster, balancer.getNode(cluster, host, port)));
     }
 

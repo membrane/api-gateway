@@ -96,11 +96,10 @@ public class Balancer {
 	}
 
 	public void addCluster(String name) {
-		if (clusters.containsKey(name))
-			return;
-		log.debug("adding cluster with name [" + name + "] to balancer ["
-				+ name + "]");
-		clusters.put(name, new Cluster(name));
+		// putIfAbsent: a concurrent call must not replace a cluster another call has just added nodes to
+		if (clusters.putIfAbsent(name, new Cluster(name)) == null)
+			log.debug("adding cluster with name [" + name + "] to balancer ["
+					+ name + "]");
 	}
 
 	/**
@@ -115,6 +114,15 @@ public class Balancer {
 
 	public void up(String cName, String host, int port) {
 		getCluster(cName).nodeUp(new Node(host, port));
+	}
+
+	/**
+	 * Adds the node with status UP, creating the cluster if needed.
+	 *
+	 * @return false if the cluster has the node already; it is left unchanged then
+	 */
+	public boolean addNode(String cName, String host, int port) {
+		return getCluster(cName).addNode(new Node(host, port));
 	}
 
 	public void down(String cName, String host, int port) {

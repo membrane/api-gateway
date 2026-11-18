@@ -19,8 +19,10 @@ import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.proxies.*;
 
+import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.*;
@@ -55,7 +57,8 @@ final class ExchangesResource {
                           String server, Integer serverPort, String reqContentType, Long reqContentLength,
                           String respContentType, Long respContentLength, boolean completed, long duration,
                           List<String> destinations, List<NodeStatus> nodeStatus, String error,
-                          String requestBodyFormat, String responseBodyFormat) {
+                          String requestBodyFormat, String responseBodyFormat,
+                          String requestBodyStored, String responseBodyStored) {
     }
 
     record InstanceResult(String instance, String status, String error) {
@@ -109,9 +112,13 @@ final class ExchangesResource {
             throw notImplemented("The exchange store (%s) cannot search bodies.".formatted(storeType(store)));
         waitForModification(req, store);
 
-        final var result = isListedInMemory(store)
-                ? queryInMemory(store, filter, sort, order, offset, limit)
-                : queryStore(store, filter, sort, order, offset, limit);
+        final ExchangeQueryResult result;
+        if (store instanceof ForgetfulExchangeStore)
+            result = new ExchangeQueryResult(List.of(), 0, store.getLastModified()); // records nothing
+        else if (isListedInMemory(store))
+            result = queryInMemory(store, filter, sort, order, offset, limit);
+        else
+            result = queryStore(store, filter, sort, order, offset, limit);
 
         return ok(new ExchangePage(result.getCount(), offset, limit,
                 List.of(new InstanceResult(ctx.instanceName(), "ok", null)),
@@ -159,7 +166,31 @@ final class ExchangesResource {
                 s.duration(), exc.getDestinations() == null ? null : List.copyOf(exc.getDestinations()),
                 nodeStatus(exc), exc.getErrorMessage(),
                 exc.getRequest() == null ? null : MessageText.format(exc.getRequestContentType()),
-                exc.getResponse() == null ? null : MessageText.format(exc.getResponseContentType())));
+                exc.getResponse() == null ? null : MessageText.format(exc.getResponseContentType()),
+                bodyStored(exc, false), bodyStored(exc, true)));
+    }
+
+    /**
+     * @return how much of the body the store kept: "complete", "truncated" (only the beginning), "formatted"
+     * (pretty-printed, so the bytes differ from the original), or null if the message has no body or the store
+     * does not tell
+     */
+    private String bodyStored(AbstractExchange exc, boolean response) {
+        final Message msg = response ? exc.getResponse() : exc.getRequest();
+        try {
+            if (msg == null || msg.isBodyEmpty())
+                return null;
+        } catch (Exception e) {
+            return null;
+        }
+        if (msg.isBodyTruncated())
+            return "truncated";
+        final var store = store();
+        if (store instanceof FileExchangeStore fs)
+            return fs.isBodyFormatted(exc.getId(), response) ? "formatted" : "complete";
+        if (store instanceof LimitedMemoryExchangeStore || store instanceof MemoryExchangeStore)
+            return "complete";
+        return null;
     }
 
     Response headers(ApiRequest req) {
@@ -183,7 +214,7 @@ final class ExchangesResource {
         // The body is attacker-controlled: never let it render as a document on the admin origin.
         final var rb = Response.ok()
                 .contentType(contentType == null || contentType.isBlank() ? APPLICATION_OCTET_STREAM : contentType)
-                .body(msg.getBodyAsStream(), false)
+                .body(bodyStream(exc, msg, isResponse(req.path(2))), true)
                 .header(CONTENT_DISPOSITION, "attachment")
                 .header(X_CONTENT_TYPE_OPTIONS, "nosniff")
                 .header(CONTENT_SECURITY_POLICY, "sandbox");
@@ -191,6 +222,19 @@ final class ExchangesResource {
         if (contentEncoding != null)
             rb.header(CONTENT_ENCODING, contentEncoding);
         return rb.build();
+    }
+
+    /**
+     * The file store streams the body from its file, so that also very large bodies are downloaded completely
+     * without being read into memory.
+     */
+    private InputStream bodyStream(AbstractExchange exc, Message msg, boolean response) throws Exception {
+        if (store() instanceof FileExchangeStore fs) {
+            final var in = fs.openBody(exc.getId(), response);
+            if (in != null)
+                return in;
+        }
+        return msg.getBodyAsStream();
     }
 
     Response formatted(ApiRequest req) throws Exception {
@@ -241,7 +285,7 @@ final class ExchangesResource {
         for (final var exc : snapshot)
             if (filter.test(exc))
                 matching.add(exc);
-        matching.sort(getAbstractExchangeComparator("instance".equals(sort) ? "time" : sort, order));
+        matching.sort(comparator(sort, order));
         final var page = matching.subList(Math.min(offset, matching.size()), (int) Math.min((long) offset + limit, matching.size()));
         return new ExchangeQueryResult(List.copyOf(page), matching.size(), lastModified);
     }
@@ -297,11 +341,37 @@ final class ExchangesResource {
                 exc.getServer(),
                 proxy instanceof AbstractServiceProxy asp && asp.getTargetPort() != -1 ? asp.getTargetPort() : null,
                 req == null ? null : exc.getRequestContentType(),
-                req == null || exc.getRequestContentLength() == -1 ? null : (long) exc.getRequestContentLength(),
+                contentLength(exc, false),
                 res == null ? null : exc.getResponseContentType(),
-                res == null || !completed || exc.getResponseContentLength() == -1 ? null : (long) exc.getResponseContentLength(),
+                completed ? contentLength(exc, true) : null,
                 completed,
                 ExchangeFilter.duration(exc));
+    }
+
+    /**
+     * @return the Content-Length, or the length the store recorded for a message without one (e.g. chunked); null if
+     * unknown
+     */
+    static Long contentLength(AbstractExchange exc, boolean response) {
+        final Message msg = response ? exc.getResponse() : exc.getRequest();
+        if (msg == null)
+            return null;
+        final var declared = msg.getHeader().getContentLength();
+        if (declared != -1)
+            return declared;
+        if (exc.getProperty(response ? FileExchangeStore.RESPONSE_BODY_LENGTH : FileExchangeStore.REQUEST_BODY_LENGTH) instanceof Long recorded)
+            return recorded;
+        if (response && msg.getBody().isRead())
+            return msg.getBody().getLength();
+        return null;
+    }
+
+    private static Comparator<AbstractExchange> comparator(String sort, String order) {
+        return switch (sort) {
+            case "reqContentLength" -> new PropertyComparator<>(order, exc -> contentLength(exc, false));
+            case "respContentLength" -> new PropertyComparator<>(order, exc -> contentLength(exc, true));
+            default -> getAbstractExchangeComparator("instance".equals(sort) ? "time" : sort, order);
+        };
     }
 
     private static List<NodeStatus> nodeStatus(AbstractExchange exc) {
@@ -369,7 +439,7 @@ final class ExchangesResource {
 
     static boolean isListedInMemory(ExchangeStore store) {
         return store instanceof LimitedMemoryExchangeStore || store instanceof MemoryExchangeStore
-               || store instanceof FileExchangeStore || store instanceof ForgetfulExchangeStore;
+               || store instanceof FileExchangeStore;
     }
 
     /**
