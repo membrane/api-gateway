@@ -31,12 +31,15 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.concurrent.TimeUnit.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ElasticSearchExchangeStoreTest {
@@ -54,11 +57,14 @@ class ElasticSearchExchangeStoreTest {
     private ElasticSearchExchangeStore es;
 
     private final List<JsonNode> insertedObjects = new ArrayList<>();
+    private final AtomicInteger bulkRequests = new AtomicInteger();
+    private final CountDownLatch firstBulkReceived = new CountDownLatch(1);
 
     /**
-     * Delay of the backend, read by its request thread.
+     * Makes the backend wait until the store has sent its first bulk request. Read by the backend's
+     * request thread.
      */
-    private volatile long backendDelayMs;
+    private volatile boolean holdBackendUntilFirstBulk;
 
     @BeforeEach
     public void start() throws IOException {
@@ -112,7 +118,7 @@ class ElasticSearchExchangeStoreTest {
     private void initializeBackend() throws IOException {
         back = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
-        sp.getFlow().add(createDelayInterceptor());
+        sp.getFlow().add(createHoldInterceptor());
         StaticInterceptor si = new StaticInterceptor();
         si.setSrc(RESPONSE_BODY);
         sp.getFlow().add(si);
@@ -123,12 +129,16 @@ class ElasticSearchExchangeStoreTest {
         back.start();
     }
 
-    private Interceptor createDelayInterceptor() {
+    private Interceptor createHoldInterceptor() {
         return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
+                if (!holdBackendUntilFirstBulk)
+                    return CONTINUE;
                 try {
-                    Thread.sleep(backendDelayMs);
+                    // A timeout lets the test fail on its bulk request count instead of hanging.
+                    //noinspection ResultOfMethodCallIgnored
+                    firstBulkReceived.await(10, SECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -158,16 +168,20 @@ class ElasticSearchExchangeStoreTest {
 
     private @NotNull Outcome getOutcome(Exchange exc, ObjectMapper om) {
         if (exc.getRequest().isPOSTRequest() && exc.getRequest().getUri().equals("/_bulk")) {
+            final var lines = new ArrayList<JsonNode>();
             for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
                 try {
-                    JsonNode obj = om.readTree(line);
-                    synchronized (insertedObjects) {
-                        insertedObjects.add(obj);
-                    }
+                    lines.add(om.readTree(line));
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
             }
+            // Add the whole bulk request at once, so a reader never sees half of an action/document pair.
+            synchronized (insertedObjects) {
+                insertedObjects.addAll(lines);
+            }
+            bulkRequests.incrementAndGet();
+            firstBulkReceived.countDown();
             exc.setResponse(ok("{}").build());
             return RETURN;
         }
@@ -176,11 +190,9 @@ class ElasticSearchExchangeStoreTest {
         return RETURN;
     }
 
-    public List<JsonNode> getInsertedObjectsAndClearList() {
+    private List<JsonNode> getInsertedObjects() {
         synchronized (insertedObjects) {
-            List<JsonNode> insertedObjects1 = new ArrayList<>(insertedObjects);
-            insertedObjects.clear();
-            return insertedObjects1;
+            return List.copyOf(insertedObjects);
         }
     }
 
@@ -195,13 +207,14 @@ class ElasticSearchExchangeStoreTest {
     }
 
     /**
-     * The store writes the exchange when the request arrives and again when it completes. A backend
-     * slower than the update interval puts these writes into separate bulk requests.
+     * The store writes the exchange when the request arrives and again when it completes. Holding the
+     * backend until the first write has arrived puts these writes into separate bulk requests.
      */
     @Test
     void exchangeWrittenInSeveralBulkRequests() throws Exception {
-        backendDelayMs = 100;
+        holdBackendUntilFirstBulk = true;
         runTest(false);
+        assertTrue(bulkRequests.get() >= 2, "Expected several bulk requests, got " + bulkRequests.get());
     }
 
     private void runTest(boolean addLoggingInterceptors) throws Exception {
@@ -211,9 +224,7 @@ class ElasticSearchExchangeStoreTest {
             client.call(Request.post("http://localhost:3064").header(AUTHORIZATION, "Demo").body(REQUEST_BODY).buildExchange());
         }
 
-        waitForExchangeStoreToFlush();
-
-        final var documents = documentsById(getInsertedObjectsAndClearList());
+        final var documents = waitForCompletedExchange();
         assertEquals(1, documents.size());
         final var exchange = documents.sequencedValues().getFirst();
 
@@ -246,18 +257,21 @@ class ElasticSearchExchangeStoreTest {
         return documents;
     }
 
-    private void waitForExchangeStoreToFlush() {
+    /**
+     * Waits until the store has written the exchange with status {@code COMPLETED}. The server sends
+     * the response to the client before it marks the exchange completed, so the client returning does
+     * not mean that the final write has been queued.
+     */
+    private SequencedMap<String, JsonNode> waitForCompletedExchange() throws InterruptedException {
+        final var deadline = System.nanoTime() + SECONDS.toNanos(10);
         while (true) {
-            synchronized (es.shortTermMemoryForBatching) {
-                int size = es.shortTermMemoryForBatching.size();
-                if (size == 0 && !es.updateThreadWorking) return;
-            }
-            try {
-                //noinspection BusyWait
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            final var documents = documentsById(getInsertedObjects());
+            if (documents.values().stream().anyMatch(doc -> "COMPLETED".equals(doc.path("status").asText())))
+                return documents;
+            if (System.nanoTime() - deadline > 0)
+                fail("No COMPLETED exchange written within 10 s, got " + documents);
+            //noinspection BusyWait
+            Thread.sleep(10);
         }
     }
 
