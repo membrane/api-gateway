@@ -55,6 +55,7 @@ import static java.lang.Long.parseLong;
 import static java.lang.Thread.sleep;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.stream.IntStream.range;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -377,6 +378,23 @@ public class RateLimitInterceptorTest {
 		limiter.setStore(new RedisRateLimitStore());
 
 		assertThrows(ConfigurationException.class, () -> limiter.init(new DummyTestRouter()));
+	}
+
+	@Test
+	void retryAfterRoundsUpPartialSecond() throws InterruptedException {
+		final var limiter = new RateLimitInterceptor(ofMinutes(1), 0);
+		// The deadline lies in the same second as now, so whole seconds would yield 0
+		while (Instant.now().getNano() > 500_000_000)
+			sleep(10);
+		final var deadline = Instant.now().truncatedTo(SECONDS).plusMillis(900);
+		limiter.setStore((key, period) -> new RateLimitStore.RequestCount(1, deadline));
+		limiter.init(new DummyTestRouter());
+
+		final var exc = new Request.Builder().buildExchange();
+		exc.setRemoteAddrIp("192.0.2.1");
+		limiter.handleRequest(exc);
+
+		assertEquals("1", exc.getResponse().getHeader().getFirstValue(RETRY_AFTER));
 	}
 
 	@Test

@@ -230,10 +230,11 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @return seconds from now until the deadline, 0 if it has passed
+     * @return seconds from now until the deadline, rounded up so a client does not retry too early, 0 if it has passed
      */
     private static String secondsUntil(Instant deadline) {
-        return Long.toString(Math.max(0, deadline.getEpochSecond() - Instant.now().getEpochSecond()));
+        final var millis = Duration.between(Instant.now(), deadline).toMillis();
+        return Long.toString(Math.max(0, Math.ceilDiv(millis, 1000)));
     }
 
     private static void setQuotaHeaders(Exchange exc, Quota quota, String reset) {
