@@ -18,7 +18,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ExchangeCursor;
 import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
+import com.predic8.membrane.core.exchangestore.InvalidExchangeQueryException;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -43,6 +45,8 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import static com.bornium.http.util.UriUtil.queryToParameters;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -54,7 +58,7 @@ import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Provides a JSON-based Admin API (health, apis, calls, exchange details, suggestions, ws) backed by the ExchangeStore.
+ * @description Provides a JSON-based Admin API (health, apis, calls, live calls via Server-Sent Events, exchange details, suggestions, ws) backed by the ExchangeStore.
  * @yaml
  * <pre><code>
  *  adminApi: {}
@@ -70,6 +74,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     private final MemoryWatcher memoryWatcher = new MemoryWatcher();
     private final DiskWatcher diskWatcher = new DiskWatcher();
     private final WebSocketExchangeWatcher wsExchangeWatcher = new WebSocketExchangeWatcher();
+    private final ServerSentEventsExchangeWatcher sseExchangeWatcher = new ServerSentEventsExchangeWatcher(15_000);
     private final WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
 
     @Override
@@ -78,6 +83,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         diskWatcher.init(router.getTimerManager(), connections);
         wsExchangeWatcher.init(connections);
         router.getExchangeStore().addExchangesStoreListener(wsExchangeWatcher);
+        router.getExchangeStore().addExchangesStoreListener(sseExchangeWatcher);
         super.init();
     }
 
@@ -89,6 +95,9 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 return handleHealth(exc);
             } else if (uri.matches(".*/apis.*")) {
                 return handleApis(exc);
+            } else if (uri.matches(".*/calls/stream/?(\\?.*)?")) {
+                exc.setResponse(sseExchangeWatcher.createStreamingResponse());
+                return RETURN;
             } else if (uri.matches(".*/calls.*")) {
                 return handleCalls(exc);
             } else if (uri.matches(".*/ws.*")) {
@@ -262,6 +271,17 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             gen.close();
 
             exc.setResponse(Response.ok().body(writer.toString()).contentType(APPLICATION_JSON).build());
+        } catch (InvalidExchangeQueryException e) {
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Invalid calls query.")
+                    .detail(e.getMessage(), true)
+                    .buildAndSetResponse(exc);
+        } catch (UnsupportedOperationException e) {
+            internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .status(501)
+                    .title("Not supported by the exchange store.")
+                    .detail(e.getMessage())
+                    .buildAndSetResponse(exc);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -294,6 +314,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         gen.writeStartObject();
 
         gen.writeNumberField("id", exc.getId());
+        gen.writeStringField("cursor", ExchangeCursor.of(exc).encode());
         gen.writeStringField("api", exc.getProxy().toString());
 
         gen.writeObjectFieldStart("request");

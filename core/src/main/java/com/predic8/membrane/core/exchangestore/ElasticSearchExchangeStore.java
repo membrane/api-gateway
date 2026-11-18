@@ -413,6 +413,10 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
 
     @Override
     public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception {
+        // Ignoring the cursor would return the first page again and make clients page forever.
+        if (params.has("after") || params.has("before"))
+            throw new UnsupportedOperationException("Cursor paging ('after'/'before') is not supported by the Elasticsearch exchange store.");
+
         JSONObject req = getJsonElasticQuery(params);
 
         Exchange exc = post(getElasticSearchExchangesPath() + "_search").contentType(APPLICATION_JSON)

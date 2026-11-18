@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.getClientAddr;
 import static com.predic8.membrane.core.util.ComparatorFactory.getAbstractExchangeComparator;
@@ -125,10 +126,51 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 		exchanges = filter(params, useXForwardedForAsClientAddr, exchanges);
 
-		exchanges.sort(getAbstractExchangeComparator(params.getString("sort", "time"),
-				params.getString("order", "desc")));
+		final var sort = params.getString("sort", "time");
+		final var order = params.getString("order", "desc");
+		// Sorting by time breaks ties by id, so offset and cursor pages see the same total order.
+		exchanges.sort("time".equals(sort)
+				? ExchangeCursor.exchangeOrder("desc".equals(order))
+				: getAbstractExchangeComparator(sort, order));
 
-		return new ExchangeQueryResult(getPaginated(params, exchanges, params.getInt("offset", 0)), exchanges.size(), lm);
+		return new ExchangeQueryResult(getPage(params, exchanges, sort, order), exchanges.size(), lm);
+	}
+
+	/**
+	 * Pages by {@code offset}, or by cursor: {@code after} returns the exchanges following the cursor in list
+	 * order, {@code before} those preceding it. Unlike offsets, cursors don't shift when exchanges are added.
+	 */
+	private static List<AbstractExchange> getPage(QueryParameter params, List<AbstractExchange> exchanges, String sort, String order) {
+		final var after = params.getString("after");
+		final var before = params.getString("before");
+		if (after == null && before == null)
+			return getPaginated(params, exchanges, params.getInt("offset", 0));
+
+		if (after != null && before != null)
+			throw new InvalidExchangeQueryException("Use either 'after' or 'before', not both.");
+		if (params.has("offset"))
+			throw new InvalidExchangeQueryException("'offset' cannot be combined with 'after' or 'before'.");
+		if (!"time".equals(sort))
+			throw new InvalidExchangeQueryException("'after' and 'before' require sorting by time.");
+
+		final var cursorOrder = ExchangeCursor.order("desc".equals(order));
+		final int max = getMax(params, exchanges);
+		if (after != null) {
+			final var cursor = ExchangeCursor.parse(after);
+			final int from = firstIndex(exchanges, e -> cursorOrder.compare(ExchangeCursor.of(e), cursor) > 0);
+			return exchanges.subList(from, Math.min(from + max, exchanges.size()));
+		}
+		final var cursor = ExchangeCursor.parse(before);
+		final int to = firstIndex(exchanges, e -> cursorOrder.compare(ExchangeCursor.of(e), cursor) >= 0);
+		return exchanges.subList(Math.max(0, to - max), to);
+	}
+
+	private static int firstIndex(List<AbstractExchange> exchanges, Predicate<AbstractExchange> predicate) {
+		for (int i = 0; i < exchanges.size(); i++) {
+			if (predicate.test(exchanges.get(i)))
+				return i;
+		}
+		return exchanges.size();
 	}
 
 	private static List<AbstractExchange> getPaginated(QueryParameter params, List<AbstractExchange> exchanges, int offset) {

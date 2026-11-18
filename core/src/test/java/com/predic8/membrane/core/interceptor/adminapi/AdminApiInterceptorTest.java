@@ -14,7 +14,11 @@
 package com.predic8.membrane.core.interceptor.adminapi;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ExchangeCursor;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
+import com.predic8.membrane.core.http.AbstractBodyTransferer;
+import com.predic8.membrane.core.http.Chunk;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.NullProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
@@ -33,25 +37,31 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {
 
     private static TestRouter router;
     private static AdminApiInterceptor interceptor;
+    private static ServiceProxy sp;
 
     @BeforeAll
     static void setUp() throws IOException {
         router = new TestRouter();
         router.setExchangeStore(new LimitedMemoryExchangeStore()); // Needed by the AdminApiInterceptor
-        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
+        sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         interceptor = new AdminApiInterceptor();
         interceptor.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
         sp.getFlow().add(interceptor);
@@ -94,6 +104,106 @@ class AdminApiInterceptorTest {
 
             testHandler.close(); // this interrupts the WebSocket connection, closing it down
             // This allows the HttpClient and HttpRouter to be shut down.
+        }
+    }
+
+    @Test
+    void liveCallsServerSentEvents() throws Exception {
+        final var exc = get("/admin/calls/stream").buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getHeader().getContentType().startsWith("text/event-stream"));
+
+        final var transferer = new CollectingTransferer();
+        final var streamer = new Thread(() -> exc.getResponse().getBody().write(transferer, false));
+        streamer.start();
+
+        assertEquals(ServerSentEventsExchangeWatcher.CONNECTED_COMMENT, transferer.chunks.poll(5, SECONDS));
+
+        final var call = get("/shop/products/7").buildExchange();
+        call.setProxy(sp);
+        router.getExchangeStore().snap(call, REQUEST);
+
+        final var event = transferer.chunks.poll(5, SECONDS);
+        assertNotNull(event);
+        assertTrue(event.startsWith("id: %d\nevent: call\ndata: {".formatted(call.getId())), event);
+        assertTrue(event.contains("\"path\":\"/shop/products/7\""), event);
+        assertTrue(event.endsWith("\n\n"), event);
+
+        streamer.interrupt();
+        assertTrue(transferer.finished.await(5, SECONDS));
+        streamer.join(5000);
+        assertFalse(streamer.isAlive());
+    }
+
+    @Test
+    void callsCarryACursorToPageAfter() throws Exception {
+        final var call = get("/shop/cursor-paging").buildExchange();
+        call.setProxy(sp);
+        router.getExchangeStore().snap(call, REQUEST);
+        final var cursor = ExchangeCursor.of(call).encode();
+
+        final var all = get("/admin/calls").buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(all));
+        assertTrue(all.getResponse().getBodyAsStringDecoded().contains("\"cursor\":\"%s\"".formatted(cursor)));
+
+        final var after = get("/admin/calls?after=" + cursor).buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(after));
+        assertEquals(200, after.getResponse().getStatusCode());
+        assertFalse(after.getResponse().getBodyAsStringDecoded().contains("/shop/cursor-paging"));
+    }
+
+    @Test
+    void invalidCursorIsABadRequest() throws Exception {
+        final var exc = get("/admin/calls?after=garbage").buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Invalid cursor"));
+    }
+
+    @Test
+    void liveCallsWatcherUnsubscribesOnDisconnect() throws Exception {
+        final var watcher = new ServerSentEventsExchangeWatcher(10);
+        final var finished = new CountDownLatch(1);
+        final var streamer = new Thread(() -> watcher.createStreamingResponse().getBody().write(new AbstractBodyTransferer() {
+            @Override
+            public void write(byte[] content, int i, int length) {
+            }
+
+            @Override
+            public void write(Chunk chunk) throws IOException {
+                throw new IOException("client gone");
+            }
+
+            @Override
+            public void finish(Header header) {
+                finished.countDown();
+            }
+        }, false));
+        streamer.start();
+
+        assertTrue(finished.await(5, SECONDS));
+        streamer.join(5000);
+        assertEquals(0, watcher.getSubscriberCount());
+    }
+
+    private static class CollectingTransferer extends AbstractBodyTransferer {
+        final LinkedBlockingQueue<String> chunks = new LinkedBlockingQueue<>();
+        final CountDownLatch finished = new CountDownLatch(1);
+
+        @Override
+        public void write(byte[] content, int i, int length) {
+            chunks.add(new String(content, i, length, UTF_8));
+        }
+
+        @Override
+        public void write(Chunk chunk) {
+            chunks.add(new String(chunk.content(), UTF_8));
+        }
+
+        @Override
+        public void finish(Header header) {
+            finished.countDown();
         }
     }
 

@@ -23,6 +23,8 @@ import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
+import java.util.Calendar;
+import java.util.List;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.exchangestore.AbstractExchangeStore.*;
@@ -127,6 +129,95 @@ public class AbstractExchangeStoreTest {
     void filterSearch() throws Exception {
         ExchangeQueryResult result = exchangeStore.getFilteredSortedPaged(getQueryParameter("?search=foo"),false);
         assertEquals(2,result.count);
+    }
+
+    @Test
+    void cursorPageIsStableWhenNewExchangesArrive() throws Exception {
+        final var store = storeWithExchangesAt(1000, 2000, 3000, 4000);
+        final var firstPage = query(store, "?max=2");
+        assertEquals(List.of(4000L, 3000L), ids(firstPage));
+
+        snapAt(store, 5000, 5000);
+
+        assertEquals(List.of(2000L, 1000L), ids(query(store, "?max=2&after=" + ExchangeCursor.of(firstPage.getLast()).encode())));
+    }
+
+    @Test
+    void beforeReturnsTheExchangesClosestToTheCursor() throws Exception {
+        final var store = storeWithExchangesAt(1000, 2000, 3000, 4000, 5000);
+        final var cursor = new ExchangeCursor(3000, 3000).encode();
+
+        assertEquals(List.of(4000L), ids(query(store, "?max=1&before=" + cursor)));
+        assertEquals(List.of(5000L, 4000L), ids(query(store, "?max=10&before=" + cursor)));
+    }
+
+    @Test
+    void cursorOrdersExchangesOfTheSameMillisecondById() throws Exception {
+        final var store = new LimitedMemoryExchangeStore();
+        snapAt(store, 1000, 3);
+        snapAt(store, 1000, 7);
+        snapAt(store, 1000, 5);
+
+        assertEquals(List.of(7L, 5L, 3L), ids(query(store, "")));
+        assertEquals(List.of(3L), ids(query(store, "?after=" + new ExchangeCursor(1000, 5).encode())));
+    }
+
+    @Test
+    void cursorOfAnEvictedExchangeStillPages() throws Exception {
+        final var store = storeWithExchangesAt(1000, 2000, 3000);
+        assertEquals(List.of(2000L, 1000L), ids(query(store, "?after=" + new ExchangeCursor(2500, 42).encode())));
+    }
+
+    @Test
+    void cursorFollowsAscendingOrder() throws Exception {
+        final var store = storeWithExchangesAt(1000, 2000, 3000, 4000);
+        assertEquals(List.of(3000L, 4000L), ids(query(store, "?order=asc&after=" + new ExchangeCursor(2000, 2000).encode())));
+    }
+
+    @Test
+    void invalidCursorQueriesAreRejected() {
+        final var store = storeWithExchangesAt(1000);
+        final var cursor = new ExchangeCursor(1000, 1000).encode();
+        for (final var query : List.of(
+                "?after=garbage",
+                "?after=1000_x",
+                "?after=" + cursor + "&before=" + cursor,
+                "?offset=1&after=" + cursor,
+                "?sort=method&after=" + cursor)) {
+            assertThrows(InvalidExchangeQueryException.class, () -> query(store, query), query);
+        }
+    }
+
+    private static LimitedMemoryExchangeStore storeWithExchangesAt(long... times) {
+        final var store = new LimitedMemoryExchangeStore();
+        for (final var time : times) {
+            snapAt(store, time, time);
+        }
+        return store;
+    }
+
+    private static void snapAt(LimitedMemoryExchangeStore store, long time, long id) {
+        try {
+            final var exc = Request.get("/calls/" + id).buildExchange();
+            exc.setResponse(Response.ok().build());
+            exc.setProxy(new APIProxy());
+            exc.setId(id);
+            final var calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(time);
+            exc.setTime(calendar);
+            store.snap(exc, REQUEST);
+            store.snap(exc, RESPONSE);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<AbstractExchange> query(LimitedMemoryExchangeStore store, String query) throws Exception {
+        return store.getFilteredSortedPaged(getQueryParameter(query), false).getExchanges();
+    }
+
+    private static List<Long> ids(List<AbstractExchange> exchanges) {
+        return exchanges.stream().map(AbstractExchange::getId).toList();
     }
 
     @NotNull
