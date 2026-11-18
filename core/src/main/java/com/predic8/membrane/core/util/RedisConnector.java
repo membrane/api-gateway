@@ -16,7 +16,9 @@ package com.predic8.membrane.core.util;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
 import redis.clients.jedis.*;
@@ -24,7 +26,7 @@ import redis.clients.jedis.*;
 import java.util.Set;
 
 @MCElement(name = "redis", component = true)
-public class RedisConnector  implements InitializingBean {
+public class RedisConnector  implements InitializingBean, DisposableBean {
     private JedisPool pool;
     private JedisSentinelPool sentinelPool;
     private String host = "localhost";
@@ -72,6 +74,15 @@ public class RedisConnector  implements InitializingBean {
     }
 
 
+
+    @PreDestroy
+    @Override
+    public void destroy() {
+        if (pool != null)
+            pool.close();
+        if (sentinelPool != null)
+            sentinelPool.close();
+    }
 
     public Jedis getJedisWithDb() {
         final var jedis = sentinelPool != null ? sentinelPool.getResource() : pool.getResource();

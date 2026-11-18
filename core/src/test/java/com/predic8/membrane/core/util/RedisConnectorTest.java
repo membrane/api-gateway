@@ -24,12 +24,31 @@ import java.net.ServerSocket;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 class RedisConnectorTest {
+
+    @Test
+    void destroyClosesPool() throws Exception {
+        final var pool = mock(JedisPool.class);
+        final var connector = new RedisConnector();
+        final var poolField = RedisConnector.class.getDeclaredField("pool");
+        poolField.setAccessible(true);
+        poolField.set(connector, pool);
+
+        connector.destroy();
+
+        verify(pool).close();
+    }
+
+    @Test
+    void destroyWithoutPoolDoesNothing() {
+        assertDoesNotThrow(() -> new RedisConnector().destroy());
+    }
 
     @Test
     void connectionIsReturnedWhenSelectFails() throws Exception {
