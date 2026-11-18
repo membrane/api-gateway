@@ -15,6 +15,7 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -42,6 +43,8 @@ public class RedisConnector  implements InitializingBean {
     private String masterName = "mymaster";
 
 
+    // YAML configurations call only @PostConstruct, Spring calls the method once either way
+    @PostConstruct
     @Override
     public void afterPropertiesSet() throws Exception {
         GenericObjectPoolConfig jedisPoolConfig = new GenericObjectPoolConfig();

@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.annot.yaml.parsing.support.BeanLifecycleInvoker;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -20,8 +21,18 @@ import java.net.ServerSocket;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class RedisConnectorTest {
+
+    @Test
+    void yamlLifecycleCreatesPool() {
+        final var connector = new RedisConnector();
+
+        new BeanLifecycleInvoker().apply(null, connector);
+
+        assertNotNull(connector.getPool());
+    }
 
     private static final int TLS_HANDSHAKE_RECORD = 0x16;
     private static final int RESP_ARRAY = '*';
