@@ -39,6 +39,13 @@ import java.util.function.Function;
  * 8 MB plus 128 KB of decoded content is held per stream before a consumer, e.g. <code>limit</code>,
  * sees the first byte. The decoder does not check the block size either, so it is checked here too.
  * <p>
+ * Nor does the decoder check that a frame's content has the Frame_Content_Size of its header.
+ * The decoder therefore gets one frame at a time: the input seems to end after each frame, and
+ * the decoded bytes are counted until the decoder reports that end. Then the next frame follows.
+ * This relies on the decoder of aircompressor 2.0.3: at the end of its input after a complete frame it
+ * returns -1, and it reads on when it is called again. One decoder is kept for all frames, so its
+ * window buffer is reused, not allocated again for every frame.
+ * <p>
  * The decoder throws unchecked exceptions for malformed input. They are rethrown as
  * {@link IOException}, so they are handled like a failure of the other content codings. So is a
  * decoder that cannot run on this JVM because the JVM denies sun.misc.Unsafe memory access.
@@ -55,7 +62,13 @@ final class ZstdDecodingInputStream extends InputStream {
 
     private static final AtomicBoolean unavailableLogged = new AtomicBoolean();
 
+    private final FrameChecker frames;
     private final InputStream decoded;
+
+    private boolean started;
+    private boolean ended;
+    /** Decoded bytes of the current frame */
+    private long frameContentRead;
 
     ZstdDecodingInputStream(InputStream compressed) {
         this(compressed, ZstdInputStream::new);
@@ -65,29 +78,65 @@ final class ZstdDecodingInputStream extends InputStream {
      * @param decoder makes the decoding stream from the checked compressed bytes; tests replace the decoder with it
      */
     ZstdDecodingInputStream(InputStream compressed, Function<InputStream, InputStream> decoder) {
-        decoded = decoder.apply(new FrameChecker(compressed));
+        frames = new FrameChecker(compressed);
+        decoded = decoder.apply(frames);
     }
 
     @Override
     public int read() throws IOException {
-        try {
-            return decoded.read();
-        } catch (RuntimeException e) {
-            throw new IOException(e.getMessage(), e);
-        } catch (LinkageError e) {
-            throw decoderUnavailable(e);
-        }
+        final var b = new byte[1];
+        return read(b, 0, 1) == -1 ? -1 : b[0] & 0xff;
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         try {
-            return decoded.read(b, off, len);
+            return readFrames(b, off, len);
         } catch (RuntimeException e) {
             throw new IOException(e.getMessage(), e);
         } catch (LinkageError e) {
             throw decoderUnavailable(e);
         }
+    }
+
+    private int readFrames(byte[] b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0)
+            return 0;
+        if (ended)
+            return -1;
+        if (!started) {
+            started = true;
+            if (!frames.nextFrame()) {
+                // RFC 8878 section 3.1.2: skippable frames only are an empty content; no frame at all is not zstd.
+                if (!frames.skippedFrame)
+                    throw new IOException("No zstd frame.");
+                ended = true;
+                return -1;
+            }
+        }
+        while (true) {
+            final var n = decoded.read(b, off, len);
+            if (n != -1) {
+                frameContentRead += n;
+                if (frames.contentSize != FrameChecker.UNKNOWN_CONTENT_SIZE && Long.compareUnsigned(frameContentRead, frames.contentSize) > 0)
+                    throw contentSizeMismatch();
+                return n;
+            }
+            // The decoder has passed on the whole frame.
+            if (frames.contentSize != FrameChecker.UNKNOWN_CONTENT_SIZE && frameContentRead != frames.contentSize)
+                throw contentSizeMismatch();
+            if (!frames.nextFrame()) {
+                ended = true;
+                return -1;
+            }
+            frameContentRead = 0;
+        }
+    }
+
+    private IOException contentSizeMismatch() {
+        return new IOException("zstd frame content does not have the Frame_Content_Size of %s bytes in its header."
+                .formatted(Long.toUnsignedString(frames.contentSize)));
     }
 
     /**
@@ -112,8 +161,16 @@ final class ZstdDecodingInputStream extends InputStream {
      * frame header and block header, and forwards block contents without parsing them. It rejects a
      * frame whose window is larger than {@link #MAX_WINDOW_SIZE}, and it drops skippable frames,
      * which the decoder does not accept, although RFC 8878 section 3.1.2 says to skip them.
+     * <p>
+     * Its input ends after each frame until {@link #nextFrame()} starts the next one.
      */
     private static final class FrameChecker extends InputStream {
+
+        /**
+         * No Frame_Content_Size field. The reference implementation also takes an 8-byte
+         * Frame_Content_Size of 2^64 - 1 as unknown (ZSTD_CONTENTSIZE_UNKNOWN).
+         */
+        static final long UNKNOWN_CONTENT_SIZE = -1;
 
         private static final int FRAME_MAGIC = 0xFD2FB528;
         private static final int SKIPPABLE_FRAME_MAGIC = 0x184D2A50;
@@ -133,6 +190,10 @@ final class ZstdDecodingInputStream extends InputStream {
         private boolean contentChecksum;
         /** Block_Maximum_Size of the current frame. */
         private long blockMaximumSize;
+        /** Frame_Content_Size of the current frame, unsigned, or {@link #UNKNOWN_CONTENT_SIZE}. */
+        long contentSize;
+        /** Whether a skippable frame has been dropped. */
+        boolean skippedFrame;
 
         FrameChecker(InputStream in) {
             this.in = in;
@@ -163,31 +224,36 @@ final class ZstdDecodingInputStream extends InputStream {
                     passThrough -= n;
                     return n;
                 }
-                if (inFrame)
-                    readBlockHeader();
-                else if (!readFrameStart())
+                if (!inFrame)
                     return -1;
+                readBlockHeader();
             }
         }
 
         /**
-         * @return false if the input ends cleanly between two frames
+         * Starts the next zstd frame, after the current one has been read to its end. Skippable
+         * frames before it are dropped.
+         *
+         * @return false if the input ends cleanly instead
          */
-        private boolean readFrameStart() throws IOException {
-            final var magicBytes = in.readNBytes(4);
-            if (magicBytes.length == 0)
-                return false;
-            if (magicBytes.length < 4)
-                throw truncated();
-            final int magic = (int) littleEndian(magicBytes, 0, 4);
-            if ((magic & SKIPPABLE_FRAME_MAGIC_MASK) == SKIPPABLE_FRAME_MAGIC) {
-                skipFrameContent(littleEndian(readFully(4), 0, 4));
+        boolean nextFrame() throws IOException {
+            while (true) {
+                final var magicBytes = in.readNBytes(4);
+                if (magicBytes.length == 0)
+                    return false;
+                if (magicBytes.length < 4)
+                    throw truncated();
+                final int magic = (int) littleEndian(magicBytes, 0, 4);
+                if ((magic & SKIPPABLE_FRAME_MAGIC_MASK) == SKIPPABLE_FRAME_MAGIC) {
+                    skipFrameContent(littleEndian(readFully(4), 0, 4));
+                    skippedFrame = true;
+                    continue;
+                }
+                if (magic != FRAME_MAGIC)
+                    throw new IOException("Not a zstd frame.");
+                readFrameHeader(magicBytes);
                 return true;
             }
-            if (magic != FRAME_MAGIC)
-                throw new IOException("Not a zstd frame.");
-            readFrameHeader(magicBytes);
-            return true;
         }
 
         /**
@@ -214,9 +280,9 @@ final class ZstdDecodingInputStream extends InputStream {
             final int windowDescriptorSize = singleSegment ? 0 : 1;
             final var rest = readFully(windowDescriptorSize + dictionaryIdSize + contentSizeSize);
 
-            final long windowSize = singleSegment
-                    ? frameContentSize(rest, dictionaryIdSize, contentSizeSize)
-                    : windowSize(rest[0] & 0xff);
+            contentSize = contentSizeSize == 0 ? UNKNOWN_CONTENT_SIZE : frameContentSize(rest, windowDescriptorSize + dictionaryIdSize, contentSizeSize);
+            // RFC 8878 section 3.1.1.1.4: in a single-segment frame, the window size is the content size.
+            final long windowSize = singleSegment ? contentSize : windowSize(rest[0] & 0xff);
             // Negative: a Frame_Content_Size of 2^63 or more
             if (windowSize < 0 || windowSize > MAX_WINDOW_SIZE)
                 throw new IOException("zstd frame needs a window of %s bytes, more than the %d bytes allowed for the zstd content coding."
@@ -258,7 +324,7 @@ final class ZstdDecodingInputStream extends InputStream {
         }
 
         /**
-         * RFC 8878 section 3.1.1.1.4: in a single-segment frame, the window size is the content size.
+         * RFC 8878 section 3.1.1.1.4
          */
         private static long frameContentSize(byte[] bytes, int offset, int size) {
             final long value = littleEndian(bytes, offset, size);

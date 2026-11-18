@@ -148,6 +148,66 @@ class ZstdDecodingInputStreamTest {
         assertThrows(IOException.class, decoding(frame(0x23, new byte[]{0, 0, 0, 1, 3}, rawBlock("abc"))));
     }
 
+    /**
+     * RFC 8878 section 3.1.1.1.4: the decoded content must have the Frame_Content_Size of the
+     * frame header. The reference implementation rejects a mismatch as data corruption.
+     */
+    @Test
+    void rejectsContentShorterThanFrameContentSize() {
+        // Single segment, Frame_Content_Size 4
+        assertContentSizeMismatch(frame(0x20, new byte[]{4}, rawBlock("abc")));
+        // 2-byte Frame_Content_Size 0 (256 bytes), 255 bytes in a 1 KiB window
+        assertContentSizeMismatch(frame(0x40, new byte[]{0, 0, 0}, rleBlock(true, 255)));
+    }
+
+    @Test
+    void rejectsContentLongerThanFrameContentSize() {
+        // Single segment, Frame_Content_Size 3, two raw blocks of 2 bytes each
+        assertContentSizeMismatch(frame(0x20, new byte[]{3}, concat(blockHeader(false, 0, 2), "ab".getBytes(UTF_8), rawBlock("cd"))));
+        // 2-byte Frame_Content_Size 0 (256 bytes), 257 bytes in a 1 KiB window
+        assertContentSizeMismatch(frame(0x40, new byte[]{0, 0, 0}, rleBlock(true, 257)));
+    }
+
+    @Test
+    void rejectsContentSizeMismatchInLaterFrame() {
+        assertContentSizeMismatch(concat(zstd("first"), frame(0x20, new byte[]{4}, rawBlock("abc"))));
+        assertContentSizeMismatch(concat(REFERENCE_FRAME, frame(0x20, new byte[]{3}, rawBlock("ab"))));
+    }
+
+    @Test
+    void acceptsContentOfFrameContentSize() throws Exception {
+        // 2-byte Frame_Content_Size 0 (256 bytes)
+        assertEquals(256, decode(frame(0x40, new byte[]{0, 0, 0}, rleBlock(true, 256))).length);
+        // Concatenated frames, each with a Frame_Content_Size
+        assertEquals(REFERENCE_CONTENT + "abc", new String(decode(concat(REFERENCE_FRAME, frame(0x20, new byte[]{3}, rawBlock("abc")))), UTF_8));
+    }
+
+    /**
+     * The reference implementation takes an 8-byte Frame_Content_Size of 2^64 - 1 as unknown
+     * (ZSTD_CONTENTSIZE_UNKNOWN), so does not check it.
+     */
+    @Test
+    void acceptsLargestFrameContentSizeAsUnknown() throws Exception {
+        assertEquals("abc", new String(decode(frame(0xc0, new byte[]{0, -1, -1, -1, -1, -1, -1, -1, -1}, rawBlock("abc"))), UTF_8));
+    }
+
+    /**
+     * RFC 8878 section 3.1.2: skippable frames only are an empty content, as in the reference implementation.
+     */
+    @Test
+    void decodesSkippableFramesOnlyToEmptyContent() throws Exception {
+        final var skippable = new byte[]{0x5f, 0x2a, 0x4d, 0x18, 3, 0, 0, 0, 1, 2, 3};
+        try (final var in = new ZstdDecodingInputStream(new ByteArrayInputStream(concat(skippable, skippable)))) {
+            assertEquals(-1, in.read());
+            assertEquals(-1, in.read(new byte[10], 0, 10));
+        }
+    }
+
+    private static void assertContentSizeMismatch(byte[] compressed) {
+        final var e = assertThrows(IOException.class, decoding(compressed));
+        assertTrue(e.getMessage().startsWith("zstd frame content does not have the Frame_Content_Size "), e.getMessage());
+    }
+
     @Test
     void rejectsWindowTooLargeInLaterFrame() {
         assertWindowTooLarge(concat(zstd("first"), frame(0x00, new byte[]{(byte) (20 << 3)}, rleBlocks(100))));
@@ -161,7 +221,8 @@ class ZstdDecodingInputStreamTest {
 
     @Test
     void rejectsEmptyStream() {
-        assertThrows(IOException.class, decoding(new byte[0]));
+        final var e = assertThrows(IOException.class, decoding(new byte[0]));
+        assertEquals("No zstd frame.", e.getMessage());
     }
 
     @Test
@@ -284,6 +345,10 @@ class ZstdDecodingInputStreamTest {
             out.write('x');
         }
         return out.toByteArray();
+    }
+
+    private static byte[] rleBlock(boolean last, int size) {
+        return concat(blockHeader(last, 1, size), new byte[]{'x'});
     }
 
     private static byte[] blockHeader(boolean last, int type, int size) {
