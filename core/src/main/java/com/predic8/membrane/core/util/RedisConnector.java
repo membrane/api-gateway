@@ -96,7 +96,11 @@ public class RedisConnector  implements InitializingBean, DisposableBean {
             return jedis;
         } catch (RuntimeException e) {
             // Returns the connection to the pool
-            jedis.close();
+            try {
+                jedis.close();
+            } catch (RuntimeException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
             throw e;
         }
     }

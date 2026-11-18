@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.exceptions.JedisException;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -26,11 +27,30 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 class RedisConnectorTest {
+
+    @Test
+    void failureOfCloseDoesNotHideSetupFailure() throws Exception {
+        final var jedis = mock(Jedis.class);
+        final var setupFailure = new JedisConnectionException("Connection reset");
+        doThrow(setupFailure).when(jedis).select(anyInt());
+        doThrow(new JedisException("Could not return the broken resource to the pool")).when(jedis).close();
+        final var pool = mock(JedisPool.class);
+        when(pool.getResource()).thenReturn(jedis);
+        final var connector = new RedisConnector();
+        final var poolField = RedisConnector.class.getDeclaredField("pool");
+        poolField.setAccessible(true);
+        poolField.set(connector, pool);
+
+        final var thrown = assertThrows(JedisConnectionException.class, connector::getJedisWithDb);
+        assertSame(setupFailure, thrown);
+        assertEquals(1, thrown.getSuppressed().length);
+    }
 
     @Test
     void destroyClosesPool() throws Exception {
