@@ -61,6 +61,13 @@ public class FileExchangeStore extends AbstractExchangeStore {
     static final String RESPONSE_SUFFIX = "Response.msg";
     static final String EXCHANGE_SUFFIX = "Exchange.json";
 
+    /**
+     * Exchange properties with the original body lengths of the request and response, as {@link Long}, for exchanges
+     * read from the store, as the store does not read bodies when it lists exchanges.
+     */
+    public static final String REQUEST_BODY_LENGTH = "membrane.fileExchangeStore.requestBodyLength";
+    public static final String RESPONSE_BODY_LENGTH = "membrane.fileExchangeStore.responseBodyLength";
+
     private static final ObjectMapper om = new ObjectMapper();
     private static final byte[] END_OF_HEADER = "\r\n\r\n".getBytes(US_ASCII);
 
@@ -92,7 +99,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
     /**
      * The newest exchanges, oldest first. Guarded by {@code this}.
      */
-    private final LinkedHashMap<Long, IndexEntry> index = new LinkedHashMap<>();
+    private final Map<Long, IndexEntry> index = new HashMap<>();
+
+    /**
+     * The entries of {@link #index}, oldest exchange first. Eviction and admission use the order in which loading the
+     * index after a restart selects the files: by exchange time, then by the number in the file name. The ID is no
+     * substitute: it is assigned when the metadata is written first, which can happen in another order.
+     */
+    private final TreeSet<IndexEntry> byAge = new TreeSet<>(OLDEST_FIRST);
+
+    private static final Comparator<IndexEntry> OLDEST_FIRST = Comparator
+            .comparingLong((IndexEntry e) -> e.stored().time())
+            .thenComparingLong(e -> counterPart(e.file().getFileName().toString()))
+            .thenComparing(e -> e.file().getFileName().toString());
     private boolean indexLoaded;
     private long lastModification = System.currentTimeMillis();
 
@@ -150,11 +169,23 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (base == null)
             return;
         try {
+            // A message without Content-Length, e.g. chunked, has its length only here. The properties of the
+            // exchange are not thread safe, and request and response are snapped on different threads: use its lock.
+            if (body != null)
+                synchronized (exc) {
+                    exc.setProperty(flow == Flow.REQUEST ? REQUEST_BODY_LENGTH : RESPONSE_BODY_LENGTH, body.getLength());
+                }
             switch (flow) {
                 case REQUEST -> {
                     writeFile(exc.getRequest(), base + "-" + REQUEST_SUFFIX, body);
                     // The response was snapped before the request body completed: reference the request file now.
-                    if (exc.getProperty(indexIdProperty) != null)
+                    // writeExchangeFile() sets the ID and checks for the request file under the same lock, so
+                    // either it saw the file or this sees the ID.
+                    final boolean indexed;
+                    synchronized (exc) {
+                        indexed = exc.getProperty(indexIdProperty) != null;
+                    }
+                    if (indexed)
                         writeExchangeFile(exc);
                 }
                 case ABORT, RESPONSE -> {
@@ -210,22 +241,37 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (base == null)
             return;
         ensureIndexLoaded();
-        final long id;
+        // The request and the response snapshot can write the metadata concurrently. Serialize them, so that an
+        // older snapshot, e.g. one taken before the request file existed, cannot overwrite a newer one.
         synchronized (exc) {
             final var existing = (Long) exc.getProperty(indexIdProperty);
-            id = existing != null ? existing : nextId.incrementAndGet();
+            final long id = existing != null ? existing : nextId.incrementAndGet();
             exc.setProperty(indexIdProperty, id);
+            final var stored = StoredExchange.of(id, exc, Path.of(base).getFileName().toString(), raw, saveBodyOnly,
+                    new File(base + "-" + REQUEST_SUFFIX).exists(), exc.getResponse() != null);
+            final var file = Path.of(base + "-" + EXCHANGE_SUFFIX);
+            try {
+                writeAtomically(file, om.writeValueAsString(stored));
+            } catch (IOException e) {
+                log.error("Could not write {}", file, e);
+                return;
+            }
+            addToIndex(id, stored, file);
         }
-        final var stored = StoredExchange.of(id, exc, Path.of(base).getFileName().toString(), raw, saveBodyOnly,
-                new File(base + "-" + REQUEST_SUFFIX).exists(), exc.getResponse() != null);
-        final var file = Path.of(base + "-" + EXCHANGE_SUFFIX);
+    }
+
+    /**
+     * Readers never see a partially written file.
+     */
+    private static void writeAtomically(Path file, String content) throws IOException {
+        final var tmp = file.resolveSibling(file.getFileName() + ".tmp");
+        Files.writeString(tmp, content, UTF_8);
         try {
-            Files.writeString(file, om.writeValueAsString(stored), UTF_8);
+            Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            log.error("Could not write {}", file, e);
-            return;
+            Files.deleteIfExists(tmp);
+            throw e;
         }
-        addToIndex(id, stored, file);
     }
 
     private StringBuilder getDirectoryNameBuffer(Calendar time) {
@@ -303,8 +349,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
         final var cutoff = startOfFirstKeptDay(now);
         synchronized (this) {
-            if (index.values().removeIf(e -> e.stored().time() < cutoff))
+            if (byAge.removeIf(e -> e.stored().time() < cutoff)) {
+                index.values().removeIf(e -> e.stored().time() < cutoff);
                 modify();
+            }
         }
     }
 
@@ -346,7 +394,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (dir == null || !Files.isDirectory(Path.of(dir)))
             return;
         final var loaded = new ArrayList<Loaded>();
-        visitNewestExchangeFiles(Path.of(dir), file -> {
+        visitNewestExchangeFiles(Path.of(dir), maxIndexed, file -> {
             try {
                 loaded.add(new Loaded(om.readValue(file.toFile(), StoredExchange.class), file));
             } catch (Exception e) {
@@ -356,7 +404,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         });
         loaded.stream().mapToLong(l -> l.stored().id()).max().ifPresent(max -> nextId.accumulateAndGet(max, Math::max));
         for (final var l : loaded.reversed())
-            add(l.stored().id() > 0 ? l.stored().id() : nextId.incrementAndGet(), l.stored(), l.file());
+            add(new IndexEntry(l.stored().id() > 0 ? l.stored().id() : nextId.incrementAndGet(), l.stored(), l.file()));
         modify();
     }
 
@@ -366,7 +414,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
     static List<Path> newestExchangeFiles(Path root, int limit) {
         final var result = new ArrayList<Path>();
         if (limit > 0)
-            visitNewestExchangeFiles(root, f -> {
+            visitNewestExchangeFiles(root, limit, f -> {
                 result.add(f);
                 return result.size() < limit;
             });
@@ -375,25 +423,56 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
     /**
      * Passes the exchange files to {@code visitor}, newest first, until it returns false.
+     *
+     * @param batchSize how many files of a day are selected at first. A busy day can hold many more files than the
+     *                  visitor needs, so they are not all kept in memory and sorted. If the visitor wants more, e.g.
+     *                  because some files were unreadable, the next batch of older files is selected, twice as large
+     *                  as the previous one, so that many unreadable files do not cause many scans of the directory.
      */
-    private static void visitNewestExchangeFiles(Path root, java.util.function.Predicate<Path> visitor) {
+    private static void visitNewestExchangeFiles(Path root, int batchSize, java.util.function.Predicate<Path> visitor) {
         for (final var year : numericSubdirsDescending(root))
             for (final var month : numericSubdirsDescending(year))
                 for (final var day : numericSubdirsDescending(month)) {
-                    final List<Path> exchangeFiles;
-                    try (var files = Files.list(day)) {
-                        exchangeFiles = files
-                                .filter(f -> f.getFileName().toString().endsWith("-" + EXCHANGE_SUFFIX))
-                                .sorted(NEWEST_FIRST)
-                                .toList();
-                    } catch (IOException e) {
-                        log.warn("Could not list {}: {}", day, e.getMessage());
-                        continue;
+                    Path olderThan = null;
+                    var size = batchSize;
+                    while (true) {
+                        final List<Path> batch;
+                        try {
+                            batch = newestExchangeFilesOfDay(day, olderThan, size);
+                        } catch (IOException e) {
+                            log.warn("Could not list {}: {}", day, e.getMessage());
+                            break;
+                        }
+                        for (final var f : batch)
+                            if (!visitor.test(f))
+                                return;
+                        if (batch.size() < size)
+                            break;
+                        olderThan = batch.getLast();
+                        size = (int) Math.min(2L * size, Integer.MAX_VALUE - 8);
                     }
-                    for (final var f : exchangeFiles)
-                        if (!visitor.test(f))
-                            return;
                 }
+    }
+
+    /**
+     * @param olderThan only files older than this one, or null for all
+     * @return at most {@code limit} exchange files of the directory, newest first
+     */
+    private static List<Path> newestExchangeFilesOfDay(Path day, Path olderThan, int limit) throws IOException {
+        // The head is the oldest of the selected files, so it is the one to drop when a newer file is found.
+        final var newest = new PriorityQueue<Path>(NEWEST_FIRST.reversed());
+        try (var files = Files.list(day)) {
+            files.filter(f -> f.getFileName().toString().endsWith("-" + EXCHANGE_SUFFIX))
+                    .filter(f -> olderThan == null || NEWEST_FIRST.compare(f, olderThan) > 0)
+                    .forEach(f -> {
+                        newest.add(f);
+                        if (newest.size() > limit)
+                            newest.poll();
+                    });
+        }
+        final var result = new ArrayList<>(newest);
+        result.sort(NEWEST_FIRST);
+        return result;
     }
 
     /**
@@ -402,6 +481,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
     static final Comparator<Path> NEWEST_FIRST = Comparator
             .comparing((Path f) -> timePart(f.getFileName().toString()))
             .thenComparingLong(f -> counterPart(f.getFileName().toString()))
+            .thenComparing(f -> f.getFileName().toString()) // a total order, also for unexpected names
             .reversed();
 
     private static String timePart(String name) {
@@ -434,20 +514,21 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     private synchronized void addToIndex(long id, StoredExchange stored, Path file) {
-        if (index.containsKey(id))
-            index.put(id, new IndexEntry(id, stored, file)); // keeps the position of the entry
-        else
-            add(id, stored, file);
+        final var entry = new IndexEntry(id, stored, file);
+        // An exchange older than all of a full index, e.g. a later snapshot of an evicted one, must not evict a newer one.
+        if (!index.containsKey(id) && index.size() >= maxIndexed && OLDEST_FIRST.compare(entry, byAge.first()) < 0)
+            return;
+        add(entry);
         modify();
     }
 
-    private void add(long id, StoredExchange stored, Path file) {
-        index.put(id, new IndexEntry(id, stored, file));
-        final var it = index.values().iterator();
-        while (index.size() > maxIndexed && it.hasNext()) {
-            it.next();
-            it.remove();
-        }
+    private void add(IndexEntry entry) {
+        final var previous = index.put(entry.id(), entry);
+        if (previous != null)
+            byAge.remove(previous);
+        byAge.add(entry);
+        while (index.size() > maxIndexed)
+            index.remove(byAge.pollFirst().id());
     }
 
     /**
@@ -528,6 +609,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
                 req.setUri(s.request().uri());
                 fill(req, s.request(), entry.file(), withBodies);
                 exc.setRequest(req);
+                if (s.request().bodyLength() != null)
+                    exc.setProperty(REQUEST_BODY_LENGTH, s.request().bodyLength());
             }
             if (s.response() != null) {
                 final var res = new Response();
@@ -535,6 +618,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
                 res.setStatusMessage(s.response().statusMessage());
                 fill(res, s.response(), entry.file(), withBodies);
                 exc.setResponse(res);
+                if (s.response().bodyLength() != null)
+                    exc.setProperty(RESPONSE_BODY_LENGTH, s.response().bodyLength());
             }
         } catch (IOException e) {
             log.warn("Could not read the messages of {}: {}", entry.file(), e.getMessage());
@@ -568,26 +653,171 @@ public class FileExchangeStore extends AbstractExchangeStore {
         return sb.append("; charset=UTF-8").toString();
     }
 
+    /**
+     * The body is read from the file only when it is used, so looking at an exchange with a large body does not load
+     * the body into memory.
+     */
     private static AbstractBody readBody(Path file, boolean headersInFile) throws IOException {
         if (!Files.exists(file))
             return new EmptyBody();
-        var bytes = Files.readAllBytes(file);
-        if (headersInFile) {
-            final var end = indexOf(bytes, END_OF_HEADER);
-            bytes = end < 0 ? new byte[0] : Arrays.copyOfRange(bytes, end + END_OF_HEADER.length, bytes.length);
-        }
-        return bytes.length == 0 ? new EmptyBody() : new Body(bytes);
+        final var offset = headersInFile ? bodyOffset(file) : 0;
+        final var length = Files.size(file) - offset;
+        return length <= 0 ? new EmptyBody() : new FileBody(file, offset, length);
     }
 
-    private static int indexOf(byte[] data, byte[] pattern) {
-        outer:
-        for (int i = 0; i <= data.length - pattern.length; i++) {
-            for (int j = 0; j < pattern.length; j++)
-                if (data[i + j] != pattern[j])
-                    continue outer;
-            return i;
+    /**
+     * A stored body. As long as nothing has read it into memory, {@link #getContentAsStream()} streams it from its
+     * file on every call, so a reader that needs only the beginning, or streams it, does not load the whole body.
+     * Other accessors, e.g. {@link #getContent()}, read it into memory as usual.
+     */
+    private static final class FileBody extends Body {
+        private final Path file;
+        private final long offset;
+        private final long length;
+
+        FileBody(Path file, long offset, long length) {
+            super(new LazyFileInputStream(file, offset, length), length);
+            this.file = file;
+            this.offset = offset;
+            this.length = length;
         }
-        return -1;
+
+        @Override
+        public InputStream getContentAsStream() {
+            if (isRead())
+                return super.getContentAsStream();
+            return new LazyFileInputStream(file, offset, length);
+        }
+    }
+
+    /**
+     * @return the position of the body in a file that starts with the start line and header fields; the file size if
+     * the header fields do not end
+     */
+    private static long bodyOffset(Path file) throws IOException {
+        try (var in = new BufferedInputStream(Files.newInputStream(file))) {
+            long position = 0;
+            var matched = 0;
+            int b;
+            while ((b = in.read()) != -1) {
+                position++;
+                matched = b == END_OF_HEADER[matched] ? matched + 1 : (b == END_OF_HEADER[0] ? 1 : 0);
+                if (matched == END_OF_HEADER.length)
+                    return position;
+            }
+            return position;
+        }
+    }
+
+    /**
+     * Opens the stored body of a message for streaming. Unlike {@link #getExchangeById(long)}, nothing is read into
+     * memory, so also very large bodies can be downloaded.
+     *
+     * @return null if the exchange is not indexed or the message has no stored body
+     */
+    public InputStream openBody(long id, boolean response) throws IOException {
+        final var file = bodyFile(id, response);
+        if (file == null)
+            return null;
+        final var offset = file.headersInFile() ? bodyOffset(file.path()) : 0;
+        final var length = Files.size(file.path()) - offset;
+        if (length <= 0)
+            return null;
+        return new LazyFileInputStream(file.path(), offset, length);
+    }
+
+    /**
+     * @return whether the body was pretty-printed when it was written, so it differs from the original body
+     */
+    public boolean isBodyFormatted(long id, boolean response) {
+        final var file = bodyFile(id, response);
+        return file != null && file.formatted();
+    }
+
+    private record BodyFile(Path path, boolean headersInFile, boolean formatted) {
+    }
+
+    private BodyFile bodyFile(long id, boolean response) {
+        ensureIndexLoaded();
+        final IndexEntry entry;
+        synchronized (this) {
+            entry = index.get(id);
+        }
+        if (entry == null)
+            return null;
+        final var stored = response ? entry.stored().response() : entry.stored().request();
+        if (stored == null || stored.file() == null)
+            return null;
+        final var path = entry.file().resolveSibling(stored.file());
+        return Files.exists(path) ? new BodyFile(path, stored.headersInFile(), stored.bodyFormatted()) : null;
+    }
+
+    /**
+     * Opens the file on the first read and closes it after {@code length} bytes, at its end, or on an error. A
+     * {@link Body} with a known length stops reading after that length, without reading to the end of the stream.
+     */
+    private static final class LazyFileInputStream extends InputStream {
+        private final Path file;
+        private final long offset;
+        private long remaining;
+        private InputStream in;
+        private boolean closed;
+
+        LazyFileInputStream(Path file, long offset, long length) {
+            this.file = file;
+            this.offset = offset;
+            this.remaining = length;
+        }
+
+        private InputStream in() throws IOException {
+            if (closed)
+                throw new IOException("Stream closed.");
+            if (in == null) {
+                in = Files.newInputStream(file);
+                in.skipNBytes(offset);
+            }
+            return in;
+        }
+
+        @Override
+        public int read() throws IOException {
+            final var b = new byte[1];
+            return read(b, 0, 1) == -1 ? -1 : b[0] & 0xff;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (closed || remaining <= 0) {
+                close();
+                return -1;
+            }
+            if (len == 0)
+                return 0;
+            final int n;
+            try {
+                n = in().read(b, off, (int) Math.min(len, remaining));
+            } catch (IOException | RuntimeException e) {
+                close();
+                throw e;
+            }
+            if (n == -1) {
+                close();
+                return -1;
+            }
+            remaining -= n;
+            if (remaining == 0)
+                close();
+            return n;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (closed)
+                return;
+            closed = true;
+            if (in != null)
+                in.close();
+        }
     }
 
     /**
@@ -616,9 +846,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
                     proxy == null ? null : proxy.getName(), proxy == null ? -1 : proxy.getKey().getPort(),
                     FakeProxy.isInboundTls(proxy), exc.getServer(),
                     req == null ? null : StoredMessage.of(req, req.getMethod(), req.getUri(), null, null,
-                            requestWritten ? baseName + "-" + REQUEST_SUFFIX : null, raw, saveBodyOnly),
+                            requestWritten ? baseName + "-" + REQUEST_SUFFIX : null, raw, saveBodyOnly,
+                            (Long) exc.getProperty(REQUEST_BODY_LENGTH)),
                     res == null ? null : StoredMessage.of(res, null, null, res.getStatusCode(), res.getStatusMessage(),
-                            responseWritten ? baseName + "-" + RESPONSE_SUFFIX : null, raw, saveBodyOnly));
+                            responseWritten ? baseName + "-" + RESPONSE_SUFFIX : null, raw, saveBodyOnly,
+                            (Long) exc.getProperty(RESPONSE_BODY_LENGTH)));
         }
     }
 
@@ -628,17 +860,18 @@ public class FileExchangeStore extends AbstractExchangeStore {
      * @param bodyFormatted whether the body was pretty-printed (and decoded) when it was written
      */
     record StoredMessage(String method, String uri, Integer statusCode, String statusMessage, String version,
-                         List<StoredHeader> headers, String file, boolean headersInFile, boolean bodyFormatted) {
+                         List<StoredHeader> headers, String file, boolean headersInFile, boolean bodyFormatted,
+                         Long bodyLength) {
 
         static StoredMessage of(Message msg, String method, String uri, Integer statusCode, String statusMessage,
-                                String file, boolean raw, boolean saveBodyOnly) {
+                                String file, boolean raw, boolean saveBodyOnly, Long bodyLength) {
             final var withHeaders = raw || !saveBodyOnly;
             // saveBodyOnly: header fields (e.g. Authorization) are not stored anywhere, also not in the metadata.
             final var headers = !withHeaders ? List.<StoredHeader>of() : Arrays.stream(msg.getHeader().getAllHeaderFields())
                     .map(f -> new StoredHeader(f.getHeaderName().toString(), f.getValue()))
                     .toList();
             return new StoredMessage(method, uri, statusCode, statusMessage, msg.getVersion(), headers, file,
-                    withHeaders, !raw && msg.isXML());
+                    withHeaders, !raw && msg.isXML(), bodyLength);
         }
     }
 
@@ -675,7 +908,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         ensureIndexLoaded();
         final List<IndexEntry> entries;
         synchronized (this) {
-            entries = new ArrayList<>(index.values());
+            entries = new ArrayList<>(byAge);
         }
         final var result = new ArrayList<AbstractExchange>(entries.size());
         for (final var entry : entries)

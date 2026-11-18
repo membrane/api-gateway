@@ -39,6 +39,10 @@ class ApiException extends RuntimeException {
         return new ApiException(404, "Not found.", detail);
     }
 
+    static ApiException payloadTooLarge(String detail) {
+        return new ApiException(413, "Payload too large.", detail);
+    }
+
     static ApiException notImplemented(String detail) {
         return new ApiException(501, "Not implemented.", detail);
     }

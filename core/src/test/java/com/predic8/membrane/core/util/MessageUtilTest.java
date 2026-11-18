@@ -35,6 +35,23 @@ import static org.junit.jupiter.api.Assertions.*;
 class MessageUtilTest {
 
     @Test
+    void closesTheBodyStreamIfTheDecoderCannotBeCreated() throws Exception {
+        final var closed = new boolean[1];
+        final var body = new java.io.ByteArrayInputStream("not gzip".getBytes(UTF_8)) {
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+        final var msg = org.mockito.Mockito.spy(Request.post("/").body("not gzip").build());
+        msg.getHeader().setValue("Content-Encoding", "gzip");
+        org.mockito.Mockito.doReturn(body).when(msg).getBodyAsStream();
+
+        assertThrows(ReadingBodyException.class, () -> MessageUtil.getContentAsStream(msg));
+        assertTrue(closed[0]);
+    }
+
+    @Test
     void validDeflateBodyReturnsOnlyDecompressedBytes() throws Exception {
         // Regression: Chunk.write() added HTTP chunk framing, e.g. "7\r\npayload\r\n".
         // Decoding must return only the original bytes, including for empty and multi-buffer bodies.
