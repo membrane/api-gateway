@@ -12,17 +12,17 @@ Run the command in this directory:
 
 Linux/Mac:
 ```sh
-docker run --rm -p 2000:2000 -v "$PWD/conf:/opt/membrane/conf" predic8/membrane:7.8.1
+docker run --rm -p 2000:2000 -v "$PWD/conf:/opt/membrane/conf" predic8/membrane:7.9.0
 ```
 
 Windows Command Prompt:
 ```bat
-docker run --rm -p 2000:2000 -v "%cd%\conf:/opt/membrane/conf" predic8/membrane:7.8.1
+docker run --rm -p 2000:2000 -v "%cd%\conf:/opt/membrane/conf" predic8/membrane:7.9.0
 ```
 
 Windows PowerShell:
 ```powershell
-docker run --rm -p 2000:2000 -v "${PWD}\conf:/opt/membrane/conf" predic8/membrane:7.8.1
+docker run --rm -p 2000:2000 -v "${PWD}\conf:/opt/membrane/conf" predic8/membrane:7.9.0
 ```
 
 The console shows JSON log lines, e.g.:
