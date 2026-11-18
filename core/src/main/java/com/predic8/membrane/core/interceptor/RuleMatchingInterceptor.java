@@ -21,10 +21,13 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLSocket;
 import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -107,6 +110,16 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 				restoreHost(request, receivedHost);
 		}
 		assignRule(exc, proxy);
+
+		if (lacksClientAuthenticationOf(exc, proxy)) {
+			log.info("Rejected request to API '{}', whose client authentication the TLS handshake of the connection did not perform.", proxy.getName());
+			user(router.getConfiguration().isProduction(), "misdirected-request")
+					.status(421)
+					.title("Misdirected request")
+					.detail("The TLS connection was set up for another host. Connect again, sending this host name as SNI.")
+					.buildAndSetResponse(exc);
+			return ABORT;
+		}
 
 		if (request.isCONNECTRequest() && !acceptsConnect(proxy)) {
 			log.info("Rejected CONNECT request that is not routed to a forward proxy.");
@@ -222,6 +235,20 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			   || request.isCONNECTRequest()
 			   || isSTOMPConnectFrame(request)
 			   || (request.isOPTIONSRequest() && "*".equals(uri));
+	}
+
+	/**
+	 * Several APIs can share a TLS port: the TLS context of the handshake is selected by the SNI, the API by the Host
+	 * header. A request must not reach an API that requires a client certificate over a connection whose handshake did
+	 * not ask for one or validated it with another trust store, see {@link SSLContext#admitsSessionOf}. RFC 9110
+	 * 15.5.20 answers such a request with 421 Misdirected Request, which lets a client retry on a new connection.
+	 */
+	private static boolean lacksClientAuthenticationOf(Exchange exc, Proxy proxy) {
+		if (!(proxy instanceof SSLableProxy sp) || sp.getSslInboundContext() == null)
+			return false;
+		if (!(exc.getHandler() instanceof HttpServerHandler handler) || !(handler.getSourceSocket() instanceof SSLSocket socket))
+			return false;
+		return !sp.getSslInboundContext().admitsSessionOf(socket.getSession());
 	}
 
 	/**

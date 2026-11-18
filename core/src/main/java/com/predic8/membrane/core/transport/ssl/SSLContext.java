@@ -25,14 +25,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
@@ -54,8 +61,15 @@ public abstract class SSLContext implements SSLProvider {
     private boolean showSSLExceptions = false;
     private boolean useAsDefault;
     private boolean useHttp2;
+    /**
+     * The session cache of the Java SSLContext this context does its handshakes with, which a session it
+     * negotiated points to. Replaced when that SSLContext is, e.g. by an ACME certificate renewal.
+     */
+    private volatile SSLSessionContext serverSessionContext;
+    private volatile X509TrustManager defaultTrustManager;
 
     public void init(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
+        serverSessionContext = sslc.getServerSessionContext();
         showSSLExceptions = sslParser.isShowSSLExceptions();
         useAsDefault = sslParser.isUseAsDefault();
         if (sslParser.getCiphers() != null) {
@@ -232,6 +246,64 @@ public abstract class SSLContext implements SSLProvider {
     }
 
     abstract SSLSocketFactory getSocketFactory();
+
+    /**
+     * Whether a request on a TLS connection meets the client authentication of this context, although another
+     * context of the same port may have done the handshake.
+     * <p>
+     * Several APIs can share a port. The handshake is done by the context that the SNI selects, or the default one
+     * without SNI, while the API is selected by the Host header. Without this check, a client could do the handshake
+     * for an API that asks for no client certificate, or that trusts another CA, and then send its requests to an API
+     * that requires a client certificate, see Traefik CVE-2026-48491 and Apache httpd CVE-2025-23048.
+     * <p>
+     * A session negotiated by this context passes. Of another context's session, a client certificate is validated
+     * with the trust manager of this context, and without one the session only passes if this context does not
+     * need a certificate. Another context with the same configuration therefore passes as well.
+     */
+    public boolean admitsSessionOf(SSLSession session) {
+        if (!needClientAuth && !wantClientAuth)
+            return true;
+        final var ownSessions = serverSessionContext;
+        if (ownSessions != null && session.getSessionContext() == ownSessions)
+            return true;
+        final Certificate[] peerCertificates;
+        try {
+            peerCertificates = session.getPeerCertificates();
+        } catch (SSLPeerUnverifiedException e) {
+            return !needClientAuth;
+        }
+        try {
+            final var chain = Arrays.stream(peerCertificates).map(X509Certificate.class::cast).toArray(X509Certificate[]::new);
+            getClientTrustManager().checkClientTrusted(chain, chain[0].getPublicKey().getAlgorithm());
+            return true;
+        } catch (CertificateException | ClassCastException e) {
+            log.debug("Client certificate of a TLS session negotiated for another API is not trusted.", e);
+            return false;
+        }
+    }
+
+    /**
+     * The trust manager that validates client certificates during the handshakes of this context. Subclasses that
+     * configure one override this; the default is the JDK's, which the Java SSLContext uses when it gets none.
+     */
+    protected X509TrustManager getClientTrustManager() {
+        var tm = defaultTrustManager;
+        if (tm != null)
+            return tm;
+        try {
+            final var tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init((java.security.KeyStore) null);
+            tm = Arrays.stream(tmf.getTrustManagers())
+                    .filter(X509TrustManager.class::isInstance)
+                    .map(X509TrustManager.class::cast)
+                    .findFirst()
+                    .orElseThrow();
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Could not create the default trust manager.", e);
+        }
+        defaultTrustManager = tm;
+        return tm;
+    }
 
     protected void checkChainValidity(List<Certificate> certs) {
         boolean valid = true;
