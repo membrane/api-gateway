@@ -74,19 +74,20 @@ public class RedisConnector  implements InitializingBean {
 
 
     public Jedis getJedisWithDb() {
-        Jedis jedis;
-        if (sentinelPool != null) {
-            jedis = sentinelPool.getResource();
-            if (password != null)
+        final var jedis = sentinelPool != null ? sentinelPool.getResource() : pool.getResource();
+        try {
+            if (sentinelPool != null && password != null)
                 if (user != null)
                     jedis.auth(user, password);
                 else
                     jedis.auth(password);
-        } else {
-            jedis = pool.getResource();
+            jedis.select(dbNumber);
+            return jedis;
+        } catch (RuntimeException e) {
+            // Returns the connection to the pool
+            jedis.close();
+            throw e;
         }
-        jedis.select(dbNumber);
-        return jedis;
     }
 
 

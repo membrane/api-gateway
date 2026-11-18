@@ -15,6 +15,9 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.annot.yaml.parsing.support.BeanLifecycleInvoker;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -22,8 +25,26 @@ import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
 
 class RedisConnectorTest {
+
+    @Test
+    void connectionIsReturnedWhenSelectFails() throws Exception {
+        final var jedis = mock(Jedis.class);
+        doThrow(new JedisConnectionException("Connection reset")).when(jedis).select(anyInt());
+        final var pool = mock(JedisPool.class);
+        when(pool.getResource()).thenReturn(jedis);
+        final var connector = new RedisConnector();
+        final var poolField = RedisConnector.class.getDeclaredField("pool");
+        poolField.setAccessible(true);
+        poolField.set(connector, pool);
+
+        assertThrows(JedisConnectionException.class, connector::getJedisWithDb);
+        verify(jedis).close();
+    }
 
     @Test
     void yamlLifecycleCreatesPool() {
