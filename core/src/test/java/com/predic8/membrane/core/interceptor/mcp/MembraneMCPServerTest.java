@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -26,12 +28,16 @@ import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.mcp.*;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MembraneMCPServerTest {
@@ -207,11 +213,37 @@ class MembraneMCPServerTest {
         assertEquals("<binary body omitted>", exchange.path("response").path("body").asText());
     }
 
+    @Test
+    void getExchangesIncludesBodiesStoredInFiles(@TempDir Path dir) throws Exception {
+        FileExchangeStore store = new FileExchangeStore();
+        store.setDir(dir.toString());
+        store.init(null);
+        Exchange recorded = Request.post("/orders").header("Host", "shop.example.com").contentType("text/plain")
+                .body("order-body").buildExchange();
+        recorded.setProxy(new com.predic8.membrane.core.proxies.ServiceProxy(
+                new com.predic8.membrane.core.proxies.ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80));
+        store.snap(recorded, REQUEST);
+        recorded.setResponse(Response.ok().contentType("text/plain").body("response-body").build());
+        store.snap(recorded, RESPONSE);
+
+        MembraneMCPServer server = newServer(store);
+        String sessionId = readyHandshake(server);
+        Exchange exc = invoke(server, request(
+                2,
+                MCPToolsCall.METHOD,
+                Map.of("name", "getExchanges", "arguments", Map.of("limit", 1, "includeBodies", true))
+        ), sessionId);
+
+        JsonNode exchange = toolPayload(exc).path("exchanges").get(0);
+        assertEquals("order-body", exchange.path("request").path("body").asText());
+        assertEquals("response-body", exchange.path("response").path("body").asText());
+    }
+
     private static MembraneMCPServer newServer() {
         return newServer(new ForgetfulExchangeStore());
     }
 
-    private static MembraneMCPServer newServer(ForgetfulExchangeStore exchangeStore) {
+    private static MembraneMCPServer newServer(ExchangeStore exchangeStore) {
         TestRouter router = new TestRouter();
         router.setExchangeStore(exchangeStore);
         router.init();
