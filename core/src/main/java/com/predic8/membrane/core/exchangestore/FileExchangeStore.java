@@ -99,8 +99,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
     /**
      * The newest exchanges, oldest first. Guarded by {@code this}.
      */
-    // Ordered by ID: the oldest ID is evicted first and admission uses the same order.
-    private final TreeMap<Long, IndexEntry> index = new TreeMap<>();
+    private final Map<Long, IndexEntry> index = new HashMap<>();
+
+    /**
+     * The entries of {@link #index}, oldest exchange first. Eviction and admission use the order in which loading the
+     * index after a restart selects the files: by exchange time, then by the number in the file name. The ID is no
+     * substitute: it is assigned when the metadata is written first, which can happen in another order.
+     */
+    private final TreeSet<IndexEntry> byAge = new TreeSet<>(OLDEST_FIRST);
+
+    private static final Comparator<IndexEntry> OLDEST_FIRST = Comparator
+            .comparingLong((IndexEntry e) -> e.stored().time())
+            .thenComparingLong(e -> counterPart(e.file().getFileName().toString()))
+            .thenComparing(e -> e.file().getFileName().toString());
     private boolean indexLoaded;
     private long lastModification = System.currentTimeMillis();
 
@@ -338,8 +349,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
         final var cutoff = startOfFirstKeptDay(now);
         synchronized (this) {
-            if (index.values().removeIf(e -> e.stored().time() < cutoff))
+            if (byAge.removeIf(e -> e.stored().time() < cutoff)) {
+                index.values().removeIf(e -> e.stored().time() < cutoff);
                 modify();
+            }
         }
     }
 
@@ -391,7 +404,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         });
         loaded.stream().mapToLong(l -> l.stored().id()).max().ifPresent(max -> nextId.accumulateAndGet(max, Math::max));
         for (final var l : loaded.reversed())
-            add(l.stored().id() > 0 ? l.stored().id() : nextId.incrementAndGet(), l.stored(), l.file());
+            add(new IndexEntry(l.stored().id() > 0 ? l.stored().id() : nextId.incrementAndGet(), l.stored(), l.file()));
         modify();
     }
 
@@ -501,19 +514,21 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     private synchronized void addToIndex(long id, StoredExchange stored, Path file) {
-        if (index.containsKey(id))
-            index.put(id, new IndexEntry(id, stored, file));
-        else if (index.size() >= maxIndexed && id < index.firstEntry().getKey())
-            return; // a later snapshot of an exchange that was evicted already: it must not evict a newer one
-        else
-            add(id, stored, file);
+        final var entry = new IndexEntry(id, stored, file);
+        // An exchange older than all of a full index, e.g. a later snapshot of an evicted one, must not evict a newer one.
+        if (!index.containsKey(id) && index.size() >= maxIndexed && OLDEST_FIRST.compare(entry, byAge.first()) < 0)
+            return;
+        add(entry);
         modify();
     }
 
-    private void add(long id, StoredExchange stored, Path file) {
-        index.put(id, new IndexEntry(id, stored, file));
+    private void add(IndexEntry entry) {
+        final var previous = index.put(entry.id(), entry);
+        if (previous != null)
+            byAge.remove(previous);
+        byAge.add(entry);
         while (index.size() > maxIndexed)
-            index.pollFirstEntry();
+            index.remove(byAge.pollFirst().id());
     }
 
     /**
@@ -647,7 +662,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
             return new EmptyBody();
         final var offset = headersInFile ? bodyOffset(file) : 0;
         final var length = Files.size(file) - offset;
-        return length <= 0 ? new EmptyBody() : new Body(new LazyFileInputStream(file, offset), length);
+        return length <= 0 ? new EmptyBody() : new Body(new LazyFileInputStream(file, offset, length), length);
     }
 
     /**
@@ -680,9 +695,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (file == null)
             return null;
         final var offset = file.headersInFile() ? bodyOffset(file.path()) : 0;
-        if (Files.size(file.path()) <= offset)
+        final var length = Files.size(file.path()) - offset;
+        if (length <= 0)
             return null;
-        return new LazyFileInputStream(file.path(), offset);
+        return new LazyFileInputStream(file.path(), offset, length);
     }
 
     /**
@@ -712,17 +728,20 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     /**
-     * Opens the file on the first read and closes it at its end.
+     * Opens the file on the first read and closes it after {@code length} bytes, at its end, or on an error. A
+     * {@link Body} with a known length stops reading after that length, without reading to the end of the stream.
      */
     private static final class LazyFileInputStream extends InputStream {
         private final Path file;
         private final long offset;
+        private long remaining;
         private InputStream in;
         private boolean closed;
 
-        LazyFileInputStream(Path file, long offset) {
+        LazyFileInputStream(Path file, long offset, long length) {
             this.file = file;
             this.offset = offset;
+            this.remaining = length;
         }
 
         private InputStream in() throws IOException {
@@ -737,18 +756,31 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
         @Override
         public int read() throws IOException {
-            final var b = in().read();
-            if (b == -1)
-                close();
-            return b;
+            final var b = new byte[1];
+            return read(b, 0, 1) == -1 ? -1 : b[0] & 0xff;
         }
 
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            if (closed)
+            if (closed || remaining <= 0) {
+                close();
                 return -1;
-            final var n = in().read(b, off, len);
-            if (n == -1)
+            }
+            if (len == 0)
+                return 0;
+            final int n;
+            try {
+                n = in().read(b, off, (int) Math.min(len, remaining));
+            } catch (IOException | RuntimeException e) {
+                close();
+                throw e;
+            }
+            if (n == -1) {
+                close();
+                return -1;
+            }
+            remaining -= n;
+            if (remaining == 0)
                 close();
             return n;
         }
@@ -851,7 +883,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         ensureIndexLoaded();
         final List<IndexEntry> entries;
         synchronized (this) {
-            entries = new ArrayList<>(index.values());
+            entries = new ArrayList<>(byAge);
         }
         final var result = new ArrayList<AbstractExchange>(entries.size());
         for (final var entry : entries)

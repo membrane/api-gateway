@@ -338,6 +338,53 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void indexKeepsTheNewestExchangeAlsoIfAnOlderOneCompletesLater() throws Exception {
+        final var store = store();
+        store.setMaxIndexed(1);
+        final var older = exchange("/older");
+        Thread.sleep(5);
+        final var newer = exchange("/newer");
+        complete(store, newer);
+        complete(store, older);
+
+        assertEquals(List.of("/newer"), store.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+
+        final var reader = new FileExchangeStore();
+        reader.setDir(dir.toString());
+        reader.setMaxIndexed(1);
+        reader.init(null);
+        assertEquals(List.of("/newer"), reader.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
+    void readingABodyReleasesItsFile() throws Exception {
+        final var store = store();
+        snap(store, "/a", "x".repeat(100_000), 200);
+        final var exc = store.getExchangeById(store.getAllExchangesAsList().getFirst().getId());
+
+        assertEquals(100_000, exc.getRequest().getBodyAsStringDecoded().length());
+
+        try (var files = Files.walk(dir)) {
+            // fails on Windows while the file is still open
+            for (final var f : files.filter(f -> f.toString().endsWith("-Request.msg")).toList())
+                Files.delete(f);
+        }
+    }
+
+    private static Exchange exchange(String path) throws Exception {
+        final var exc = Request.post(path).contentType("text/plain").body("x").buildExchange();
+        exc.setProxy(new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80));
+        return exc;
+    }
+
+    private static void complete(FileExchangeStore store, Exchange exc) {
+        store.snap(exc, REQUEST);
+        exc.setResponse(Response.ok("y").build());
+        exc.setStatus(ExchangeState.COMPLETED);
+        store.snap(exc, RESPONSE);
+    }
+
+    @Test
     void indexingSkipsUnreadableFilesBeyondTheFirstBatch() throws Exception {
         final var writer = store();
         for (int i = 0; i < 5; i++)
