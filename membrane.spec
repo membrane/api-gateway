@@ -4,7 +4,7 @@
 %global logdir %{_var}/log/%{name}
 
 Name:             membrane
-Version:          7.8.2-SNAPSHOT
+Version:          7.9.0
 Release:          1%{?dist}
 URL:              https://github.com/membrane/api-gateway
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
