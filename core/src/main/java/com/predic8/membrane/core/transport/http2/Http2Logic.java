@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -628,6 +629,7 @@ public class Http2Logic {
         final var statusReceived = new boolean[1];
         final var regularFieldReceived = new boolean[1];
         final var pseudoHeaders = new HashSet<String>();
+        final var scheme = new String[1];
         // The whole block is decoded even if it gets rejected, so the HPACK dynamic table stays in sync.
         decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
             // Checked first: a malformed message is a protocol error, even if it is also too large.
@@ -669,7 +671,7 @@ public class Http2Logic {
             if (":method".equals(key) && request instanceof Request)
                 ((Request)request).setMethod(val);
             else if (":scheme".equals(key))
-                ; // ignore
+                scheme[0] = val; // Only to compare host fields, which come after it.
             else if (":authority".equals(key))
                 request.getHeader().setHost(val);
             else if (":path".equals(key) && request instanceof Request) {
@@ -685,6 +687,11 @@ public class Http2Logic {
                 ((Response) request).setStatusCode(Integer.parseInt(val));
                 statusReceived[0] = true;
                 log.debug("streamId=" + streamId1 + " status=" + val);
+            } else if ("host".equals(key) && request instanceof Request && header.getHost() != null) {
+                // :authority and host, or several host fields, must name the same host (RFC 9113 §8.3.1). Only one
+                // Host field is kept, so the gateway and an HTTP/1.1 backend, which may read another one, agree.
+                if (!normalizeAuthority(header.getHost(), scheme[0]).equals(normalizeAuthority(val, scheme[0])))
+                    malformedField[0] = true;
             } else
                 header.add(key, val);
         });
@@ -712,7 +719,9 @@ public class Http2Logic {
             log.info("Rejecting header block on stream {}: it is malformed (RFC 9113 §8.1.1).", streamId1);
             // Queued before anyone waiting on the stream is woken up, as they might reset it with another error code.
             // The block's END_STREAM is not applied: it could close the stream before the reset is sent, and the
-            // frame sender drops frames for closed streams. Writing the reset closes the stream instead.
+            // frame sender drops frames for closed streams. Writing the reset closes the stream instead. Until then,
+            // frames still in flight for the stream are dropped.
+            streamInfo.resetForStreamError();
             sender.send(streamId1, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId1, ERROR_PROTOCOL_ERROR)));
             if (isTrailer)
                 streamInfo.abortReceiving(new IOException((trailerWithoutEndStream
@@ -874,6 +883,31 @@ public class Http2Logic {
         log.info("Resetting stream {} from {}: the peer sent DATA after END_STREAM (RFC 9113 §6.1).", streamId, remoteAddr);
         streamInfo.resetForStreamError();
         sender.send(streamId, (encoder, peerSettings) -> List.of(RstStreamFrame.construct(streamId, ERROR_STREAM_CLOSED)));
+    }
+
+    /**
+     * The authority in lower case and without the scheme's default port, so that authorities naming the same host
+     * compare equal, e.g. "Example.com" and "example.com:443" for https (RFC 3986 §6.2.3). An empty port is dropped
+     * as well.
+     */
+    private static String normalizeAuthority(String authority, String scheme) {
+        final var lowerCase = authority.toLowerCase(Locale.ROOT);
+        final var colon = lowerCase.lastIndexOf(':');
+        // A colon inside the brackets of an IPv6 literal does not start a port.
+        if (colon < 0 || colon < lowerCase.lastIndexOf(']'))
+            return lowerCase;
+        final var port = lowerCase.substring(colon + 1);
+        if (port.isEmpty() || port.equals(defaultPort(scheme)))
+            return lowerCase.substring(0, colon);
+        return lowerCase;
+    }
+
+    private static String defaultPort(String scheme) {
+        if ("https".equalsIgnoreCase(scheme))
+            return "443";
+        if ("http".equalsIgnoreCase(scheme))
+            return "80";
+        return null;
     }
 
     /**
