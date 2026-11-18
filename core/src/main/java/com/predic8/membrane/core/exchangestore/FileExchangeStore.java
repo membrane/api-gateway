@@ -210,22 +210,37 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (base == null)
             return;
         ensureIndexLoaded();
-        final long id;
+        // The request and the response snapshot can write the metadata concurrently. Serialize them, so that an
+        // older snapshot, e.g. one taken before the request file existed, cannot overwrite a newer one.
         synchronized (exc) {
             final var existing = (Long) exc.getProperty(indexIdProperty);
-            id = existing != null ? existing : nextId.incrementAndGet();
+            final long id = existing != null ? existing : nextId.incrementAndGet();
             exc.setProperty(indexIdProperty, id);
+            final var stored = StoredExchange.of(id, exc, Path.of(base).getFileName().toString(), raw, saveBodyOnly,
+                    new File(base + "-" + REQUEST_SUFFIX).exists(), exc.getResponse() != null);
+            final var file = Path.of(base + "-" + EXCHANGE_SUFFIX);
+            try {
+                writeAtomically(file, om.writeValueAsString(stored));
+            } catch (IOException e) {
+                log.error("Could not write {}", file, e);
+                return;
+            }
+            addToIndex(id, stored, file);
         }
-        final var stored = StoredExchange.of(id, exc, Path.of(base).getFileName().toString(), raw, saveBodyOnly,
-                new File(base + "-" + REQUEST_SUFFIX).exists(), exc.getResponse() != null);
-        final var file = Path.of(base + "-" + EXCHANGE_SUFFIX);
+    }
+
+    /**
+     * Readers never see a partially written file.
+     */
+    private static void writeAtomically(Path file, String content) throws IOException {
+        final var tmp = file.resolveSibling(file.getFileName() + ".tmp");
+        Files.writeString(tmp, content, UTF_8);
         try {
-            Files.writeString(file, om.writeValueAsString(stored), UTF_8);
+            Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            log.error("Could not write {}", file, e);
-            return;
+            Files.deleteIfExists(tmp);
+            throw e;
         }
-        addToIndex(id, stored, file);
     }
 
     private StringBuilder getDirectoryNameBuffer(Calendar time) {
@@ -346,7 +361,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (dir == null || !Files.isDirectory(Path.of(dir)))
             return;
         final var loaded = new ArrayList<Loaded>();
-        visitNewestExchangeFiles(Path.of(dir), file -> {
+        visitNewestExchangeFiles(Path.of(dir), maxIndexed, file -> {
             try {
                 loaded.add(new Loaded(om.readValue(file.toFile(), StoredExchange.class), file));
             } catch (Exception e) {
@@ -366,7 +381,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
     static List<Path> newestExchangeFiles(Path root, int limit) {
         final var result = new ArrayList<Path>();
         if (limit > 0)
-            visitNewestExchangeFiles(root, f -> {
+            visitNewestExchangeFiles(root, limit, f -> {
                 result.add(f);
                 return result.size() < limit;
             });
@@ -375,25 +390,53 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
     /**
      * Passes the exchange files to {@code visitor}, newest first, until it returns false.
+     *
+     * @param batchSize how many files of a day are selected at once. A busy day can hold many more files than the
+     *                  visitor needs, so they are not all kept in memory and sorted. If the visitor wants more, e.g.
+     *                  because some files were unreadable, the next batch of older files is selected.
      */
-    private static void visitNewestExchangeFiles(Path root, java.util.function.Predicate<Path> visitor) {
+    private static void visitNewestExchangeFiles(Path root, int batchSize, java.util.function.Predicate<Path> visitor) {
         for (final var year : numericSubdirsDescending(root))
             for (final var month : numericSubdirsDescending(year))
                 for (final var day : numericSubdirsDescending(month)) {
-                    final List<Path> exchangeFiles;
-                    try (var files = Files.list(day)) {
-                        exchangeFiles = files
-                                .filter(f -> f.getFileName().toString().endsWith("-" + EXCHANGE_SUFFIX))
-                                .sorted(NEWEST_FIRST)
-                                .toList();
-                    } catch (IOException e) {
-                        log.warn("Could not list {}: {}", day, e.getMessage());
-                        continue;
+                    Path olderThan = null;
+                    while (true) {
+                        final List<Path> batch;
+                        try {
+                            batch = newestExchangeFilesOfDay(day, olderThan, batchSize);
+                        } catch (IOException e) {
+                            log.warn("Could not list {}: {}", day, e.getMessage());
+                            break;
+                        }
+                        for (final var f : batch)
+                            if (!visitor.test(f))
+                                return;
+                        if (batch.size() < batchSize)
+                            break;
+                        olderThan = batch.getLast();
                     }
-                    for (final var f : exchangeFiles)
-                        if (!visitor.test(f))
-                            return;
                 }
+    }
+
+    /**
+     * @param olderThan only files older than this one, or null for all
+     * @return at most {@code limit} exchange files of the directory, newest first
+     */
+    private static List<Path> newestExchangeFilesOfDay(Path day, Path olderThan, int limit) throws IOException {
+        // The head is the oldest of the selected files, so it is the one to drop when a newer file is found.
+        final var newest = new PriorityQueue<Path>(NEWEST_FIRST.reversed());
+        try (var files = Files.list(day)) {
+            files.filter(f -> f.getFileName().toString().endsWith("-" + EXCHANGE_SUFFIX))
+                    .filter(f -> olderThan == null || NEWEST_FIRST.compare(f, olderThan) > 0)
+                    .forEach(f -> {
+                        newest.add(f);
+                        if (newest.size() > limit)
+                            newest.poll();
+                    });
+        }
+        final var result = new ArrayList<>(newest);
+        result.sort(NEWEST_FIRST);
+        return result;
     }
 
     /**
@@ -402,6 +445,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
     static final Comparator<Path> NEWEST_FIRST = Comparator
             .comparing((Path f) -> timePart(f.getFileName().toString()))
             .thenComparingLong(f -> counterPart(f.getFileName().toString()))
+            .thenComparing(f -> f.getFileName().toString()) // a total order, also for unexpected names
             .reversed();
 
     private static String timePart(String name) {
@@ -436,6 +480,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
     private synchronized void addToIndex(long id, StoredExchange stored, Path file) {
         if (index.containsKey(id))
             index.put(id, new IndexEntry(id, stored, file)); // keeps the position of the entry
+        else if (index.size() >= maxIndexed && id < index.firstEntry().getKey())
+            return; // a later snapshot of an exchange that was evicted already: it must not evict a newer one
         else
             add(id, stored, file);
         modify();

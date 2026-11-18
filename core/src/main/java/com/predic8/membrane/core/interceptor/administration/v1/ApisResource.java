@@ -145,6 +145,8 @@ final class ApisResource {
     }
 
     Response transportFlow(ApiRequest req) {
+        if (ctx.isExcluded(req))
+            return ok(new TransportFlowResponse(List.of()));
         return ok(new TransportFlowResponse(List.of(
                 new InstanceFlow(ctx.instanceName(), FlowTree.of(ctx.router().getTransport().getFlow())))));
     }

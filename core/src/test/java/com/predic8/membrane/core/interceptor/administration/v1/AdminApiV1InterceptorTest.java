@@ -159,6 +159,8 @@ class AdminApiV1InterceptorTest {
         assertEquals(1, json(get(API + "/apis?instance=node-b,node-a")).get("total").asInt());
         assertEquals(0, json(get(API + "/system?instance=node-b")).get("instances").size());
         assertEquals(0, json(get(API + "/statistics/apis?instance=node-b")).get("apis").size());
+        assertEquals(0, json(get(API + "/transport/flow?instance=node-b")).get("instances").size());
+        assertEquals(1, json(get(API + "/transport/flow?instance=node-a")).get("instances").size());
     }
 
     @Test
@@ -176,6 +178,15 @@ class AdminApiV1InterceptorTest {
         final var res = sendUnvalidated(Request.post(API + "/balancers/node-a/Default/clusters")
                 .contentType("application/json").body("{\"name\":\"blue\"} {\"name\":\"red\"}"), false).getResponse();
         assertEquals(400, res.getStatusCode());
+    }
+
+    @Test
+    void rejectsLargeRequestBodies() throws Exception {
+        addBalancer();
+        final var name = "a".repeat(ApiJson.MAX_REQUEST_BODY_BYTES);
+        final var res = send(Request.post(API + "/balancers/node-a/Default/clusters")
+                .contentType("application/json").body("{\"name\":\"%s\"}".formatted(name)), false);
+        assertEquals(413, res.getStatusCode());
     }
 
     @Test
@@ -306,6 +317,28 @@ class AdminApiV1InterceptorTest {
         assertEquals("attachment", res.getHeader().getFirstValue(CONTENT_DISPOSITION));
         assertEquals("nosniff", res.getHeader().getFirstValue(X_CONTENT_TYPE_OPTIONS));
         assertEquals("sandbox", res.getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
+    }
+
+    @Test
+    void forgetfulStoreListsNoExchanges() throws Exception {
+        router.setExchangeStore(new ForgetfulExchangeStore());
+
+        assertEquals(0, json(get(API + "/exchanges")).get("total").asInt());
+        assertEquals(0, json(get(API + "/statistics/clients")).get("total").asInt());
+        final var capabilities = json(get(API + "/exchanges/store")).get("stores").get(0).get("capabilities");
+        capabilities.properties().forEach(e -> assertFalse(e.getValue().asBoolean(), e.getKey()));
+    }
+
+    @Test
+    void jsonBodyIsDownloadedWithItsContentType() throws Exception {
+        final var exc = Request.post("/foo").contentType("application/json").body("{\"a\":1}").buildExchange();
+        store.snap(exc, REQUEST);
+
+        final var res = get(API + "/exchanges/node-a/" + exc.getId() + "/request/body");
+
+        assertEquals(200, res.getStatusCode());
+        assertEquals("application/json", res.getHeader().getContentType());
+        assertEquals("{\"a\":1}", res.getBodyAsStringDecoded());
     }
 
     @Test

@@ -109,9 +109,13 @@ final class ExchangesResource {
             throw notImplemented("The exchange store (%s) cannot search bodies.".formatted(storeType(store)));
         waitForModification(req, store);
 
-        final var result = isListedInMemory(store)
-                ? queryInMemory(store, filter, sort, order, offset, limit)
-                : queryStore(store, filter, sort, order, offset, limit);
+        final ExchangeQueryResult result;
+        if (store instanceof ForgetfulExchangeStore)
+            result = new ExchangeQueryResult(List.of(), 0, store.getLastModified()); // records nothing
+        else if (isListedInMemory(store))
+            result = queryInMemory(store, filter, sort, order, offset, limit);
+        else
+            result = queryStore(store, filter, sort, order, offset, limit);
 
         return ok(new ExchangePage(result.getCount(), offset, limit,
                 List.of(new InstanceResult(ctx.instanceName(), "ok", null)),
@@ -369,7 +373,7 @@ final class ExchangesResource {
 
     static boolean isListedInMemory(ExchangeStore store) {
         return store instanceof LimitedMemoryExchangeStore || store instanceof MemoryExchangeStore
-               || store instanceof FileExchangeStore || store instanceof ForgetfulExchangeStore;
+               || store instanceof FileExchangeStore;
     }
 
     /**

@@ -136,7 +136,9 @@ final class MonitoringResource {
         final var limit = req.intParam("limit", 50, 1, 1000);
         if (ctx.isExcluded(req))
             return ok(new ClientPage(0, offset, limit, List.of()));
-        final var clients = new ArrayList<ClientStatistics>(ctx.router().getExchangeStore().getClientStatistics());
+        final var statistics = ctx.router().getExchangeStore().getClientStatistics();
+        // ForgetfulExchangeStore returns null
+        final var clients = statistics == null ? new ArrayList<ClientStatistics>() : new ArrayList<ClientStatistics>(statistics);
         clients.sort(desc ? CLIENT_SORTS.get(sort).reversed() : CLIENT_SORTS.get(sort));
         final var page = clients.stream().skip(offset).limit(limit)
                 .map(c -> new ClientStatistic(ctx.instanceName(), c.getClient(), c.getCount(),

@@ -649,7 +649,8 @@ paths:
             X-Content-Type-Options: { schema: { type: string, const: nosniff } }
             Content-Security-Policy: { schema: { type: string, const: sandbox } }
           content:
-            application/octet-stream:
+            # The recorded content type of the message, application/octet-stream if it has none.
+            '*/*':
               schema: { type: string, format: binary }
         '204': { description: "The message has no body." }
         '404': { $ref: '#/components/responses/NotFound' }

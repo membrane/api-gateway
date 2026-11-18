@@ -253,6 +253,51 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void repeatedSnapshotOfAnEvictedExchangeDoesNotEvictANewerOne() throws Exception {
+        final var store = store();
+        store.setMaxIndexed(1);
+        final var older = Request.post("/older").body("x").buildExchange();
+        older.setProxy(new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 2000, null), "localhost", 80));
+        store.snap(older, REQUEST);
+        older.setResponse(Response.ok("y").build());
+        store.snap(older, RESPONSE);
+        snap(store, "/newer", "x", 200);
+
+        older.setStatus(ExchangeState.COMPLETED);
+        store.snap(older, RESPONSE);
+
+        assertEquals(List.of("/newer"), store.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
+    void indexingSkipsUnreadableFilesBeyondTheFirstBatch() throws Exception {
+        final var writer = store();
+        for (int i = 0; i < 5; i++)
+            snap(writer, "/" + i, "x", 200);
+        try (var files = Files.walk(dir)) {
+            final var newestTwo = files.filter(f -> f.toString().endsWith("-Exchange.json"))
+                    .sorted(FileExchangeStore.NEWEST_FIRST).limit(2).toList();
+            for (final var f : newestTwo)
+                Files.writeString(f, "{\"trunc");
+        }
+
+        final var reader = new FileExchangeStore();
+        reader.setDir(dir.toString());
+        reader.setMaxIndexed(2);
+        reader.init(null);
+
+        assertEquals(List.of("/1", "/2"), reader.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
+    void writesNoTemporaryFilesThatOutliveASnapshot() throws Exception {
+        snap(store(), "/a", "x", 200);
+        try (var files = Files.walk(dir)) {
+            assertTrue(files.noneMatch(f -> f.toString().endsWith(".tmp")));
+        }
+    }
+
+    @Test
     void deletingOldFoldersRemovesTheWholeCutoffDayFromTheIndex() throws Exception {
         final var store = store();
         store.setMaxDays(1);
