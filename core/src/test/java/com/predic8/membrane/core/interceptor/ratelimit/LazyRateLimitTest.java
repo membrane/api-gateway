@@ -1,4 +1,4 @@
-/* Copyright 2023 predic8 GmbH, www.predic8.com
+/* Copyright 2015 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,13 +11,14 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+
 package com.predic8.membrane.core.interceptor.ratelimit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,32 +26,33 @@ import static org.junit.jupiter.api.Assertions.*;
 class LazyRateLimitTest {
 
     final int requestLimit = 100;
+    final Duration period = Duration.ofSeconds(10);
     LazyRateLimit limiter;
 
     @BeforeEach
     void setup() {
-        limiter = new LazyRateLimit(Duration.ofSeconds(10), requestLimit);
+        limiter = new LazyRateLimit();
     }
 
     @Test
     void countRequest() {
-        final var counts = IntStream.range(0, limiter.getRequestLimit())
+        final var counts = IntStream.range(0, requestLimit)
             .parallel()
-            .map(i -> limiter.countRequest("foo").count())
+            .map(i -> limiter.countRequest("foo", period).count())
             .sorted()
             .toArray();
 
         assertArrayEquals(IntStream.rangeClosed(1, requestLimit).toArray(), counts);
-        assertEquals(requestLimit + 1, limiter.countRequest("foo").count());
-        assertEquals(1, limiter.countRequest("bar").count());
+        assertEquals(requestLimit + 1, limiter.countRequest("foo", period).count());
+        assertEquals(1, limiter.countRequest("bar", period).count());
     }
 
     @Test
     void countRequestReportsEndOfPeriod() {
-        final var before = LocalDateTime.now();
-        final var resetAt = limiter.countRequest("foo").resetAt();
+        final var before = Instant.now();
+        final var resetAt = limiter.countRequest("foo", period).resetAt();
 
         assertTrue(resetAt.isAfter(before));
-        assertFalse(resetAt.isAfter(LocalDateTime.now().plusSeconds(10)));
+        assertFalse(resetAt.isAfter(Instant.now().plusSeconds(10)));
     }
 }

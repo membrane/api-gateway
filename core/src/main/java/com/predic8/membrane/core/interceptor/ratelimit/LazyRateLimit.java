@@ -15,44 +15,31 @@
 package com.predic8.membrane.core.interceptor.ratelimit;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class LazyRateLimit extends RateLimitStrategy {
+/**
+ * Counts in memory, so every Membrane instance counts on its own. All keys share one period.
+ */
+public class LazyRateLimit implements RateLimitStore {
 
 	private final Object lock = new Object();
+	// The first request starts the first period
 	@GuardedBy("lock")
-	private java.time.LocalDateTime nextCleanup = LocalDateTime.now();
+	private Instant nextCleanup = Instant.MIN;
 	public final ConcurrentHashMap<String, AtomicInteger> requestCounterFromKey = new ConcurrentHashMap<>();
 
-	public LazyRateLimit(java.time.Duration requestLimitDuration, int requestLimit) {
-		this.requestLimitDuration = requestLimitDuration;
-		this.requestLimit = requestLimit;
-		incrementNextCleanupTime();
-	}
-
 	@Override
-	public RequestCount countRequest(String key) {
+	public RequestCount countRequest(String key, Duration period) {
 		// Counting under the lock that starts a new period keeps the count and its end in the same period
 		synchronized (lock) {
-			if (java.time.LocalDateTime.now().isAfter(nextCleanup)) {
+			if (Instant.now().isAfter(nextCleanup)) {
 				requestCounterFromKey.clear();
-				incrementNextCleanupTime();
+				nextCleanup = Instant.now().plus(period);
 			}
 			return new RequestCount(requestCounterFromKey.computeIfAbsent(key, s -> new AtomicInteger()).incrementAndGet(), nextCleanup);
 		}
-	}
-
-	private void incrementNextCleanupTime() {
-		synchronized (lock) {
-			nextCleanup = java.time.LocalDateTime.now().plus(requestLimitDuration);
-		}
-	}
-
-	@Override
-	public void updateAfterConfigChange() {
-		requestCounterFromKey.clear();
-		incrementNextCleanupTime();
 	}
 }
