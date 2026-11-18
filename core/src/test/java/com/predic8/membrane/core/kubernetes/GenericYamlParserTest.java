@@ -119,6 +119,9 @@ public class GenericYamlParserTest {
         }};
         TestBeanRegistry memReg = new TestBeanRegistry().with("mem", mem);
 
+        RedisConnector redis = new RedisConnector();
+        TestBeanRegistry redisReg = new TestBeanRegistry().with("redis", redis);
+
         Target target = new Target() {{
             setUrl("https://ref.example");
         }};
@@ -275,6 +278,29 @@ public class GenericYamlParserTest {
                             OAuth2Resource2Interceptor i = (OAuth2Resource2Interceptor) a.getFlow().getFirst();
                             MemcachedOriginalExchangeStore store = (MemcachedOriginalExchangeStore) i.getOriginalExchangeStore();
                             assertSame(mem, store.getConnector());
+                        }
+                ),
+
+                ok(
+                        "rateLimiter_redis_store_ref_injected",
+                        """
+                        flow:
+                          - rateLimiter:
+                              requestLimit: 10
+                              failOpen: false
+                              redisRateLimitStore:
+                                connector: redis
+                                prefix: orders
+                        """,
+                        redisReg,
+                        a -> {
+                            RateLimitInterceptor i = (RateLimitInterceptor) a.getFlow().getFirst();
+                            RedisRateLimitStore store = (RedisRateLimitStore) i.getStore();
+                            assertAll(
+                                    () -> assertSame(redis, store.getConnector()),
+                                    () -> assertEquals("orders", store.getPrefix()),
+                                    () -> assertFalse(i.isFailOpen())
+                            );
                         }
                 ),
                 ok(
