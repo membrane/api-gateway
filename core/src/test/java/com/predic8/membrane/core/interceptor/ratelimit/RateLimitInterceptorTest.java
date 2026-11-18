@@ -25,6 +25,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwt.JwtClaims;
@@ -366,6 +367,16 @@ public class RateLimitInterceptorTest {
 		}
 
 		assertEquals(List.of(CONTINUE, CONTINUE, CONTINUE, RETURN), outcomes);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"PT0S", "PT0.0001S", "-PT1M"})
+	void durationBelowOneMillisecondIsRejected(String duration) {
+		final var limiter = new RateLimitInterceptor();
+		limiter.setRequestLimitDuration(duration);
+		limiter.setStore(new RedisRateLimitStore());
+
+		assertThrows(ConfigurationException.class, () -> limiter.init(new DummyTestRouter()));
 	}
 
 	@Test

@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInte
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitStore.RequestCount;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,6 +132,8 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     @Override
     public void init() {
         super.init();
+        if (requestLimitDuration.compareTo(Duration.ofMillis(1)) < 0)
+            throw new ConfigurationException("requestLimitDuration must be at least 1 millisecond, but is %s.".formatted(requestLimitDuration));
         if (store == null)
             store = new LazyRateLimit();
         store.init(router);
