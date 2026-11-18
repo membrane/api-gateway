@@ -24,12 +24,18 @@ Membrane now uses Jedis 8.
   connect. Set `host` to a name in the certificate, or issue a certificate for the `host`.
 - `redis` with `useSentinels: true` honors `ssl: true`: the connections to the Sentinels and to the
   master use TLS. Before, `ssl` was ignored there. If your Sentinels or master don't speak TLS,
-  remove `ssl: true`. If they do, the master's certificate must name the address the Sentinels
-  announce for it. That is an IP address unless Sentinel is configured with:
+  remove `ssl: true`. If they do, the certificate of every Redis instance that can become master
+  must name the address the Sentinels announce for it. Sentinel announces IP addresses unless it
+  monitors the master by host name and the replicas announce host names:
 
   ```
+  # sentinel.conf
   sentinel resolve-hostnames yes
   sentinel announce-hostnames yes
+  sentinel monitor mymaster redis-1.example.com 6379 2
+
+  # redis.conf of each replica
+  replica-announce-ip redis-2.example.com
   ```
 
 ## `rateLimiter` sets the quota headers
