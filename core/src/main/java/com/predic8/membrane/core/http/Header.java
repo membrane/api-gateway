@@ -349,6 +349,19 @@ public class Header {
     }
 
     /**
+     * Removes the fields named {@code name}, ignoring case, and those that only differ from it by "_" in place of
+     * "-" or the other way round, like "X_User" for "X-User".
+     * <p>
+     * CGI (RFC 3875 4.1.18), and following it PHP and many WSGI servers, turn both spellings into the same
+     * variable. Before Membrane sets a header that a backend trusts, such as the identity of a logged-in user, it
+     * must remove every spelling a client could have sent, or the backend may see the client's value.
+     */
+    public void removeFieldsAndUnderscoreAliases(String name) {
+        final var canonical = name.replace('_', '-');
+        fields.removeIf(hf -> hf.getHeaderName().toString().replace('_', '-').equalsIgnoreCase(canonical));
+    }
+
+    /**
      * Retrieves all header fields whose name matches the specified header name.
      *
      * @param headerName the header name used to filter header fields
