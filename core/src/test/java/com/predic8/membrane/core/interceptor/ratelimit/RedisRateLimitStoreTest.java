@@ -51,7 +51,7 @@ class RedisRateLimitStoreTest {
 
 	@Test
 	void countsInKeyOfAlignedPeriodThatExpiresAtItsEnd() {
-		final var key = "membrane:ratelimit:60000:%d:%s".formatted(PERIOD_START, sha256Hex("ip:192.0.2.1"));
+		final var key = "membrane:ratelimit:60000:" + PERIOD_START + ":" + sha256Hex("ip:192.0.2.1");
 		final var count = countIs(7L);
 		when(transaction.incr(key)).thenReturn(count);
 
@@ -69,7 +69,7 @@ class RedisRateLimitStoreTest {
 	@Test
 	void prefixSeparatesLimiters() {
 		store.setPrefix("orders");
-		final var key = "orders:60000:%d:%s".formatted(PERIOD_START, sha256Hex("key:customer-a"));
+		final var key = "orders:60000:" + PERIOD_START + ":" + sha256Hex("key:customer-a");
 		final var count = countIs(1L);
 		when(transaction.incr(key)).thenReturn(count);
 
