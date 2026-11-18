@@ -58,7 +58,7 @@ class RedisRateLimitStoreTest {
 		final var requestCount = store.countRequest("ip:192.0.2.1", ofMinutes(1));
 
 		assertEquals(7, requestCount.count());
-		assertEquals(LocalDateTime.ofInstant(Instant.ofEpochMilli(PERIOD_END), ZoneId.systemDefault()), requestCount.resetAt());
+		assertEquals(Instant.ofEpochMilli(PERIOD_END), requestCount.resetAt());
 		final var inOrder = inOrder(transaction, jedis);
 		inOrder.verify(transaction).incr(key);
 		inOrder.verify(transaction).pexpireAt(key, PERIOD_END);

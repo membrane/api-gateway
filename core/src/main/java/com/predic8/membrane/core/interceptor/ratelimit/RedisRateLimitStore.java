@@ -21,6 +21,7 @@ import redis.clients.jedis.exceptions.*;
 import java.time.*;
 import java.util.*;
 
+import static java.time.Instant.ofEpochMilli;
 import static org.apache.commons.codec.digest.DigestUtils.sha256Hex;
 
 /**
@@ -72,7 +73,7 @@ public class RedisRateLimitStore implements RateLimitStore {
 		try {
 			// The key may be a credential, e.g. an API key, which must not be readable in Redis
 			final var count = increment(String.format(Locale.ROOT, "%s:%d:%d:%s", prefix, periodMillis, periodStart, sha256Hex(key)), periodEnd);
-			return new RequestCount((int) Math.min(count, Integer.MAX_VALUE), LocalDateTime.ofInstant(Instant.ofEpochMilli(periodEnd), ZoneId.systemDefault()));
+			return new RequestCount((int) Math.min(count, Integer.MAX_VALUE), ofEpochMilli(periodEnd));
 		} catch (JedisException e) {
 			throw new RateLimitStoreException("Cannot count request in Redis.", e);
 		}

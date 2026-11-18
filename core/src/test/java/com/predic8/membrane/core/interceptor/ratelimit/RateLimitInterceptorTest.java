@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -113,11 +113,11 @@ public class RateLimitInterceptorTest {
 
 		// LazyRateLimit currently shares one reset time across all keys, masking issue #3387.
 		// Keep its real request counting, but distinguish the API-key and remote-IP reset times.
-		final var keyDeadline = LocalDateTime.now().plusSeconds(42);
+		final var keyDeadline = Instant.now().plusSeconds(42);
 		interceptor.setStore(new LazyRateLimit() {
 			@Override
 			public RequestCount countRequest(String key, Duration period) {
-				return new RequestCount(super.countRequest(key, period).count(), "key:customer-a".equals(key) ? keyDeadline : LocalDateTime.now());
+				return new RequestCount(super.countRequest(key, period).count(), "key:customer-a".equals(key) ? keyDeadline : Instant.now());
 			}
 		});
 
@@ -236,7 +236,7 @@ public class RateLimitInterceptorTest {
 	void resetTimeIsCountedDownWhileTheBackendIsCalled() throws Exception {
 		final var router = new DummyTestRouter();
 		final var limiter = limiter(router, 3);
-		final var deadline = LocalDateTime.now().plusSeconds(10);
+		final var deadline = Instant.now().plusSeconds(10);
 		limiter.setStore(new LazyRateLimit() {
 			@Override
 			public RequestCount countRequest(String key, Duration period) {

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,10 +49,10 @@ class LazyRateLimitTest {
 
     @Test
     void countRequestReportsEndOfPeriod() {
-        final var before = LocalDateTime.now();
+        final var before = Instant.now();
         final var resetAt = limiter.countRequest("foo", period).resetAt();
 
         assertTrue(resetAt.isAfter(before));
-        assertFalse(resetAt.isAfter(LocalDateTime.now().plusSeconds(10)));
+        assertFalse(resetAt.isAfter(Instant.now().plusSeconds(10)));
     }
 }

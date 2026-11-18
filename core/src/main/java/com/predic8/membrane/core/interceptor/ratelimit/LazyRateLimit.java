@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.ratelimit;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,16 +28,16 @@ public class LazyRateLimit implements RateLimitStore {
 	private final Object lock = new Object();
 	// The first request starts the first period
 	@GuardedBy("lock")
-	private LocalDateTime nextCleanup = LocalDateTime.MIN;
+	private Instant nextCleanup = Instant.MIN;
 	public final ConcurrentHashMap<String, AtomicInteger> requestCounterFromKey = new ConcurrentHashMap<>();
 
 	@Override
 	public RequestCount countRequest(String key, Duration period) {
 		// Counting under the lock that starts a new period keeps the count and its end in the same period
 		synchronized (lock) {
-			if (LocalDateTime.now().isAfter(nextCleanup)) {
+			if (Instant.now().isAfter(nextCleanup)) {
 				requestCounterFromKey.clear();
-				nextCleanup = LocalDateTime.now().plus(period);
+				nextCleanup = Instant.now().plus(period);
 			}
 			return new RequestCount(requestCounterFromKey.computeIfAbsent(key, s -> new AtomicInteger()).incrementAndGet(), nextCleanup);
 		}

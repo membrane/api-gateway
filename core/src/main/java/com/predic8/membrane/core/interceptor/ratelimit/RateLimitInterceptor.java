@@ -29,8 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -233,8 +232,8 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     /**
      * @return seconds from now until the deadline, 0 if it has passed
      */
-    private static String secondsUntil(LocalDateTime deadline) {
-        return Long.toString(Math.max(0, deadline.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)));
+    private static String secondsUntil(Instant deadline) {
+        return Long.toString(Math.max(0, deadline.getEpochSecond() - Instant.now().getEpochSecond()));
     }
 
     private static void setQuotaHeaders(Exchange exc, Quota quota, String reset) {
@@ -248,7 +247,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     /**
      * @param resetAt when the counts are reset. The seconds until then are computed when the headers are written.
      */
-    private record Quota(int limit, int remaining, LocalDateTime resetAt, String duration) {
+    private record Quota(int limit, int remaining, Instant resetAt, String duration) {
     }
 
     /**

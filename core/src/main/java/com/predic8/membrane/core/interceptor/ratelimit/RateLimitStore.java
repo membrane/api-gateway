@@ -40,6 +40,6 @@ public interface RateLimitStore {
 	 * @param count   number of requests for the key in the period, including the counted one
 	 * @param resetAt end of the period the request was counted in
 	 */
-	record RequestCount(int count, LocalDateTime resetAt) {
+	record RequestCount(int count, Instant resetAt) {
 	}
 }
