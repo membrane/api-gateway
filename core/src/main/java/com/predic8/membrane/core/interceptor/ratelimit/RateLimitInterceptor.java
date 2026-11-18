@@ -476,8 +476,9 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @description What to do with a request when the store cannot be reached, e.g. because Redis is down: let it
-     * pass without counting it (true), or reject it with 503 Service Unavailable (false).
+     * @description What to do with a request when the store cannot confirm the count, e.g. because Redis is down or
+     * does not answer in time: let it pass without checking the limit (true), or reject it with 503 Service
+     * Unavailable (false). The request may still have been counted, e.g. if Redis counted it but the answer was lost.
      * @default true
      */
     @MCAttribute
