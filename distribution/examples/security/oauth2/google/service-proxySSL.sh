@@ -24,7 +24,7 @@ homeSet() {
     CLASSPATH="$MEMBRANE_HOME/conf:$MEMBRANE_HOME/lib/*"
     export CLASSPATH
     echo "Membrane Router running..."
-    java -classpath "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxiesSSL.xml
+    java -XX:-UseBASE64Intrinsics -classpath "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxiesSSL.xml
 }
 
 terminate() {
