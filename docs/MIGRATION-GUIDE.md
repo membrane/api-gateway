@@ -19,6 +19,19 @@ rateLimiter:
 
 Otherwise requests counted by client address are all counted by the address of that proxy.
 
+## `rateLimiter`: `trustedProxyCount` includes the connecting proxy
+
+`trustedProxyCount` counts every trusted proxy, including the one that connects to Membrane, so it
+is 1 for a single load balancer. With 0, `X-Forwarded-For` is ignored and requests are counted by
+the address of the connection. Before, the count excluded the connecting proxy. If you configured it
+that way, add 1:
+
+```yaml
+rateLimiter:
+  trustForwardedFor: true
+  trustedProxyCount: 1   # a single load balancer, before: 0
+```
+
 # Migrate to Membrane 7.8.1
 
 See `distribution/release-notes/7.8.1.md` for the complete list of changes.

@@ -216,16 +216,18 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
 
     private String getClientIPFromTrustedProxyCount(Exchange exc, List<String> xForwardedFor) {
         log.debug("Using trustedProxyCount of {}", trustedProxyCount);
-        if (xForwardedFor.size() <= trustedProxyCount) {
-            log.info("Forwarded-For entries {} do not match trusted proxy count {}", xForwardedFor, trustedProxyCount);
+        // The connecting proxy is one of the trusted proxies, but its address is not in the list.
+        final var entriesOfTrustedProxies = trustedProxyCount - 1;
+        if (entriesOfTrustedProxies < 0 || xForwardedFor.size() <= entriesOfTrustedProxies) {
+            log.debug("Forwarded-For entries {} do not match trusted proxy count {}", xForwardedFor, trustedProxyCount);
             return useRemoteIpAddress(exc);
         }
         // e.g.:
-        // 3 entries in X-Forwarded-For = a.b.c
-        // trustedProxyCount = 2
-        // 3 - 2 - 1 = 0 = First entry from the left
+        // X-Forwarded-For = a, b, c (the address of the connecting proxy is already removed)
+        // trustedProxyCount = 2: the connecting proxy and the one that added c
+        // 3 - 1 - 1 = 1 = b
         // See tests
-        return getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyCount);
+        return getOneBeforeTrustworthyProxy(xForwardedFor, entriesOfTrustedProxies);
     }
 
     /**
@@ -362,10 +364,12 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     /**
-     * @description Number of trusted proxy servers and loadbalancers. Used to evaluate the X-Forwarded-For header.
+     * @description Number of trusted proxy servers and loadbalancers, including the one that connects to Membrane,
+     * e.g. 1 for a single loadbalancer. Used to evaluate the X-Forwarded-For header: the client is the entry before
+     * the ones added by the trusted proxies. With 0, the header is ignored and the address of the connection is used.
      * If both <pre>trustedProxyList</pre> and <pre>trustedProxyCount</pre> is specified, the trustedProxyList is used to
      * determine the client ip address. To make this configuration active set <pre>isTrustForwardedFor</pre> to true.
-     * @default 0
+     * @default not set
      */
     @MCAttribute
     public void setTrustedProxyCount(int trustedProxyCount) {

@@ -454,6 +454,7 @@ public class RateLimitInterceptorTest {
 		Exchange exc = new Request.Builder().buildExchange();
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "171.1.1.2");
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "10.1.1.1");
+		exc.setRemoteAddrIp("10.1.1.1");
 
 		assertEquals("171.1.1.2",interceptor.getClientIp(exc));
 	}
@@ -466,6 +467,7 @@ public class RateLimitInterceptorTest {
 
 		Exchange exc = new Request.Builder().buildExchange();
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "192.1.1.2,	10.1.1.1, 172.0.0.1");
+		exc.setRemoteAddrIp("172.0.0.1");
 
 		assertEquals("192.1.1.2",interceptor.getClientIp(exc));
 	}
@@ -478,8 +480,52 @@ public class RateLimitInterceptorTest {
 
 		Exchange exc = new Request.Builder().buildExchange();
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "192.1.1.2,	1.1.1.2,	10.1.1.1, 172.0.0.1");
+		exc.setRemoteAddrIp("172.0.0.1");
 
 		assertEquals("192.1.1.2",interceptor.getClientIp(exc));
+	}
+
+	/**
+	 * One load balancer (10.0.0.2) in front of the gateway. The header is shown as the interceptor sees it, with the
+	 * peer address appended by the gateway.
+	 */
+	@Test
+	void getClientIpTrustedProxyCountOfOneUsesEntryOfTheLoadBalancer() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyCount(1);
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "203.0.113.5, 10.0.0.2").buildExchange();
+		exc.setRemoteAddrIp("10.0.0.2");
+
+		assertEquals("203.0.113.5", interceptor.getClientIp(exc));
+	}
+
+	/**
+	 * Entries left of the one the load balancer added are not evaluated.
+	 */
+	@Test
+	void getClientIpTrustedProxyCountOfOneIgnoresEntriesBeforeTheLoadBalancer() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyCount(1);
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "198.51.100.7, 203.0.113.5, 10.0.0.2").buildExchange();
+		exc.setRemoteAddrIp("10.0.0.2");
+
+		assertEquals("203.0.113.5", interceptor.getClientIp(exc));
+	}
+
+	@Test
+	void getClientIpTrustedProxyCountOfZeroUsesThePeer() {
+		final var interceptor = new RateLimitInterceptor();
+		interceptor.setTrustedProxyCount(0);
+		interceptor.setTrustForwardedFor(true);
+
+		final var exc = new Request.Builder().header(X_FORWARDED_FOR, "203.0.113.5, 10.0.0.2").buildExchange();
+		exc.setRemoteAddrIp("10.0.0.2");
+
+		assertEquals("10.0.0.2", interceptor.getClientIp(exc));
 	}
 
 
