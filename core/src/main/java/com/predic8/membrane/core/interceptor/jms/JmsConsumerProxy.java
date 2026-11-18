@@ -48,6 +48,9 @@ import static com.predic8.membrane.core.util.ExtensionLoader.load;
  * redelivery policy, and finally moves it to its dead-letter queue. A message can be delivered more than once, so the
  * target should handle duplicates, e.g. by the message id passed in a header.</p>
  *
+ * <p>A redirect (3xx) counts as delivered and the message is acknowledged, but Membrane does not follow it, so the
+ * message does not reach the new location. Use the final URL of the backend as the target.</p>
+ *
  * <p>The request carries the message body and its Content-Type. The header fields and properties of the message are
  * not passed to the target. The flow reads them from the exchange property <code>jms</code>, e.g.
  * <code>${property.jms.messageId}</code>, <code>${property.jms.correlationId}</code>,
