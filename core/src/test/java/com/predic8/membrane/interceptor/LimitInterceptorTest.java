@@ -158,7 +158,8 @@ class LimitInterceptorTest {
 
         final var large = Request.post("/foo").body(zstd("a".repeat(1001))).header("Content-Encoding", "zstd").build();
         limit.handleRequest(exchangeOf(large));
-        assertThrows(Exception.class, large::readBody);
+        final var e = assertThrows(ReadingBodyException.class, large::readBody);
+        assertEquals("Message body too large.", e.getCause().getMessage());
     }
 
     private static byte[] zstd(String content) throws IOException {

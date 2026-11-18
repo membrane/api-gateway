@@ -74,8 +74,44 @@ class ZstdDecodingInputStreamTest {
     void acceptsWindowOfEightMegabytes() throws Exception {
         // Window_Descriptor: exponent 13 (2^23), mantissa 0
         assertEquals("abc", new String(decode(frame(0x00, new byte[]{13 << 3}, rawBlock("abc"))), UTF_8));
-        // Single segment, 4-byte Frame_Content_Size: 2^23
-        assertEquals("abc", new String(decode(frame(0xa0, new byte[]{0, 0, (byte) 0x80, 0}, rawBlock("abc"))), UTF_8));
+        // Single segment, 4-byte Frame_Content_Size: 2^23, filled by 64 RLE blocks of 128 KiB
+        final var content = new byte[1 << 23];
+        Arrays.fill(content, (byte) 'x');
+        assertArrayEquals(content, decode(frame(0xa0, new byte[]{0, 0, (byte) 0x80, 0}, rleBlocks(64))));
+    }
+
+    /**
+     * RFC 8878 section 3.1.1.1.1: a decoder must reject a frame whose Reserved_Bit is set.
+     */
+    @Test
+    void rejectsReservedBitInFrameHeader() {
+        final var e = assertThrows(IOException.class, decoding(frame(0x08, new byte[]{0}, rawBlock("abc"))));
+        assertEquals("Reserved bit set in zstd frame header.", e.getMessage());
+    }
+
+    /**
+     * RFC 8878 section 3.1.1.2: Block_Maximum_Size is the smaller of the window size and 128 KiB.
+     */
+    @Test
+    void acceptsBlocksOfMaximumSize() throws Exception {
+        // Window_Descriptor 0: 1 KiB window
+        assertEquals(1024, decode(frame(0x00, new byte[]{0}, concat(blockHeader(true, 0, 1024), new byte[1024]))).length);
+        // 8 MiB window: 128 KiB
+        assertEquals(128 * 1024, decode(frame(0x00, new byte[]{13 << 3}, rleBlocks(1))).length);
+        // Single segment, Frame_Content_Size 3
+        assertEquals("abc", new String(decode(frame(0x20, new byte[]{3}, rawBlock("abc"))), UTF_8));
+    }
+
+    @Test
+    void rejectsBlocksLargerThanMaximumSize() {
+        assertBlockTooLarge(frame(0x00, new byte[]{0}, concat(blockHeader(true, 0, 1025), new byte[1025])));
+        assertBlockTooLarge(frame(0x00, new byte[]{13 << 3}, concat(blockHeader(true, 1, 128 * 1024 + 1), new byte[]{'x'})));
+        assertBlockTooLarge(frame(0x20, new byte[]{3}, rawBlock("abcd")));
+    }
+
+    private static void assertBlockTooLarge(byte[] compressed) {
+        final var e = assertThrows(IOException.class, decoding(compressed));
+        assertTrue(e.getMessage().startsWith("zstd block of "), e.getMessage());
     }
 
     /**
@@ -155,14 +191,22 @@ class ZstdDecodingInputStreamTest {
         for (final var error : new Error[]{
                 new ExceptionInInitializerError(new UnsupportedOperationException("objectFieldOffset")),
                 new NoClassDefFoundError("Could not initialize class io.airlift.compress.zstd.UnsafeUtil")}) {
-            final var e = assertThrows(IOException.class, () -> {
-                try (final var in = new ZstdDecodingInputStream(new ByteArrayInputStream(zstd("abc")), compressed -> failingStream(error))) {
-                    in.readAllBytes();
-                }
-            });
-            assertSame(error, e.getCause());
-            assertTrue(e.getMessage().contains("--sun-misc-unsafe-memory-access"), e.getMessage());
+            assertUnusableDecoderReported(error, assertThrows(IOException.class, () -> unusableDecoder(error).read()));
+            assertUnusableDecoderReported(error, assertThrows(IOException.class, () -> unusableDecoder(error).read(new byte[10], 0, 10)));
         }
+    }
+
+    /**
+     * The injected decoder never reads the compressed bytes, so the test needs no zstd encoder,
+     * which would fail on such a JVM as well.
+     */
+    private static ZstdDecodingInputStream unusableDecoder(Error error) {
+        return new ZstdDecodingInputStream(new ByteArrayInputStream(REFERENCE_FRAME), compressed -> failingStream(error));
+    }
+
+    private static void assertUnusableDecoderReported(Error cause, IOException e) {
+        assertSame(cause, e.getCause());
+        assertTrue(e.getMessage().contains("--sun-misc-unsafe-memory-access"), e.getMessage());
     }
 
     private static InputStream failingStream(Error error) {

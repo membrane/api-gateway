@@ -34,9 +34,10 @@ import java.util.function.Function;
  * window of gigabytes. The window size is therefore checked here, for every frame, before the
  * decoder reads the frame header.
  * <p>
- * The decoder hands out decoded bytes once its window buffer is full or the frame ends, so it
- * reads up to one window of input ahead: at most 8 MB of decoded content is held per stream
- * before a consumer, e.g. <code>limit</code>, sees the first byte.
+ * The decoder hands out decoded bytes once its window buffer is full or the frame ends, and it may
+ * decode one more block before that. So it reads ahead up to one window plus one block: at most
+ * 8 MB plus 128 KB of decoded content is held per stream before a consumer, e.g. <code>limit</code>,
+ * sees the first byte. The decoder does not check the block size either, so it is checked here too.
  * <p>
  * The decoder throws unchecked exceptions for malformed input. They are rethrown as
  * {@link IOException}, so they are handled like a failure of the other content codings. So is a
@@ -117,6 +118,8 @@ final class ZstdDecodingInputStream extends InputStream {
         private static final int FRAME_MAGIC = 0xFD2FB528;
         private static final int SKIPPABLE_FRAME_MAGIC = 0x184D2A50;
         private static final int SKIPPABLE_FRAME_MAGIC_MASK = 0xFFFFFFF0;
+        /** RFC 8878 section 3.1.1.2: a block is at most 128 KB, and never larger than the window. */
+        private static final long MAX_BLOCK_SIZE = 128 * 1024;
 
         private final InputStream in;
 
@@ -128,6 +131,8 @@ final class ZstdDecodingInputStream extends InputStream {
         /** Whether the next header is a block header rather than the start of a frame. */
         private boolean inFrame;
         private boolean contentChecksum;
+        /** Block_Maximum_Size of the current frame. */
+        private long blockMaximumSize;
 
         FrameChecker(InputStream in) {
             this.in = in;
@@ -190,6 +195,9 @@ final class ZstdDecodingInputStream extends InputStream {
          */
         private void readFrameHeader(byte[] magicBytes) throws IOException {
             final int descriptor = readFully(1)[0] & 0xff;
+            // RFC 8878 section 3.1.1.1.1: a decoder must reject a set Reserved_Bit. The decoder ignores it.
+            if ((descriptor & 0x08) != 0)
+                throw new IOException("Reserved bit set in zstd frame header.");
             final boolean singleSegment = (descriptor & 0x20) != 0;
             final int dictionaryIdSize = switch (descriptor & 0x03) {
                 case 0 -> 0;
@@ -214,6 +222,7 @@ final class ZstdDecodingInputStream extends InputStream {
                 throw new IOException("zstd frame needs a window of %s bytes, more than the %d bytes allowed for the zstd content coding."
                         .formatted(Long.toUnsignedString(windowSize), MAX_WINDOW_SIZE));
 
+            blockMaximumSize = Math.min(windowSize, MAX_BLOCK_SIZE);
             contentChecksum = (descriptor & 0x04) != 0;
             inFrame = true;
             header = forwardedFrameHeader(magicBytes, descriptor, rest, windowDescriptorSize, dictionaryIdSize);
@@ -269,6 +278,9 @@ final class ZstdDecodingInputStream extends InputStream {
                 case 1 -> 1;            // RLE: the byte to repeat
                 default -> throw new IOException("Reserved zstd block type.");
             };
+            if (blockSize > blockMaximumSize)
+                throw new IOException("zstd block of %d bytes is larger than the %d bytes allowed in this frame."
+                        .formatted(blockSize, blockMaximumSize));
             if (lastBlock) {
                 if (contentChecksum)
                     passThrough += 4;
