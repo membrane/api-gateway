@@ -7,7 +7,7 @@ import { statusClass, time } from "../util/format";
 type ExchangePage = Page & { exchanges: ExchangeSummary[]; lastModified: Record<string, number> };
 
 const PAGE_SIZE = 100;
-const FILTERS = ["instance", "method", "statusCode", "q"] as const;
+const FILTERS = ["instance", "method", "statusCode", "proxy", "client", "q"] as const;
 
 /**
  * The recorded calls of all instances, newest first. With live updates, the list long-polls the API and reloads as
@@ -79,6 +79,12 @@ export function CallsPage() {
             <option value="">all</option>
             {["2xx", "3xx", "4xx", "5xx"].map((s) => <option key={s}>{s}</option>)}
           </select>
+        </label>
+        <label>
+          API <input value={filters.proxy} onChange={(e) => setFilter("proxy", e.target.value)} placeholder="all" />
+        </label>
+        <label>
+          Client <input value={filters.client} onChange={(e) => setFilter("client", e.target.value)} placeholder="all" />
         </label>
         <label>
           Search <input type="search" value={filters.q} onChange={(e) => setFilter("q", e.target.value)} placeholder="path, client, server" />

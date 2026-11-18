@@ -139,3 +139,10 @@ details { margin-top: 16px; }
   .instances { margin-left: 0; }
   .content { padding: 12px; }
 }
+
+.card.wide { margin-bottom: 16px; }
+h3 { font-size: 14px; margin: 16px 0 8px; }
+.actions { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+button.link { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+button.link:hover { text-decoration: underline; }
+tr.sub td { color: var(--muted); }

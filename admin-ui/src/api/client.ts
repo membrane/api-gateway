@@ -9,6 +9,11 @@ export type ExchangeDetail = Schemas["ExchangeDetail"];
 export type Header = Schemas["Header"];
 export type SystemInfo = Schemas["SystemInfo"];
 export type Principal = Schemas["Principal"];
+export type Balancer = Schemas["Balancer"];
+export type BalancerNode = Schemas["Node"];
+export type NodeDetail = Schemas["NodeDetail"];
+export type Statistics = Schemas["Statistics"];
+export type StreamPump = Schemas["StreamPump"];
 
 export interface Page {
   total: number;

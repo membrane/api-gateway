@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ApiError } from "./api/client";
+import { api, ApiError, type Principal } from "./api/client";
 
 export interface Loaded<T> {
   data?: T;
@@ -28,4 +28,13 @@ export function useLoad<T>(load: (signal: AbortSignal) => Promise<T>, deps: unkn
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);
   return { ...state, reload: () => setTick((t) => t + 1) };
+}
+
+/**
+ * What the caller may do, to show only the actions the admin API would accept. Until it is known, nothing may be
+ * changed.
+ */
+export function usePrincipal(): { readOnly: boolean; canControlNodes: boolean } {
+  const me = useLoad((signal) => api.get<Principal>("/auth/me", undefined, signal), []);
+  return { readOnly: me.data?.readOnly ?? true, canControlNodes: me.data?.canControlNodes ?? false };
 }

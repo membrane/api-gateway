@@ -6,6 +6,8 @@ import { ApisPage } from "./pages/ApisPage";
 import { CallsPage } from "./pages/CallsPage";
 import { CallDetailPage } from "./pages/CallDetailPage";
 import { SystemPage } from "./pages/SystemPage";
+import { BalancersPage, NodePage } from "./pages/BalancersPage";
+import { StatisticsPage } from "./pages/StatisticsPage";
 import { ErrorBox } from "./components/ErrorBox";
 
 const INSTANCES_REFRESH_MS = 15_000;
@@ -13,6 +15,8 @@ const INSTANCES_REFRESH_MS = 15_000;
 const TABS = [
   { id: "calls", label: "Calls" },
   { id: "apis", label: "APIs" },
+  { id: "statistics", label: "Statistics" },
+  { id: "balancers", label: "Load balancers" },
   { id: "system", label: "System" },
 ];
 
@@ -68,6 +72,13 @@ function page(segments: string[]) {
         : <CallsPage />;
     case "apis":
       return <ApisPage />;
+    case "statistics":
+      return <StatisticsPage view={segments[1]} />;
+    case "balancers":
+      // #/balancers/{instance}/{balancer}/{cluster}/{host:port}
+      return segments.length >= 5
+        ? <NodePage key={segments.join("/")} instance={segments[1]} balancer={segments[2]} cluster={segments[3]} node={segments[4]} />
+        : <BalancersPage />;
     case "system":
       return <SystemPage />;
     default:
