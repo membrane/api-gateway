@@ -151,7 +151,7 @@ class MessageTextTest {
         final var proxy = new com.predic8.membrane.core.exchange.snapshots.FakeProxy(443);
         proxy.setInboundTls(true);
         exc.setProxy(proxy);
-        assertTrue(MessageText.curl(exc, false).startsWith("curl 'https://gw.example.com/q'"));
+        assertTrue(MessageText.curl(exc, false).startsWith("curl --globoff 'https://gw.example.com/q'"));
     }
 
     @Test
