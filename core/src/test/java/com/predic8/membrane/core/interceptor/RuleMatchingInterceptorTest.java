@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.InetAddress;
 
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -671,5 +672,16 @@ class RuleMatchingInterceptorTest {
 
         assertSame(proxyRule, exc.getProxy());
         assertEquals("http://example.com/a\\b", exc.getRequest().getUri());
+    }
+
+    @Test
+    @DisplayName("All received X-Forwarded-For field lines are kept when the peer address is appended")
+    void xForwardedForKeepsEveryFieldLine() throws Exception {
+        final var exc = get("/x").header(X_FORWARDED_FOR, "198.51.100.7").header(X_FORWARDED_FOR, "203.0.113.5").buildExchange();
+        exc.setRemoteAddrIp("10.0.0.2");
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertArrayEquals(new String[]{"198.51.100.7,203.0.113.5, 10.0.0.2"}, exc.getRequest().getHeader().getValues(new HeaderName(X_FORWARDED_FOR)).stream().map(HeaderField::getValue).toArray());
     }
 }

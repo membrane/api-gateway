@@ -322,8 +322,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return exc.getProxy().getProtocol();
 	}
 
+	/**
+	 * @return all X-Forwarded-For field lines joined by commas, since they are replaced by a single line
+	 */
 	private String getXForwardedFor(AbstractExchange exc) {
-		return exc.getRequest().getHeader().getXForwardedFor();
+		return exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_FOR);
 	}
 
 	private String getXForwardedProto(AbstractExchange exc) {
