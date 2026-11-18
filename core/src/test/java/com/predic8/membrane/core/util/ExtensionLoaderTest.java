@@ -46,7 +46,7 @@ class ExtensionLoaderTest {
     void reportsClassThatCannotBeLoaded() {
         final var e = assertThrows(ConfigurationException.class, () -> ExtensionLoader.load(ExtensionLoaderTest.class.getPackageName() + ".BrokenExtension", Extension.class, "missing"));
         assertNotEquals("missing", e.getMessage());
-        assertInstanceOf(LinkageError.class, e.getCause());
+        assertInstanceOf(IncompatibleClassChangeError.class, e.getCause());
     }
 
     /**
