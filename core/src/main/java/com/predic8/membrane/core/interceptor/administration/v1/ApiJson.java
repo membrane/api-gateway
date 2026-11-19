@@ -17,7 +17,9 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
 
+import java.io.*;
 import java.time.*;
 import java.util.*;
 
@@ -75,17 +77,26 @@ final class ApiJson {
                 .build();
     }
 
+    /**
+     * @return the decoded request body, at most {@link #MAX_REQUEST_BODY_BYTES}
+     * @throws ApiException 413 if the body is larger
+     */
+    static byte[] readBody(Message message) throws IOException {
+        final byte[] body;
+        // Not getBodyAsStreamDecoded(): it reassembles a multipart XOP document in memory before the limit applies.
+        try (final var in = MessageUtil.getContentAsStream(message)) {
+            body = in.readNBytes(MAX_REQUEST_BODY_BYTES + 1);
+        }
+        if (body.length > MAX_REQUEST_BODY_BYTES)
+            throw ApiException.payloadTooLarge("The request body must not exceed %d bytes.".formatted(MAX_REQUEST_BODY_BYTES));
+        return body;
+    }
+
     static Map<String, Object> readObject(Message message) {
         if (message.isBodyEmpty())
             return Map.of();
         try {
-            final byte[] body;
-            try (final var in = message.getBodyAsStreamDecoded()) {
-                body = in.readNBytes(MAX_REQUEST_BODY_BYTES + 1);
-            }
-            if (body.length > MAX_REQUEST_BODY_BYTES)
-                throw ApiException.payloadTooLarge("The request body must not exceed %d bytes.".formatted(MAX_REQUEST_BODY_BYTES));
-            final var node = MAPPER.readTree(body);
+            final var node = MAPPER.readTree(readBody(message));
             if (node == null || !node.isObject())
                 throw ApiException.badRequest("The request body must be a JSON object.");
             //noinspection unchecked
