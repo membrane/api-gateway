@@ -97,6 +97,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
     private final AtomicLong nextId = new AtomicLong();
 
     /**
+     * The file in {@link #dir} with the highest ID that may have been assigned. The index holds only the newest
+     * exchanges, so after a restart, e.g. with a smaller {@code maxIndexed}, the loaded IDs need not include the
+     * highest one. IDs are reserved in blocks, so the file is not written for every exchange.
+     */
+    static final String RESERVED_ID_FILE = "reserved-exchange-id";
+    private static final long ID_BLOCK = 1000;
+
+    /**
+     * The highest reserved ID. Guarded by {@code this}.
+     */
+    private long reservedId;
+
+    /**
      * The newest exchanges, oldest first. Guarded by {@code this}.
      */
     private final Map<Long, IndexEntry> index = new HashMap<>();
@@ -245,7 +258,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         // older snapshot, e.g. one taken before the request file existed, cannot overwrite a newer one.
         synchronized (exc) {
             final var existing = (Long) exc.getProperty(indexIdProperty);
-            final long id = existing != null ? existing : nextId.incrementAndGet();
+            final long id = existing != null ? existing : newId();
             exc.setProperty(indexIdProperty, id);
             final var stored = StoredExchange.of(id, exc, Path.of(base).getFileName().toString(), raw, saveBodyOnly,
                     new File(base + "-" + REQUEST_SUFFIX).exists(), exc.getResponse() != null);
@@ -295,28 +308,39 @@ public class FileExchangeStore extends AbstractExchangeStore {
         return df;
     }
 
+    /**
+     * Writes the message to a temporary file and moves it into place, so that the file exists only when it is
+     * complete: {@link #writeExchangeFile(AbstractExchange)} records an existing request file as stored.
+     */
     private void writeFile(Message msg, String path, AbstractBody body) throws Exception {
-        File file = new File(path);
-
-        //noinspection ResultOfMethodCallIgnored
-        file.createNewFile();
-
-        try (FileOutputStream os = new FileOutputStream(file)) {
-            if (raw || !saveBodyOnly) {
-                msg.writeStartLine(os);
-                msg.getHeader().write(os);
-                os.write(Constants.CRLF_BYTES);
+        final var file = Path.of(path);
+        final var tmp = file.resolveSibling(file.getFileName() + ".tmp");
+        try {
+            try (FileOutputStream os = new FileOutputStream(tmp.toFile())) {
+                writeMessage(msg, body, os);
             }
+            Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            Files.deleteIfExists(tmp);
+            throw e;
+        }
+    }
 
-            if (raw) {
-                IOUtils.copy(body.getContentAsStream(), os);
-            } else {
-                if (msg.isXML()) {
-                    os.write(formatXML(body.getContentAsStream(), /*asHTML*/ false).getBytes(UTF_8));
-                    return;
-                }
-                IOUtils.copy(body.getContentAsStream(), os);
+    private void writeMessage(Message msg, AbstractBody body, OutputStream os) throws Exception {
+        if (raw || !saveBodyOnly) {
+            msg.writeStartLine(os);
+            msg.getHeader().write(os);
+            os.write(Constants.CRLF_BYTES);
+        }
+
+        if (raw) {
+            IOUtils.copy(body.getContentAsStream(), os);
+        } else {
+            if (msg.isXML()) {
+                os.write(formatXML(body.getContentAsStream(), /*asHTML*/ false).getBytes(UTF_8));
+                return;
             }
+            IOUtils.copy(body.getContentAsStream(), os);
         }
     }
 
@@ -403,9 +427,39 @@ public class FileExchangeStore extends AbstractExchangeStore {
             return loaded.size() < maxIndexed;
         });
         loaded.stream().mapToLong(l -> l.stored().id()).max().ifPresent(max -> nextId.accumulateAndGet(max, Math::max));
+        reservedId = readReservedId();
+        nextId.accumulateAndGet(reservedId, Math::max);
         for (final var l : loaded.reversed())
-            add(new IndexEntry(l.stored().id() > 0 ? l.stored().id() : nextId.incrementAndGet(), l.stored(), l.file()));
+            add(new IndexEntry(l.stored().id() > 0 ? l.stored().id() : newId(), l.stored(), l.file()));
         modify();
+    }
+
+    /**
+     * @return a new ID, higher than every ID assigned before, also before a restart
+     */
+    private synchronized long newId() {
+        final var id = nextId.incrementAndGet();
+        if (id > reservedId && dir != null) {
+            reservedId = id + ID_BLOCK - 1;
+            try {
+                writeAtomically(Path.of(dir, RESERVED_ID_FILE), Long.toString(reservedId));
+            } catch (IOException e) {
+                log.warn("Could not write {}: IDs can be assigned again after a restart. {}", RESERVED_ID_FILE, e.getMessage());
+            }
+        }
+        return id;
+    }
+
+    private long readReservedId() {
+        final var file = Path.of(dir, RESERVED_ID_FILE);
+        if (!Files.exists(file))
+            return 0;
+        try {
+            return Long.parseLong(Files.readString(file, UTF_8).trim());
+        } catch (IOException | NumberFormatException e) {
+            log.warn("Could not read {}: {}", file, e.getMessage());
+            return 0;
+        }
     }
 
     /**

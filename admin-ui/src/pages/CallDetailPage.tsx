@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError, download, path, type ExchangeDetail, type Header, type Principal } from "../api/client";
 import { useLoad } from "../hooks";
 import { ErrorBox } from "../components/ErrorBox";
@@ -86,28 +86,47 @@ function Replay({ instance, id, exchange }: { instance: string; id: string; exch
   // The recorded body is sent unless the user edits it: the shown text may be pretty-printed, truncated or empty.
   const [bodyEdited, setBodyEdited] = useState(false);
   const [bodyNote, setBodyNote] = useState<string>();
+  // The loading of the dialog that is open: Close or a new Replay… aborts an older one, so it cannot overwrite the fields.
+  const loading = useRef<AbortController>();
+  useEffect(() => () => loading.current?.abort(), []);
 
   if (!me.data || me.data.readOnly || !exchange) return null;
 
   const start = async () => {
+    loading.current?.abort();
+    const current = new AbortController();
+    loading.current = current;
     setOpen(true);
     setReady(false);
     setError(undefined);
+    setResult(undefined);
     setBodyEdited(false);
+    setHeaders("");
+    setBody("");
     setMethod(exchange.method ?? "GET");
     setRequestPath(exchange.path ?? "/");
     try {
-      const h = await api.get<{ headers: Header[] }>(path("exchanges", instance, id, "request", "headers"));
+      const h = await api.get<{ headers: Header[] }>(path("exchanges", instance, id, "request", "headers"), undefined, current.signal);
+      const b = await api.get<{ format: string; text: string; truncated: boolean }>(path("exchanges", instance, id, "request", "body", "formatted"), undefined, current.signal);
+      if (current.signal.aborted) return;
       setHeaders(h.headers.map((x) => `${x.name}: ${x.value}`).join("\n"));
-      const b = await api.get<{ format: string; text: string; truncated: boolean }>(path("exchanges", instance, id, "request", "body", "formatted"));
+      const storedTruncated = exchange.requestBodyStored === "truncated";
       setBody(b.format === "empty" || b.format === "binary" ? "" : b.text);
-      setBodyNote(b.format === "binary" ? "The recorded binary body is sent unless you enter another body."
+      setBodyEdited(storedTruncated); // the server cannot send a truncated body: what is entered here is sent
+      setBodyNote(storedTruncated ? "The store holds only the beginning of the body. Enter the complete body to replay the call."
+        : b.format === "binary" ? "The recorded binary body is sent unless you enter another body."
         : b.truncated ? "Only the beginning of the body is shown. The recorded body is sent unless you edit it."
         : undefined);
       setReady(true);
     } catch (e) {
+      if (current.signal.aborted) return;
       setError(e instanceof ApiError ? e : new ApiError(0, String(e)));
     }
+  };
+
+  const close = () => {
+    loading.current?.abort();
+    setOpen(false);
   };
 
   const send = async () => {
@@ -145,15 +164,16 @@ function Replay({ instance, id, exchange }: { instance: string; id: string; exch
         <label>Method <input value={method} onChange={(e) => setMethod(e.target.value)} size={8} /></label>
         <label className="grow">Path <input value={requestPath} onChange={(e) => setRequestPath(e.target.value)} /></label>
       </div>
-      <label className="block">Header fields (one per line)<textarea rows={6} value={headers} onChange={(e) => setHeaders(e.target.value)} /></label>
+      {/* Disabled while loading: the loaded header fields and body would replace what was entered. */}
+      <label className="block">Header fields (one per line)<textarea rows={6} value={headers} disabled={!ready} onChange={(e) => setHeaders(e.target.value)} /></label>
       <label className="block">
-        Body {bodyEdited ? "(edited)" : "(sent as recorded unless edited)"}
-        <textarea rows={8} value={body} onChange={(e) => { setBody(e.target.value); setBodyEdited(true); }} />
+        Body {bodyEdited ? "(sent as entered)" : "(sent as recorded unless edited)"}
+        <textarea rows={8} value={body} disabled={!ready} onChange={(e) => { setBody(e.target.value); setBodyEdited(true); }} />
       </label>
-      {bodyNote && !bodyEdited && <p className="muted">{bodyNote}</p>}
+      {bodyNote && <p className="muted">{bodyNote}</p>}
       <p>
         <button className="button primary" onClick={send} disabled={sending || !ready}>{sending ? "Sending…" : "Send"}</button>{" "}
-        <button className="link" onClick={() => setOpen(false)}>Close</button>
+        <button className="link" onClick={close}>Close</button>
       </p>
       {error && <ErrorBox error={error} />}
       {result && (

@@ -71,8 +71,14 @@ class PeerClient {
         } catch (IllegalArgumentException e) {
             return CompletableFuture.failedFuture(e);
         }
-        return http.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-                .thenApply(PeerClient::toPeerResponse);
+        final var sent = http.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray());
+        final var result = sent.thenApply(PeerClient::toPeerResponse);
+        // Cancelling the returned future cancels the request, e.g. a long poll that is no longer needed.
+        result.whenComplete((r, e) -> {
+            if (result.isCancelled())
+                sent.cancel(true);
+        });
+        return result;
     }
 
     private static PeerResponse toPeerResponse(HttpResponse<byte[]> response) {
