@@ -70,6 +70,36 @@ class MessageTextTest {
     }
 
     @Test
+    void doesNotDecodeACompressedBodyBeyondThePreview() throws Exception {
+        final var gzipped = new java.io.ByteArrayOutputStream();
+        try (var out = new java.util.zip.GZIPOutputStream(gzipped)) {
+            out.write("x".repeat(1_000_000).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        final var msg = Request.post("/").contentType("text/plain").body(gzipped.toByteArray()).build();
+        msg.getHeader().setValue("Content-Encoding", "gzip"); // after body(), which removes it
+        final var body = MessageText.formatted(msg, "text/plain", 10);
+        assertTrue(body.truncated());
+        assertEquals("x".repeat(10), body.text());
+        assertNull(body.originalLength(), "the decoded length is unknown without decoding everything");
+    }
+
+    @Test
+    void rawViewShowsOnlyTheBeginningOfLargeBodies() throws Exception {
+        final var msg = Request.post("/").contentType("text/plain").body("x".repeat(MessageText.RAW_MAX_BODY_BYTES + 10)).build();
+        final var raw = MessageText.raw(msg);
+        assertTrue(raw.contains("Download the body"));
+        assertTrue(raw.length() < MessageText.RAW_MAX_BODY_BYTES + 1000);
+    }
+
+    @Test
+    void curlReadsLargeBodiesFromTheBodyFile() throws Exception {
+        final var exc = Request.post("/orders").contentType("text/plain").body("x".repeat(MessageText.CURL_MAX_INLINE_BYTES + 1)).buildExchange();
+        final var curl = MessageText.curl(exc, false);
+        assertTrue(curl.contains("--data-binary @request-body.bin"), curl);
+        assertFalse(curl.contains("--data-raw"));
+    }
+
+    @Test
     void doesNotRenderBinaryBodies() throws Exception {
         final var msg = Request.post("/").contentType("image/png").body(new byte[]{1, 2, 3}).build();
         final var body = MessageText.formatted(msg, "image/png", 1024);

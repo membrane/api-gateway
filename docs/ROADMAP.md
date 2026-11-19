@@ -1,6 +1,6 @@
 # Membrane Roadmap
 
-PRIO 1:
+## Priority 1
 - docker documentation:
   - Look what is already there somewhere
   - Creating docker image for Membrane
@@ -10,36 +10,44 @@ PRIO 1:
       - conf/log4j.conf/yaml
   - Memory with Java in Docker
   - Image for minimal RAM usage
-- set backlog to 1000
-  - provide production tutorial with backlog = 100
-  - production = true
-  - not hotreload
 - When released:
-  - Add SqlProtection to README.md
-  - Udate OAuth2 sections in README.md
+  - Update OAuth2 sections in README.md
 - Proxy Server Configuration Sample 
   - explains how to configure a proxy server
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
-- Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
 - Central description of MEMBRANE_* environment variables CG
   - Check https://www.membrane-api.io/gateway-documentation.html #configuration 
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
-- API gateway best practice document TB
-  - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
+- API gateway best practice document TB - Start with conditions on the body (`if`, `choose`, API `test`) and media types:
     - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
     - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
     - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
 
-PRIO 2:
+## Priority 2
 - Add performance tutorial or tuning guide
   - forgetful exchange store
 - Remove MemoryExchangeStore CG
   - It was used only by Membrane Monitor
 - Tutorial: Replace httpbin and catfact TB
+- Rate-limiting tutorial: rateLimiter behind a proxy or load balancer (X-Forwarded-For)
+  - Next step in `distribution/tutorials/rate-limiting`, e.g. `50-Behind-a-Load-Balancer.yaml`: `trustForwardedFor` with `trustedProxyList` or `trustedProxyCount`, testable with `curl -H "X-Forwarded-For: ..."`
+  - Wait for #3744, which changes how `trustedProxyList` is evaluated
+  - Check `trustedProxyCount` first: it takes the entry N+1 from the right of `X-Forwarded-For`, so with one load balancer it has to be 0, not 1
+- Replace the deprecated Jedis API
+  - Story: since the upgrade to Jedis 8.0.2, `JedisPool` and `JedisSentinelPool` (`RedisConnector`) and `Jedis.setex` (`RedisSessionManager`, `RedisOriginalExchangeStore`) are deprecated. They still work, but may be removed in a later major version.
+  - Move to the client API Jedis recommends now (`RedisClient`, and `RedisSentinelClient` for sentinels; `set` with `SetParams.ex` instead of `setex`).
+  - Keep the `redis` attributes as they are: `host`, `port`, `dbNumber`, `user`, `password`, `ssl`, `timeout`, `connectionNumber`, `minIdleConnection`, `useSentinels`, `masterName`.
+  - Check the sentinel case: `getJedisWithDb()` authenticates sentinel connections by hand and calls `select(dbNumber)` on every borrowed connection; the new API may take both in the client configuration.
+  - Test against a real Redis (plain, password, user + password, TLS, sentinel); the unit tests only use a map-backed fake.
+- Remove the `-XX:-UseBASE64Intrinsics` workaround for CVE-2026-114938 ("Java4Shell") (#3814)
+  - Story: #3814 turns off the Base64 intrinsics of the JVM, a mitigation for a memory corruption in the AVX-512 Base64 decoder of JDK 17, 21, 25 and 27 on x86-64. It costs Base64 performance on CPUs with AVX-512 and is not needed once the JDK is fixed (Oracle JDK 17.0.21.1, 21.0.13.1, 25.0.5.1, 27.0.1.1, Corretto 17.0.21.1.2, Temurin builds to follow).
+  - When: the Docker images ship a fixed JDK (`eclipse-temurin:25-jdk` in `distribution/docker/Dockerfile`, `amazoncorretto-21` in `Dockerfile`), and fixed builds of all Java versions Membrane supports have been out long enough to be widely installed.
+  - Undo #3814: the flag in `distribution/scripts/start_router.sh` and `start_router.cmd` (including their comments), `wrapper.java.additional.1` in `distribution/examples/deployment/windows-service/wrapper.conf`, and the `java` calls in `distribution/examples/security/oauth2/{github,google}/service-proxySSL.{sh,ps1}`.
+  - Add a release note saying the flag was removed, and that operators on an unpatched JDK can keep it with `-XX:-UseBASE64Intrinsics` in `JAVA_OPTS`.
 
-PRIO 3:
+## Priority 3
 - OpenAPI: validate `in: cookie` parameters
   - Path, query and header parameters are validated; cookie parameters currently are not.
 - OpenAPI: support `style: matrix` path parameters (#3544)
@@ -52,6 +60,13 @@ PRIO 3:
   - Story: the keyword is never read, so arrays are validated as if it were absent. `unevaluatedItems: false` does not reject any items.
   - It applies to the items not evaluated by `prefixItems`, `items` or `contains`, including those of the `allOf`/`anyOf`/`oneOf`/`$ref` subschemas that validated successfully. `ObjectValidator` does the same for `unevaluatedProperties`.
   - Related: #3499 (`prefixItems`).
+- OpenAPI: support `if`/`then`/`else` and `dependentSchemas` (JSON Schema 2020-12, OAS 3.1 and later) (#3481)
+  - Story: `SchemaValidator.validateKeywords` handles `allOf`/`anyOf`/`oneOf`/`not`, but never reads `if`, `then`, `else` or `dependentSchemas`, so a schema that relies on them doesn't enforce them. With `if: {properties: {kind: {const: cat}}, required: [kind]}` and `then: {required: [lives], properties: {lives: {type: integer}}}`, both `{"kind": "cat"}` and `{"kind": "cat", "lives": "wrong"}` are accepted instead of getting a 400. `dependentSchemas: {creditCard: {required: [billingAddress]}}` is never checked either.
+  - Idea, in `SchemaValidator.validateKeywords`:
+    - `if`/`then`/`else`: validate against `if` without reporting its errors. If it is valid, validate against `then`, otherwise against `else`. A missing `then` or `else` accepts. Applies to every type, not only objects.
+    - `dependentSchemas`: for each property the object has, validate the whole object against its subschema.
+  - `ObjectValidator.collectEvaluatedProperties` already reads these keywords for `unevaluatedProperties` and counts a `then`/`else`/`dependentSchemas` subschema only if the object is valid against it. That stays as it is (the spec collects annotations only from valid subschemas), but today a `lives` with a wrong type is reported as *unevaluated* instead of "not an integer". Once the keywords are validated, the error names the real violation. Update the Javadoc there that says no other path validates them.
+  - Related: `dependentRequired` is not validated either.
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor
@@ -82,19 +97,29 @@ PRIO 3:
         remove:
           name: Security
           namespaceUri: http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd
-        add: |
-          <ns1:token xmlns:ns1="http://example.com/auth">...</ns1:token>
+        add:
+          src: |
+            <ns1:token xmlns:ns1="http://example.com/auth">${//token}</ns1:token>
+          language: xpath
     ```
   - Parse with the hardened XML parser.
-
-
-## Membrane 8.0.0 (Java 25)
-
-- change all maven packages to membrane-api.io
-  - Needs changes at maven central
+  - Use xmlConfig for Xpath. See how other interceptors use it.
+- `rateLimiter`: shared store for the request counts, with a Redis implementation
+  - Story: the counts live in memory in each instance (`LazyRateLimit`). With several Membrane instances behind a load balancer, every instance counts on its own, so a client gets the limit once per instance. Reloading the configuration resets the counts.
+  - Idea: an interface for the store, with the in-memory store as the default and a Redis store that uses the existing `RedisConnector`, e.g. `INCR` plus `EXPIRE` per key and period.
+  - `RateLimitStrategy` is an abstract class today; `countRequest(key)`, which returns the count together with the end of its period, is what a store has to provide.
+  - To decide: per-key periods (Redis key expiry) instead of the one period for all keys that `LazyRateLimit` uses; what happens when Redis is unreachable (fail open or closed).
+  - Related: "Replace the deprecated Jedis API" (Priority 2).
 - ReplaceInterceptor: TB
   - allow also XPath
   - allow to use expressions for the replacement
+
+## Membrane 8.0.0 (Java 25)
+
+- Remove Interceptors:
+  - StatisticsCSVInterceptor, StatisticsJDBCInterceptor: They are obsolete; use Prometheus metrics or the access log instead.
+- change all maven packages to membrane-api.io
+  - Needs changes at maven central
 - global:
   - global runs between client and Membrane. We need a global also between Membrane and the backend.
   - Ideas: 
@@ -105,7 +130,7 @@ PRIO 3:
 - Remove deprecated finalize blocks
 - Remove XML configuration
 - configure log4j with YAML
-- Remove SOAP2REST XSLT Interceptor:
+- Remove SOAP2REST XSLT Interceptor (?):
   - rm HTTP2XMLInterceptor
   - rm com.predic8.membrane.core.http.xml
 - Log harmonization:
@@ -125,7 +150,7 @@ PRIO 3:
     - `coreThreadPoolSize`: meaningless without a pool (virtual threads are not pooled). Deprecate/ignore it with a warning; removing it is a breaking change.
     - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
     - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
-- Read HTTP start lines and header lines in bulk (`HttpUtil.readLine`)
+- Read HTTP start lines and header lines in bulk (`HttpUtil.readLine`) (Is it worth it?)
   - Story: `readLine` calls `read()` once per byte, and every call takes the stream's lock. Reading ahead into an array and scanning it took 23–28 instead of 93–294 ns per line in a JDK 25 micro-benchmark, and saved about 1.8 µs of gateway user CPU per request in the Azure fullproxy test; throughput stayed within noise (measured on an earlier variant of PR #3379).
   - Parked for 8.0: so it never blocks where the byte-by-byte loop would not, the bulk read has to know how many bytes the `BufferedInputStream` holds, which needs a subclass. On Java 21–23 a subclass locks with `synchronized`, so an HTTP/2 virtual thread that reads a backend response pins its carrier thread; with as many slow backend reads as CPU cores, every virtual thread stalls. JEP 491 (Java 24) removed monitor pinning.
   - Do it after the line-parsing fixes in #3378, so the bulk path follows the corrected terminator rules instead of mirroring each fix.
@@ -167,10 +192,10 @@ PRIO 3:
   - Related: a start hook after all APIs are initialized. `KafkaConsumerProxy` starts the consumer from `init()`, before the interceptors of its flow are initialized, so the Kafka extension has to wait itself until the router is running.
 - Lifecycle for APIs: stop an API when it is removed or replaced
   - Story: `Proxy` only has `init()`. `@PreDestroy` runs only when the bean registry is closed (`BeanRegistryImplementation.close()`, on router stop or reload). Deleting or changing an API by hot deployment (`DefaultRouter.handleBeanEvent`), in the Admin Console, over JMX, or replacing it with a clone in `RuleReinitializer` (retryInit) goes through `RuleManager.removeRule()`/`replaceRule()`, which never stop the old instance. The registry keeps the old bean's callback until shutdown.
-  - Affected: `kafkaConsumer` (`KafkaConsumerProxy`). A removed or replaced consumer keeps receiving messages and delivering them to its old target until Membrane stops. For now `kafkaConsumer` refuses to start when hot deployment is on.
+  - Affected: `kafkaConsumer` (`KafkaConsumerProxy`) and `jmsConsumer` (`JmsConsumerProxy`). A removed or replaced consumer keeps receiving messages and delivering them to its old target until Membrane stops. Hot deployment of a changed `apis.yaml` is not affected: it reloads the whole configuration and closes the bean registry, which stops the old consumers. Affected are changes from the Kubernetes watcher, the Admin Console and JMX.
   - Also `kafkaConsumer` with retryInit: the consumer starts in `init()`, before the interceptors of the flow. If one of them fails, the API stays inactive with a running consumer that reads without delivering. Every retry replaces the API with a clone, and `clone()` and `replaceRule()` both initialize it, so the consumer is restarted twice per retry and the consumer group rebalances. Also, without the Kafka extension Membrane starts anyway with an inactive API, although the docs say it does not start. For now `kafkaConsumer` refuses to start when retryInit is on, but `AbstractProxy.init` swallows that exception under retryInit, so Membrane starts anyway with the API inactive and retries it forever.
   - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
-  - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
+  - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
 - `groovy`: serialize a returned `List` to a JSON body like a `Map`
   - Story: since 7.9 the `javascript` plugin turns a returned array into a JSON body (`isListSerializedToJson()` in `AbstractScriptInterceptor`). `groovy` still ignores a returned `List`, so the two languages differ.
   - **Breaking**: `list.each {...}`, `collect` or `findAll` as the last statement returns a list, which then replaces the body. Name ending the script with `CONTINUE` in the release notes. Then remove the hook.
@@ -178,7 +203,7 @@ PRIO 3:
   - Story: a `template` whose `location` ends in `.xml` is rendered by Groovy's `XmlTemplateEngine`, which escapes only the template's own text. Values inserted with `${}`, also in attributes, and with `<gsp:expression>` are not escaped. All other templates use the adapted `StreamingTemplateEngine`, which escapes `${}` and `<%= %>` for the content type.
   - Fix: drop `XmlTemplateEngine`. A `.xml` file only sets the content type to `application/xml` (as `.json` does for JSON) and is rendered by `StreamingTemplateEngine` with XML escaping. The output is no longer re-indented (`pretty: true` formats it). Check whether the built-in functions (`xpath()`, `user()`, ...) work in `.xml` files today; only the streaming engine sets the `fn` delegate.
   - Raw XML stays possible as with inline templates: `<% out << x %>`, or a DOM node or node list, e.g. from `xpath()`.
-  - **Breaking**: `<gsp:scriptlet>` and `<gsp:expression>` are no longer processed. If a template declares the `http://groovy.codehaus.org/2005/gsp` namespace, fail at startup with a `ConfigurationException` that shows the rewrite (`<gsp:scriptlet>` → `<% %>`, `<gsp:expression>` → `${}`), so it is never output literally. Values that inserted markup through `${}` are escaped now. Comments are no longer removed. Rewrite `distribution/examples/templating/xml/template.xml`, or drop it with the examples.
+  - **Breaking**: `<gsp:scriptlet>` and `<gsp:expression>` are no longer processed. If a template declares the `http://groovy.codehaus.org/2005/gsp` namespace, fail at startup with a `ConfigurationException` that shows the rewrite (`<gsp:scriptlet>` → `<% %>`, `<gsp:expression>` → `${}`), so it is never output literally. Values that inserted markup through `${}` are escaped now. Comments are no longer removed.
   - Until then, the `template` reference docs say that values in `.xml` files are not escaped.
 - Reorganisation of *Util* classes. Check for duplicates and right place.
 - WSDL validation: change the default of the `validator` attribute `headers` from `none` to `bound`
@@ -272,55 +297,39 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - Path normalization and SSRF when combining target and request path (dot segments, `//x` as a network-path reference, encoded slashes `%2F`); checks in the flow (`if`, `openapi` validation, path-based authorization) must see the path that is sent to the backend.
 - **Breaking**: interceptors and Groovy/SpEL scripts that read or write `exc.getDestinations()` in the flow see different values.
 
-## Breaking Changes
+### Keep the request body while sending it
 
-- `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 
-- headerFilter YAML format has changed.
-- Choose Interceptor configuration
-- Chain (ChainDef) configuration
-- BasicAuthentication interceptor removes the Authentication header from the request. 
-- OpenApi: rename `specs` to `openapi`
-- **YAML configuration in list elements**:
-    * List items can now be written in *inline form* if the list accepts exactly one concrete element type (no polymorphic candidates) and the element is not `collapsed`, not `noEnvelope`, and not string-like.
-    * Old wrapper form remains supported: `- <kind>: { ... }` (Only when schema validation is deactivated). 
-  
-    Old: 
-     ```yaml
-      properties:
-        - property:
-            name: driverClassName
-            value: org.h2.Driver
-        - property:
-            name: url
-            value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-  ```
-    New:
-    ```yaml
-      properties:
-        - name: driverClassName
-          value: org.h2.Driver
-        - name: url
-          value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-  ```
-- removed `MethodOverrideInterceptor`
-- `APIsJSON` renamed to `apisJson`. It now follows APIs.json 0.24:
-    * `rootDomain` and `url` are replaced by `baseUrl`, the URL clients reach the gateway under. Its host is the domain of every `aid`. Without it, URLs and identifiers come from the Host header of the request.
-    * `humanUrl` and `baseUrl` in the document are now spelled `humanURL` and `baseURL`.
-    * New `maintainers` option. The tags of the listed APIs become the tags of the collection.
-    * A proxy bound to every host is listed under the host the client used instead of `localhost`.
-    * `serviceProxy` and `soapProxy` are listed too, not only `api`.
-    * The default collection `description` is now `APIs served by this gateway`.
+- Story: the HTTP/1 client keeps a copy of the request body whenever a retry is possible, which with the default `retries: 2` is always. `AbstractBody.write(out, true)` goes to `writeAlreadyRead()`, which reads the complete body into memory before the first byte goes to the backend. A slow or large upload adds its full transfer time to the latency.
+- Measured locally: a 100 KB POST, sent by the client in 10 chunks 200 ms apart, through a gateway with the default HTTP client to a mock backend (ms from the client's first byte):
 
-## Bug Fixes
-- `xml2json`: Ensuring content type alignment and better exception handling.  
+  | | streamed | master |
+  |---|---|---|
+  | backend receives headers / first body byte | **58** | 1,837 |
+  | client sends last body byte | 1,831 | 1,834 |
+  | backend receives last body byte | 1,831 | 1,837 |
 
-## Improvements
-
-- `xml2json`: Better exception handling.  
-- Updated documentation and comments for clarity and consistency in related classes (`Header`, `MimeType`, etc.). 
-
-- JSONBody
-  - Store body as parsed JsonNode or Document
-    - If JSON is needed by an interceptor use already parsed JSON
-
+- Dropping the copy is not an option. #3705 stopped keeping it for POST and PATCH, which was safe for retries: `RetryHandler` repeats a non-idempotent method only after a failure before anything was written (RFC 9110 §9.2.2). But then the request body could no longer be read in the response flow (scripts, templates, expressions): 500 `Cannot read body after it was streamed.` instead of 200. People writing an `apis.yaml` can't be expected to know about streaming, so the request body stays readable by default (#3750, decision 1). The code stays on branch `perf/stream-non-idempotent-request-bodies` (806dddb5c).
+- Idea: keep the chunks while writing ("tee"). Each chunk read from the incoming stream is stored first and then written. The backend gets the first byte right away. Once the transfer is complete, the body is fully in memory, as it is today, so memory use does not change. Bodies written without a copy (responses to the client) stay unbuffered.
+  - `enum BodyRetention { NONE, READABLE, REPLAYABLE }` and `AbstractBody.write(out, BodyRetention)`. The `boolean` overloads become `final` and delegate.
+  - A hook `writeKeepingCopy()`. The default reads first, as today. `Body` and `ChunkedBody` tee.
+  - `Http1ProtocolHandler`: `retries: 0` → `NONE`, idempotent method → `REPLAYABLE`, otherwise → `READABLE`.
+  - A tee write that fails partway marks the body as streamed and clears the chunks.
+  - Known interim limitation: for `REPLAYABLE` bodies this loses the retry after a partial failure (master retries, because the body is already complete). `Partial` (below) removes it.
+  - HTTP/2 and `XmlDomBody` fall back to read-first.
+- Later: send a partly sent body again. Instead of giving up on it, add a `Partial` `BodyState` between `Unread` and `Read`: the stored chunks are exactly the part taken from the stream so far, and the rest is still in the stream.
+  - Sending again: write the stored chunks, then continue from the stream, storing and writing as before.
+  - Reading: append the rest of the stream to the stored chunks.
+  - `write`, `read`, `getContent`, `getContentAsStream`, `getLength` and `discard` have to handle `Partial`. `read()` must no longer clear the chunks first.
+  - `ChunkedBody`'s own half-read mechanism (`bodyObserved` / `bodyComplete`) merges into the new state.
+  - Observers (exchange store, shadowing) must not receive stored chunks a second time when the body is sent again.
+  - A chunked body keeps its trailer when it is sent again.
+  - HTTP/2 (`StreamInfo`, `writeMessageBody`) uses the same mechanism.
+- To decide:
+  - Whether `retries: 0` keeps meaning "no copy" or also keeps one, with streaming without a copy as an explicit opt-out (#3750, decisions 2 and 3).
+  - #3706 wants to read a retained request body completely before the header fields are sent, so that a request over the limit never reaches the backend. Tee sends the header fields first. Choose between "nothing over the limit reaches the backend" and "first byte early" (#3750, decision 4).
+- Tests:
+  - Plain and chunked bodies: a successful write followed by a read; a write that fails partway, followed by a second write, by a read and by a discard; a read failure during the write (stays sticky, like `Failed`); observer events fire exactly once.
+  - Incremental forwarding: a body source that holds back its second chunk until the first chunk has reached the backend. `wasStreamed()` alone does not prove this, since it is set before anything is written.
+  - `Expect: 100-continue` with a streamed body and default retries.
+  - Idempotent request, tee write fails partway, `RetryHandler` retries: with the interim design the failure surfaces, with `Partial` the retry succeeds.
   

@@ -30,8 +30,21 @@ import static com.predic8.membrane.core.http.MimeType.*;
  */
 final class MessageText {
 
-    record FormattedBody(String format, String text, boolean truncated, long originalLength) {
+    /**
+     * @param originalLength the decoded length, null if it is not known without reading the whole body
+     */
+    record FormattedBody(String format, String text, boolean truncated, Long originalLength) {
     }
+
+    /**
+     * The raw view shows at most this much of the body; the complete body is available as a download.
+     */
+    static final int RAW_MAX_BODY_BYTES = 1_048_576;
+
+    /**
+     * Larger request bodies are not put into the curl command, but read from the body file.
+     */
+    static final int CURL_MAX_INLINE_BYTES = 65_536;
 
     private static final Set<String> CURL_SKIPPED_HEADERS = Set.of("content-length", "host", "transfer-encoding", "connection");
 
@@ -56,18 +69,49 @@ final class MessageText {
     }
 
     static FormattedBody formatted(Message msg, String contentType, int maxBytes) throws Exception {
+        return formatted(msg, contentType, maxBytes, null);
+    }
+
+    /**
+     * Reads at most {@code maxBytes + 1} decoded bytes: a small compressed body can expand to gigabytes, and a stored
+     * body can be very large. Multipart XOP bodies are shown as stored, not reassembled, for the same reason.
+     *
+     * @param storedLength the length of the body as stored, if known, e.g. recorded by the exchange store
+     */
+    static FormattedBody formatted(Message msg, String contentType, int maxBytes, Long storedLength) throws Exception {
         if (msg == null || msg.isBodyEmpty())
-            return new FormattedBody("empty", "", false, 0);
+            return new FormattedBody("empty", "", false, 0L);
         final var format = format(contentType);
-        // Decode at most maxBytes into memory: a small compressed body can expand to gigabytes.
-        try (final var in = msg.getBodyAsStreamDecoded()) {
-            if ("binary".equals(format))
-                return new FormattedBody(format, "", false, in.transferTo(OutputStream.nullOutputStream()));
-            final var shown = in.readNBytes(maxBytes);
-            final var rest = in.transferTo(OutputStream.nullOutputStream());
-            final var truncated = rest > 0;
-            final var charset = msg.getCharsetOrDefault();
-            return new FormattedBody(format, pretty(format, contentType, shown, charset, truncated), truncated, shown.length + rest);
+        final var knownLength = decodedLength(msg, storedLength);
+        if ("binary".equals(format))
+            return new FormattedBody(format, "", false, knownLength);
+        final var read = readAtMost(msg, maxBytes + 1);
+        final var truncated = read.length > maxBytes;
+        final var shown = truncated ? Arrays.copyOf(read, maxBytes) : read;
+        final var charset = msg.getCharsetOrDefault();
+        return new FormattedBody(format, pretty(format, contentType, shown, charset, truncated), truncated,
+                truncated ? knownLength : Long.valueOf(read.length));
+    }
+
+    /**
+     * @return the decoded length if it is known without reading the body: the stored or declared length of a body
+     * without Content-Encoding
+     */
+    private static Long decodedLength(Message msg, Long storedLength) {
+        if (msg.getHeader().getContentEncoding() != null)
+            return null;
+        if (storedLength != null)
+            return storedLength;
+        final var declared = msg.getHeader().getContentLength();
+        return declared == -1 ? null : (long) declared;
+    }
+
+    /**
+     * @return at most {@code limit} bytes of the body, with Content-Encodings removed but multipart XOP not reassembled
+     */
+    private static byte[] readAtMost(Message msg, int limit) throws IOException {
+        try (final var in = MessageUtil.getContentAsStream(msg)) {
+            return in.readNBytes(limit);
         }
     }
 
@@ -92,7 +136,14 @@ final class MessageText {
     }
 
     static String raw(Message msg) throws Exception {
-        return msg.getStartLine() + msg.getHeader().toString() + "\r\n" + (msg.isBodyEmpty() ? "" : msg.getBodyAsStringDecoded());
+        final var head = msg.getStartLine() + msg.getHeader().toString() + "\r\n";
+        if (msg.isBodyEmpty())
+            return head;
+        final var read = readAtMost(msg, RAW_MAX_BODY_BYTES + 1);
+        if (read.length <= RAW_MAX_BODY_BYTES)
+            return head + new String(read, msg.getCharsetOrDefault());
+        return head + new String(read, 0, RAW_MAX_BODY_BYTES, msg.getCharsetOrDefault())
+               + "\n\n[Only the first %d bytes of the body are shown. Download the body for all of it.]\n".formatted(RAW_MAX_BODY_BYTES);
     }
 
     /**
@@ -113,10 +164,12 @@ final class MessageText {
         else if (!"GET".equals(req.getMethod()) || !req.isBodyEmpty())
             sb.append(" -X ").append(quote(req.getMethod()));
         sb.append(' ').append(quote(url(exc, backend)));
-        // A UTF-8 text body is emitted decoded. Binary bodies, and text in another charset, which the shell would
-        // send as UTF-8, are read from the body file with the recorded (encoded) bytes.
-        final var decodedBody = !req.isBodyEmpty() && !"binary".equals(format(exc.getRequestContentType()))
-                                && isUtf8Compatible(req.getCharsetOrDefault());
+        // A small UTF-8 text body is emitted decoded. Binary bodies, large bodies, and text in another charset, which
+        // the shell would send as UTF-8, are read from the body file with the recorded (encoded) bytes.
+        final var inline = !req.isBodyEmpty() && !"binary".equals(format(exc.getRequestContentType()))
+                           && isUtf8Compatible(req.getCharsetOrDefault())
+                ? readAtMost(req, CURL_MAX_INLINE_BYTES + 1) : null;
+        final var decodedBody = inline != null && inline.length <= CURL_MAX_INLINE_BYTES;
         for (final var field : req.getHeader().getAllHeaderFields()) {
             final var name = field.getHeaderName().toString().toLowerCase(Locale.ROOT);
             if (CURL_SKIPPED_HEADERS.contains(name) || (decodedBody && "content-encoding".equals(name)))
@@ -128,7 +181,7 @@ final class MessageText {
                 sb.append(" \\\n  --data-binary @request-body.bin");
             else
                 // --data-raw: unlike --data-binary, a body starting with @ is not read from a local file.
-                sb.append(" \\\n  --data-raw ").append(quote(req.getBodyAsStringDecoded()));
+                sb.append(" \\\n  --data-raw ").append(quote(new String(inline, req.getCharsetOrDefault())));
         }
         return sb.append('\n').toString();
     }

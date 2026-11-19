@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.9.0.json
+#
+# Tutorial: Tiered Rate Limits
+#
+# Keys with the premium scope may send 10 requests per minute, all other keys 3.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 40-Tiered-Rate-Limits.yaml
+#       Windows:
+#         run-docker.cmd -c 40-Tiered-Rate-Limits.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 40-Tiered-Rate-Limits.yaml
+#       Windows:
+#         membrane.cmd -c 40-Tiered-Rate-Limits.yaml
+#
+# 2.) Call with the free key:
+#       curl -i -H "X-Api-Key: key-free" localhost:2000
+#
+#       HTTP/1.1 200 OK
+#       X-RateLimit-Limit: 3
+#       X-RateLimit-Remaining: 2
+#       ...
+#
+# 3.) Call with the premium key:
+#       curl -i -H "X-Api-Key: key-premium" localhost:2000
+#
+#       HTTP/1.1 200 OK
+#       X-RateLimit-Limit: 10
+#       X-RateLimit-Remaining: 9
+#       ...
+
+api:
+  port: 2000
+  flow:
+    - apiKey:
+        stores:
+          - simple:
+              - secret:
+                  value: key-free
+              - secret:
+                  value: key-premium
+                  scopes:
+                    - premium
+        extractors:
+          - header: X-Api-Key
+    - if:
+        test: hasScope('premium')
+        flow:
+          - rateLimiter:
+              requestLimit: 10
+              requestLimitDuration: PT1M
+              keyExpression: headers['X-Api-Key']
+        else:
+          - rateLimiter:
+              requestLimit: 3
+              requestLimitDuration: PT1M
+              keyExpression: headers['X-Api-Key']
+    - static:
+        src: Hello!
+    - return:
+        status: 200
+
+# NOTE:
+#   The scopes can also come from a database, see ../api-keys/40-API-Key-JDBC-Store.yaml
+#
+# See also:
+#   - ../api-keys/20-API-Key-RBAC.yaml for scopes on API keys
+#   - ../advanced/60-If-Else.yaml for if and else

@@ -248,13 +248,41 @@ public class Request extends Message {
      * open the door to request smuggling.
      * <p>
      * A request that is chunked-framed and also carries a <tt>Content-Length</tt> is rejected as
-     * well, see {@link #rejectIfChunkedWithContentLength(String)}.
+     * well, and so is one with a transfer coding other than <tt>chunked</tt>, see
+     * {@link #rejectInvalidFraming()}.
      */
     @Override
     protected void createBody(InputStream in) throws IOException {
-        rejectIfBodyLengthUndeterminable("request");
-        rejectIfChunkedWithContentLength("request");
+        rejectInvalidFraming();
         super.createBody(in);
+    }
+
+    /**
+     * The next hop finds the end of the body only through Content-Length or chunked Transfer-Encoding: without them,
+     * an HTTP/1.1 request has no body (RFC 9112 6.3), and the body would be read as the next request. A request that
+     * has a body but neither field, e.g. because a headerFilter removed them or an HTTP/2 request had no
+     * content-length, gets them here. A body that is already read, or of an HTTP/1.0 request or a method without a
+     * body, is measured; any other body is sent chunked, so it can still be streamed.
+     */
+    @Override
+    protected boolean prepareBodyForWrite() {
+        if (body instanceof EmptyBody || header.hasContentLength() || header.getFirstValue(TRANSFER_ENCODING) != null)
+            return true;
+
+        if (body.isRead() || isHTTP10() || methodsWithoutBody.contains(method)) {
+            final var length = body.getLength();
+            if (length > 0)
+                header.setContentLength(length);
+            return true;
+        }
+
+        header.setValue(TRANSFER_ENCODING, CHUNKED);
+        return true;
+    }
+
+    @Override
+    protected String getMessageType() {
+        return "request";
     }
 
     @Override

@@ -19,9 +19,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.InitializingBean;
 
 import redis.clients.jedis.*;
-import redis.clients.jedis.params.GetExParams;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @MCElement(name = "redis", component = true)
@@ -40,7 +38,6 @@ public class RedisConnector  implements InitializingBean {
     private boolean ssl = false;
     private String user;
     private String password;
-    private GetExParams params;
     private boolean useSentinels = false;
     private String masterName = "mymaster";
 
@@ -54,10 +51,12 @@ public class RedisConnector  implements InitializingBean {
         jedisPoolConfig.setMaxWaitMillis(timeout);
 
         if (useSentinels) {
-            Set<String> sentinels = new HashSet<>();
-            sentinels.add(host + ":" + port);
-
-            sentinelPool = new JedisSentinelPool(masterName, sentinels, jedisPoolConfig, timeout);
+            final var masterConfig = DefaultJedisClientConfig.builder().autoNegotiateProtocol(false)
+                    .connectionTimeoutMillis(timeout).socketTimeoutMillis(timeout)
+                    .ssl(ssl).build();
+            final var sentinelConfig = DefaultJedisClientConfig.builder().autoNegotiateProtocol(false)
+                    .ssl(ssl).build();
+            sentinelPool = new JedisSentinelPool(masterName, Set.of(new HostAndPort(host, port)), jedisPoolConfig, masterConfig, sentinelConfig);
         } else {
             if (user == null && password != null) {
                 pool = new JedisPool(jedisPoolConfig, host, port, timeout, password, ssl);
@@ -67,8 +66,6 @@ public class RedisConnector  implements InitializingBean {
                 pool = new JedisPool(jedisPoolConfig, host, port, ssl);
             }
         }
-
-        params = new GetExParams().ex(getTimeout());
     }
 
 
@@ -112,14 +109,6 @@ public class RedisConnector  implements InitializingBean {
         this.minIdleConnection = minIdleConnection;
     }
 
-    public GetExParams getParams() {
-        return params;
-    }
-
-    public void setParams(GetExParams params) {
-        this.params = params;
-    }
-
     public int getTimeout() {
         return timeout;
     }
@@ -161,7 +150,7 @@ public class RedisConnector  implements InitializingBean {
     }
 
     /**
-     * @description Used for enabling ssl. Default value is false
+     * @description Used for enabling ssl. With <code>useSentinels</code>, the connections to the Sentinels and to the master use TLS. Default value is false
      * */
     @MCAttribute
     public void setSsl(boolean ssl) {
