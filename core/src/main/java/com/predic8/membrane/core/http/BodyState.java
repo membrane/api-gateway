@@ -18,16 +18,17 @@ package com.predic8.membrane.core.http;
  * How far consuming an {@link AbstractBody} has got. A body starts {@link #UNREAD} and moves at most
  * once into one of the two terminal states, so "read" and "failed" can never both hold.
  * <p>
- * This is deliberately not the whole story of a body: whether it was <i>streamed</i> (passed through
- * without being retained) is an orthogonal property, see {@link AbstractBody#wasStreamed()}. A
- * streamed body is still {@link Read} once it has been consumed completely.
+ * This is deliberately not the whole story of a body: whether its content was retained, or
+ * <i>streamed</i> or discarded without being retained, is an orthogonal property, see
+ * {@link AbstractBody#isContentRetained()}. A streamed or discarded body is still {@link Read} once it
+ * has been consumed completely.
  */
 sealed interface BodyState {
 
 	/** Nothing consumed yet: the only state a body may be read, streamed or failed from. */
 	record Unread() implements BodyState {}
 
-	/** Consumed completely. For a buffered body the content is in the chunks; for a streamed one it is gone. */
+	/** Consumed completely. For a retained body the content is in the chunks; for a streamed or discarded one it is gone. */
 	record Read() implements BodyState {}
 
 	/**

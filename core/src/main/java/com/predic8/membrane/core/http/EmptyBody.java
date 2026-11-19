@@ -18,6 +18,10 @@ import java.io.IOException;
 
 public class EmptyBody extends AbstractBody {
 
+	public EmptyBody() {
+		markAsRead(); // there is nothing to read
+	}
+
 	@Override
 	public long getLength() {
 		return 0;
@@ -55,11 +59,5 @@ public class EmptyBody extends AbstractBody {
 		} catch (IOException e) {
 			throw new WritingBodyException(e);
 		}
-		markAsRead();
-	}
-
-	@Override
-	public boolean isRead() {
-		return true;
 	}
 }

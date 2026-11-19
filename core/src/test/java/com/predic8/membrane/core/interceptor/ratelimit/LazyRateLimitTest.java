@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,11 +33,24 @@ class LazyRateLimitTest {
     }
 
     @Test
-    void isRequestLimitReached() {
-        IntStream.range(0, limiter.getRequestLimit())
+    void countRequest() {
+        final var counts = IntStream.range(0, limiter.getRequestLimit())
             .parallel()
-            .forEach(i -> assertFalse(limiter.isRequestLimitReached("foo")));
+            .map(i -> limiter.countRequest("foo").count())
+            .sorted()
+            .toArray();
 
-        assertTrue(limiter.isRequestLimitReached("foo"));
+        assertArrayEquals(IntStream.rangeClosed(1, requestLimit).toArray(), counts);
+        assertEquals(requestLimit + 1, limiter.countRequest("foo").count());
+        assertEquals(1, limiter.countRequest("bar").count());
+    }
+
+    @Test
+    void countRequestReportsEndOfPeriod() {
+        final var before = LocalDateTime.now();
+        final var resetAt = limiter.countRequest("foo").resetAt();
+
+        assertTrue(resetAt.isAfter(before));
+        assertFalse(resetAt.isAfter(LocalDateTime.now().plusSeconds(10)));
     }
 }

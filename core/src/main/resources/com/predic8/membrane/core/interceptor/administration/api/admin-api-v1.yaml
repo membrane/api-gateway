@@ -6,6 +6,8 @@ info:
     REST API of the `adminConsole` plugin. It is consumed by the admin console web UI and can be
     used by scripts.
 
+    **Preview.** This API may still change in minor releases until it is declared stable.
+
     **Instances.** Every response that contains runtime data is tagged with the name of the
     instance it comes from. A console configured with `peers` aggregates: it forwards each
     request to all peers in parallel, merges the results and reports the state of every peer in
@@ -240,6 +242,7 @@ paths:
         '204': { description: "Removed." }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Problem' }
         '4XX': { $ref: '#/components/responses/Problem' }
         '5XX': { $ref: '#/components/responses/Problem' }
 
@@ -251,6 +254,7 @@ paths:
       tags: [apis]
       operationId: startApi
       summary: Retry starting an inactive API.
+      description: Answers `409` if the API is active, or if several APIs share the ID (same name and port).
       responses:
         '200':
           description: Result of the start attempt.
