@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
 
 import java.time.*;
 import java.util.*;
@@ -80,7 +81,8 @@ final class ApiJson {
             return Map.of();
         try {
             final byte[] body;
-            try (final var in = message.getBodyAsStreamDecoded()) {
+            // Not getBodyAsStreamDecoded(): it reassembles a multipart XOP document in memory before the limit applies.
+            try (final var in = MessageUtil.getContentAsStream(message)) {
                 body = in.readNBytes(MAX_REQUEST_BODY_BYTES + 1);
             }
             if (body.length > MAX_REQUEST_BODY_BYTES)

@@ -120,14 +120,20 @@ final class BalancersResource {
         final var balancer = balancer(req);
         final var cluster = cluster(balancer, req.path(2));
         final var node = node(balancer, cluster, req.path(3));
-        switch (req.path(4)) {
-            case "up" -> balancer.up(cluster, node.getHost(), node.getPort());
-            case "down" -> balancer.down(cluster, node.getHost(), node.getPort());
-            case "takeout" -> balancer.takeout(cluster, node.getHost(), node.getPort());
-            case "reset" -> node.clearCounter();
+        // A node removed concurrently must not come back: change only a node that still exists.
+        final var changed = switch (req.path(4)) {
+            case "up" -> balancer.setExistingNodeStatus(cluster, node.getHost(), node.getPort(), Node.Status.UP);
+            case "down" -> balancer.setExistingNodeStatus(cluster, node.getHost(), node.getPort(), Node.Status.DOWN);
+            case "takeout" -> balancer.setExistingNodeStatus(cluster, node.getHost(), node.getPort(), Node.Status.TAKEOUT);
+            case "reset" -> {
+                node.clearCounter();
+                yield node;
+            }
             default -> throw notFound("Unknown node action.");
-        }
-        return ok(nodeInfo(balancer, cluster, balancer.getNode(cluster, node.getHost(), node.getPort())));
+        };
+        if (changed == null)
+            throw notFound("Unknown node.");
+        return ok(nodeInfo(balancer, cluster, changed));
     }
 
     private Balancer balancer(ApiRequest req) {
