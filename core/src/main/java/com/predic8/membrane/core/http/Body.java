@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.*;
 
@@ -95,6 +96,19 @@ public class Body extends AbstractBody {
 	}
 
 	/**
+	 * Creates a body from content already in memory as chunks. The chunks are shared, not copied; later
+	 * changes to the list do not affect the body. The body is read from the start.
+	 *
+	 * @param content the complete body
+	 */
+	Body(List<Chunk> content) {
+		this.inputStream = null;
+		this.length = content.stream().mapToLong(Chunk::getLength).sum();
+		chunks.addAll(content);
+		markAsRead();
+	}
+
+	/**
 	 * Reads the body into {@link #chunks}, in chunks of at most {@code MAX_CHUNK_LENGTH} bytes, passing
 	 * each chunk to the observers. A body of unknown length is read to the end of the stream as a single
 	 * chunk.
@@ -115,29 +129,20 @@ public class Body extends AbstractBody {
 	}
 
 	/**
-	 * Consumes the body without retaining it, so that the connection can carry the next message. Does
-	 * nothing if the body was already read, streamed, or has failed. See {@code skipBodyContent()} for
-	 * how bodies of unknown length and bodies that end early are handled.
-	 *
-	 * @throws ReadingBodyException if reading from the stream fails
+	 * @return <code>true</code>: a discarded body is not retained
 	 */
-	public void discard() {
-		if (isRead())
-			return;
-		if (hasFailed())
-			return; // see AbstractBody.discard(): best-effort, and the stream is already dead
-		if (wasStreamed())
-			return;
+	@Override
+	protected boolean dropsContentOnDiscard() {
+		return true;
+	}
 
-		for (MessageObserver observer : observers)
-			observer.bodyRequested(this);
-
-        try {
-            skipBodyContent();
-        } catch (IOException e) {
-            throw fail(e);
-        }
-    }
+	/**
+	 * See {@code skipBodyContent()} for how bodies of unknown length and bodies that end early are handled.
+	 */
+	@Override
+	protected DropOutcome dropContent() throws IOException {
+		return skipBodyContent();
+	}
 
 	/**
 	 * Drops the bytes the body still owes, so that the connection can carry the next message.
@@ -146,19 +151,19 @@ public class Body extends AbstractBody {
 	 * so reading to its end would mean waiting for that close. Such a close-delimited body (HTTP/1.0
 	 * without a length, {@code Connection: close}, or the "the server will send EOF" fallback, see
 	 * {@code Message.createBody}) leaves no connection to reclaim, even where the headers still say
-	 * keep-alive. So the stream is left untouched and the body is marked failed rather than read, which
+	 * keep-alive. So the stream is left untouched and the body is abandoned rather than read, which
 	 * makes sure the connection is closed instead of reused.
 	 * <p>
 	 * A body of <b>known length</b> is drained, feeding the relevant observers as it goes, and never
 	 * reads beyond the declared length - the bytes after it belong to the next message. If the body ends
-	 * early, whether by EOF or by a read timeout, it is marked failed too: what the message promised is
+	 * early, whether by EOF or by a read timeout, that is a failure too: what the message promised is
 	 * not there, so the connection is out of step and must not be reused.
+	 *
+	 * @throws IOException if reading fails or the body ends before its declared length
 	 */
-	private void skipBodyContent() throws IOException {
-		if (length == -1) {
-			fail(new IOException("Body of unknown length was not drained: it ends with the connection, which therefore cannot be reused."));
-			return;
-		}
+	private DropOutcome skipBodyContent() throws IOException {
+		if (length == -1)
+			return new DropOutcome.Abandoned("Body of unknown length was not drained: it ends with the connection, which therefore cannot be reused.");
 
 		boolean hasRelevantObserver = hasRelevantObservers();
 		chunks.clear();
@@ -177,11 +182,9 @@ public class Body extends AbstractBody {
 			toSkip -= read;
 		}
 
-		if (toSkip > 0) {
-			fail(new EOFException("Body ended %d bytes before the declared length of %d while being discarded.".formatted(toSkip, length)));
-			return;
-		}
-		markAsRead();
+		if (toSkip > 0)
+			throw new EOFException("Body ended %d bytes before the declared length of %d while being discarded.".formatted(toSkip, length));
+		return DropOutcome.DRAINED;
 	}
 
 	/**

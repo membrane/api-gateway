@@ -15,8 +15,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.DecodingException;
-import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import org.jetbrains.annotations.NotNull;
@@ -35,12 +33,11 @@ import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
-import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
-import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
 
 
 /**
@@ -143,47 +140,6 @@ public class ProblemDetails {
                 .status(400)
                 .title("OpenAPI error.")
                 .component(component);
-    }
-
-    /**
-     * Describes a failure to read a message body, attributed to the end of the exchange it belongs
-     * to: a request body the sender could not deliver in readable form is the sender's error, while
-     * anything else - a backend response body above all - is the gateway's. Every place that answers
-     * a {@link ReadingBodyException} with a response should describe it here instead of deciding a
-     * status of its own, so the same broken body is not a 400 in one plugin and a 500 in the next.
-     *
-     * <p>A body that could not be decoded names the Content-Encoding that failed in a field of its
-     * own. The composed explanation goes into the detail, which production withholds; the field and
-     * the subtype survive, so a sender still learns that its compression, and not its document, is
-     * what the gateway could not read.</p>
-     *
-     * @param exchange the exchange the failure happened on, to tell whose body it was
-     * @implNote sets the {@code see} suffix itself. {@link #addSubSee} concatenates without a
-     * separator, so a caller adding one of its own would run the two together into a single
-     * malformed segment.
-     */
-    public static ProblemDetails bodyFailure(boolean production, String component, Exchange exchange,
-                                             ReadingBodyException failure) {
-        if (!failure.isRequestBodyFailure(exchange))
-            return internal(production, component)
-                    .addSubSee("reading-body")
-                    .detail(failure.belongsTo(exchange.getResponse())
-                            ? "Could not read the response body from the backend."
-                            : "Could not read the message body.")
-                    .exception(failure)
-                    // An I/O error is explained by its message and the place named in the detail.
-                    .stacktrace(!failure.exceptionMessageIsSufficient());
-
-        var problem = user(production, component).flow(REQUEST).addSubSee("reading-body");
-        var decoding = throwableOfType(failure, DecodingException.class);
-        if (decoding == null)
-            return problem.detail(getRootCause(failure).getMessage());
-
-        return problem
-                .addSubType("body-decoding")
-                .title("Request body could not be decoded")
-                .topLevel("contentEncoding", decoding.getContentEncoding())
-                .detail(decoding.getMessage());
     }
 
     public static ProblemDetails problemDetails(String type, boolean production) {
@@ -343,15 +299,20 @@ public class ProblemDetails {
 
         try {
             MDC.put(LOG_KEY, logKey);
+            // Title, detail, internal fields and exception message may echo what the sender sent
+            final var escapedTitle = escapeControlCharsForLog(title);
+            final var escapedDetail = escapeControlCharsForLog(detail);
+            final var escapedInternal = escapeControlCharsForLog(String.valueOf(internalFields));
             if (exception != null) {
                 log.info("type={}, title={}, detail={}, internal={} message={}",
-                        getTypeSubtypeString(), title, detail, internalFields, exception.getMessage());
+                        getTypeSubtypeString(), escapedTitle, escapedDetail, escapedInternal,
+                        escapeControlCharsForLog(exception.getMessage()));
                 if (stacktrace) {
                     log.info("Stacktrace for hidden details:", exception);
                 }
             } else {
                 log.info("type={}, title={}, detail={}, internal={}",
-                        getTypeSubtypeString(), title, detail, internalFields);
+                        getTypeSubtypeString(), escapedTitle, escapedDetail, escapedInternal);
             }
         } finally {
             MDC.remove(LOG_KEY);

@@ -30,12 +30,12 @@ It lists example **directories** (with the first line of each README as a
 summary) and tutorial **files**:
 
 ```
-Examples using <rateLimiter>:
-  distribution/examples/rate-limiting   The `rateLimiter` helps you maintain ...
-  distribution/examples/xml/namespaces  Namespaces are a powerful XML feature ...
-
 Tutorials using <rateLimiter>:
   distribution/tutorials/operation/70-Production-Settings.yaml
+  distribution/tutorials/rate-limiting/10-Rate-Limit-by-Client-IP.yaml
+  distribution/tutorials/rate-limiting/20-Global-Rate-Limit.yaml
+  distribution/tutorials/rate-limiting/30-Rate-Limit-by-JSON-Field.yaml
+  distribution/tutorials/rate-limiting/40-Tiered-Rate-Limits.yaml
 ```
 
 Narrow to one tree when that's all the user wants:

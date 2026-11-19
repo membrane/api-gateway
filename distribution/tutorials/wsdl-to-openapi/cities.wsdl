@@ -22,6 +22,11 @@
                 </xsd:complexType>
             </xsd:element>
         </xsd:schema>
+        <!-- No targetNamespace: the service sends the elements of its fault detail unqualified. -->
+        <xsd:schema>
+            <xsd:element name="errorcode" type="xsd:int"/>
+            <xsd:element name="errormessage" type="xsd:string"/>
+        </xsd:schema>
     </wsdl:types>
     <wsdl:message name="City">
         <wsdl:part name="getCity" element="cs:getCity"/>
@@ -29,10 +34,18 @@
     <wsdl:message name="CityResponse">
         <wsdl:part name="getCityResponse" element="cs:getCityResponse"/>
     </wsdl:message>
+    <wsdl:message name="ErrorCode">
+        <wsdl:part name="errorcode" element="errorcode"/>
+    </wsdl:message>
+    <wsdl:message name="ErrorMessage">
+        <wsdl:part name="errormessage" element="errormessage"/>
+    </wsdl:message>
     <wsdl:portType name="CityPort">
         <wsdl:operation name="getCity">
             <wsdl:input message="cs:City"></wsdl:input>
             <wsdl:output message="cs:CityResponse"></wsdl:output>
+            <wsdl:fault name="errorcode" message="cs:ErrorCode"/>
+            <wsdl:fault name="errormessage" message="cs:ErrorMessage"/>
         </wsdl:operation>
     </wsdl:portType>
     <wsdl:binding name="CitySoapBinding" type="cs:CityPort">
@@ -45,6 +58,12 @@
             <wsdl:output>
                 <s:body use="literal" namespace="https://predic8.de/cities"></s:body>
             </wsdl:output>
+            <wsdl:fault name="errorcode">
+                <s:fault name="errorcode" use="literal"/>
+            </wsdl:fault>
+            <wsdl:fault name="errormessage">
+                <s:fault name="errormessage" use="literal"/>
+            </wsdl:fault>
         </wsdl:operation>
     </wsdl:binding>
     <wsdl:service name="CityService">

@@ -21,8 +21,10 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LimitInterceptorTest {
@@ -106,6 +108,42 @@ class LimitInterceptorTest {
         limit.handleRequest(exc);
         assertThrows(ReadingBodyException.class, request::readBody);
         assertTrue(request.allStreamsClosed());
+    }
+
+    @Test
+    void decodedBodyIsForwardedWithoutContentEncoding() throws Exception {
+        final var limit = new LimitInterceptor();
+        limit.setMaxBodyLength(1000);
+        final var exc = Request.post("/foo").body(gzip(SMALL)).header("Content-Encoding", "gzip").buildExchange();
+        limit.handleRequest(exc);
+        assertNull(exc.getRequest().getHeader().getContentEncoding());
+        assertEquals(SMALL, new String(exc.getRequest().getBody().getContent(), UTF_8));
+    }
+
+    @Test
+    void bodyWithUnsupportedContentEncodingIsForwardedEncoded() throws Exception {
+        final var encoded = new byte[]{1, 2, 3, 4, 5};
+        final var exc = Request.post("/foo").body(encoded).header("Content-Encoding", "unknown").buildExchange();
+        li.handleRequest(exc);
+        assertEquals("unknown", exc.getRequest().getHeader().getContentEncoding());
+        assertArrayEquals(encoded, exc.getRequest().getBody().getContent());
+    }
+
+    @Test
+    void bodyWithUnsupportedContentEncodingIsLimitedByItsEncodedLength() throws Exception {
+        final var request = Request.post("/foo").header("Content-Encoding", "unknown").build();
+        request.setBody(new Body(new ByteArrayInputStream(LARGE.getBytes(UTF_8))));
+        final var exc = exchangeOf(request);
+        li.handleRequest(exc);
+        assertThrows(Exception.class, request::readBody);
+    }
+
+    private static byte[] gzip(String content) throws IOException {
+        final var out = new ByteArrayOutputStream();
+        try (final var gzip = new GZIPOutputStream(out)) {
+            gzip.write(content.getBytes(UTF_8));
+        }
+        return out.toByteArray();
     }
 
     private static Exchange exchangeOf(Request request) {

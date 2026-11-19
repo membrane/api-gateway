@@ -33,32 +33,21 @@ public class LazyRateLimit extends RateLimitStrategy {
 	}
 
 	@Override
-	public boolean isRequestLimitReached(String key) {
+	public RequestCount countRequest(String key) {
+		// Counting under the lock that starts a new period keeps the count and its end in the same period
 		synchronized (lock) {
 			if (java.time.LocalDateTime.now().isAfter(nextCleanup)) {
 				requestCounterFromKey.clear();
 				incrementNextCleanupTime();
 			}
+			return new RequestCount(requestCounterFromKey.computeIfAbsent(key, s -> new AtomicInteger()).incrementAndGet(), nextCleanup);
 		}
-
-		addRequestEntry(key);
-		return requestCounterFromKey.get(key).get() > requestLimit;
-	}
-
-	private void addRequestEntry(String addr) {
-		requestCounterFromKey.computeIfAbsent(addr, s -> new AtomicInteger());
-		requestCounterFromKey.get(addr).incrementAndGet();
 	}
 
 	private void incrementNextCleanupTime() {
 		synchronized (lock) {
 			nextCleanup = java.time.LocalDateTime.now().plus(requestLimitDuration);
 		}
-	}
-
-	@Override
-	public LocalDateTime getServiceAvailableAgainTime(String key) {
-		return nextCleanup;
 	}
 
 	@Override

@@ -457,8 +457,8 @@ public class Response extends Message {
 	 * A backend response whose <tt>Transfer-Encoding</tt> does not end in <tt>chunked</tt> is
 	 * rejected for the same reason as such a request: its body length is undeterminable. The
 	 * check runs before the redirect shortcut, so a redirect does not skip it. The same goes for a
-	 * response that is chunked-framed and also carries a <tt>Content-Length</tt>, see
-	 * {@link #rejectIfChunkedWithContentLength(String)}.
+	 * response that is chunked-framed and also carries a <tt>Content-Length</tt>, or a transfer
+	 * coding other than <tt>chunked</tt>, see {@link #rejectInvalidFraming()}.
 	 * <p>
 	 * A response that {@link #endsAfterHeaderFields() ends after its header fields} is not
 	 * validated: it has no framing, so the framing fields it carries are ignored. Nor is a 205 that
@@ -483,14 +483,18 @@ public class Response extends Message {
 			return;
 		}
 
-		rejectIfBodyLengthUndeterminable("response");
-		rejectIfChunkedWithContentLength("response");
+		rejectInvalidFraming();
 
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
 		closeDelimited = !header.hasContentLength() && !header.isChunked();
 		super.createBody(in);
+	}
+
+	@Override
+	protected String getMessageType() {
+		return "response";
 	}
 
 	/**

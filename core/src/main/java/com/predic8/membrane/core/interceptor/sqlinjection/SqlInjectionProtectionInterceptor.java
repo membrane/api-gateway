@@ -140,7 +140,7 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (ReadingBodyException e) {
             // Not a scanner error, e.g. the client stopped sending the body: the flow controller describes
-            // it, see ProblemDetails.bodyFailure()
+            // it, see BodyFailureProblems.bodyFailure()
             throw e;
         } catch (Exception e) {
             log.error("Error inspecting {} for SQL injection", flow, e);
