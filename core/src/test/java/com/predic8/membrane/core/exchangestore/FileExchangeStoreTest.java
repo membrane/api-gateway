@@ -37,7 +37,8 @@ class FileExchangeStoreTest {
         final var store = store();
         snap(store, "/a", "{\"a\":1}", 201);
 
-        final var names = Files.walk(dir).filter(Files::isRegularFile).map(p -> p.getFileName().toString()).sorted().toList();
+        final var names = Files.walk(dir).filter(Files::isRegularFile).map(p -> p.getFileName().toString())
+                .filter(n -> !n.equals(FileExchangeStore.RESERVED_ID_FILE)).sorted().toList();
 
         assertEquals(3, names.size(), names.toString());
         final var base = names.getFirst().substring(0, names.getFirst().lastIndexOf('-'));
@@ -298,8 +299,8 @@ class FileExchangeStoreTest {
         second.snap(exc, RESPONSE);
 
         try (var a = Files.walk(dir); var b = Files.walk(other)) {
-            assertEquals(3, a.filter(Files::isRegularFile).count());
-            assertEquals(3, b.filter(Files::isRegularFile).count());
+            assertEquals(3, a.filter(Files::isRegularFile).filter(f -> !f.endsWith(FileExchangeStore.RESERVED_ID_FILE)).count());
+            assertEquals(3, b.filter(Files::isRegularFile).filter(f -> !f.endsWith(FileExchangeStore.RESERVED_ID_FILE)).count());
         }
         assertEquals(1, second.getAllExchangesAsList().size());
     }
@@ -354,6 +355,27 @@ class FileExchangeStoreTest {
         reader.setMaxIndexed(1);
         reader.init(null);
         assertEquals(List.of("/newer"), reader.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
+    void idsAreNotReusedAfterARestartWithASmallerIndex() throws Exception {
+        final var writer = store();
+        final var older = exchange("/older");
+        Thread.sleep(5);
+        final var newer = exchange("/newer");
+        complete(writer, newer);
+        complete(writer, older);
+        final var olderId = writer.getAllExchangesAsList().stream()
+                .filter(e -> e.getRequest().getUri().equals("/older")).findFirst().orElseThrow().getId();
+
+        final var reader = new FileExchangeStore();
+        reader.setDir(dir.toString());
+        reader.setMaxIndexed(1);
+        reader.init(null);
+        assertEquals(List.of("/newer"), reader.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+        snap(reader, "/next", "x", 200);
+
+        assertTrue(reader.getAllExchangesAsList().getLast().getId() > olderId);
     }
 
     @Test

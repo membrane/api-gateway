@@ -88,6 +88,22 @@ public class Cluster {
 		getNodeCreateIfNeeded(n).setStatus(Status.TAKEOUT);
 	}
 
+	/**
+	 * Unlike {@link #nodeUp(Node)} and the other node operations, this never adds the node.
+	 *
+	 * @return the node of this cluster with the new status, or null if the cluster does not have the node
+	 */
+	public Node setExistingNodeStatus(Node n, Status status) {
+		synchronized (nodes) {
+			final var i = nodes.indexOf(n);
+			if (i < 0)
+				return null;
+			final var node = nodes.get(i);
+			node.setStatus(status);
+			return node;
+		}
+	}
+
 	public void removeNode(Node node) {
 		nodes.remove(node);
 	}

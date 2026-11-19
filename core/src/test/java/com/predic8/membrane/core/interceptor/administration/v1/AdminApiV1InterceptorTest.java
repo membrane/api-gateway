@@ -190,6 +190,23 @@ class AdminApiV1InterceptorTest {
     }
 
     @Test
+    void doesNotReassembleMultipartBodies() throws Exception {
+        addBalancer();
+        final var body = """
+                --b\r
+                Content-ID: <root>\r
+                Content-Type: application/xop+xml; type="application/json"\r
+                \r
+                {"name":"multipart"}\r
+                --b--\r
+                """;
+        // Unvalidated: the OpenAPI validator of the test would itself reassemble the body.
+        final var res = sendUnvalidated(Request.post(API + "/balancers/node-a/Default/clusters")
+                .contentType("multipart/related; type=\"application/xop+xml\"; start=\"<root>\"; boundary=b").body(body), false).getResponse();
+        assertEquals(400, res.getStatusCode());
+    }
+
+    @Test
     void deletesApi() throws Exception {
         assertEquals(204, send(Request.delete(VICTIM), false).getStatusCode());
         assertNull(RuleUtil.findRuleByIdentifier(router, "victim:3999"));
