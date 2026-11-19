@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.http.BodyCollectingMessageObserver.Strategy.TRUNCATE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,5 +61,18 @@ class MessageTest {
         }, TRUNCATE, limit);
         req.getBody().write(new PlainBodyTransferer(OutputStream.nullOutputStream()), false);
         return snapshot;
+    }
+
+    @Test
+    void isContentEncodingDecodedOnlyForTheCodingsThatAreDecoded() throws Exception {
+        for (final var coding : new String[]{"gzip", "deflate", "br", "GZIP"})
+            assertTrue(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
+        for (final var coding : new String[]{"unknown", "identity", "gzip, br"})
+            assertFalse(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
+        assertFalse(Request.post("/").body("plain").build().isContentEncodingDecoded());
+    }
+
+    private static Message requestWithContentEncoding(String coding) throws URISyntaxException {
+        return Request.post("/").body(new byte[]{1}).header("Content-Encoding", coding).build();
     }
 }

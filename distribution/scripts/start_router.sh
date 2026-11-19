@@ -83,7 +83,9 @@ else
   DISABLE_COLORS="true"
 fi
 
-JAVA_OPTS="${JAVA_OPTS:-} -Dmembrane.disable.term.colors=$DISABLE_COLORS -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0"
+# -XX:-UseBASE64Intrinsics mitigates CVE-2026-114938 (memory corruption in the AVX-512 Base64 decoder of the JDK).
+# It comes before JAVA_OPTS, so a later -XX:+UseBASE64Intrinsics there turns the intrinsics back on.
+JAVA_OPTS="-XX:-UseBASE64Intrinsics ${JAVA_OPTS:-} -Dmembrane.disable.term.colors=$DISABLE_COLORS -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0"
 
 # Outlive SIGTERM/SIGINT so a process-group signal (tini -g in Docker) cannot kill this shell
 # while the JVM still runs its shutdown hooks. Not trap '': ignored signals are inherited by java.

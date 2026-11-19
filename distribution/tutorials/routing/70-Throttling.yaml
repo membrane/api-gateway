@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.9.0.json
 #
 # Tutorial: Throttling
 #
@@ -96,4 +96,4 @@ api:
 #       busyDelay: 5000
 #
 # To limit the number of requests per client and time window, use the
-# rateLimiter plugin instead.
+# rateLimiter interceptor instead, see ../rate-limiting.

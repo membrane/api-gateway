@@ -220,7 +220,7 @@ public class Header {
      * @throws MalformedHeaderException if the line carries no field name followed by a colon, or
      *                                  if the field name is not a token
      */
-    private static HeaderField parseFieldLine(String line, boolean stripWhitespaceBeforeColon) {
+    static HeaderField parseFieldLine(String line, boolean stripWhitespaceBeforeColon) {
         final int colon = line.indexOf(':');
         if (colon < 1)
             throw malformedFieldLine(null, "it carries no field name followed by a colon. Rejecting the message rather than dropping the line, which would forward it with a header silently missing.");
