@@ -63,6 +63,22 @@ class AdminRESTInterceptorTest {
         assertEquals("sandbox", res.getHeader().getFirstValue(CONTENT_SECURITY_POLICY));
     }
 
+    /**
+     * The stored body is served as received, so the download has to declare every coding, not
+     * only the one on the first field line.
+     */
+    @Test
+    void storedBodyKeepsAllContentCodings() throws Exception {
+        final var exc = post("/foo").body("encoded")
+                .header(CONTENT_ENCODING, "gzip")
+                .header(CONTENT_ENCODING, "br").buildExchange();
+        store.snap(exc, REQUEST);
+
+        final var res = interceptor.getRequestBody(bodyParams(exc.getId(), "request"), "");
+
+        assertEquals("gzip, br", res.getHeader().getValuesAsString(CONTENT_ENCODING));
+    }
+
     private static QueryParameter bodyParams(long id, String direction) {
         final var matcher = Pattern.compile("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
                 .matcher("/admin/rest/exchanges/%d/%s/body".formatted(id, direction));

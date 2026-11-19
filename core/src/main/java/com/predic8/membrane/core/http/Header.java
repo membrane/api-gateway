@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.StringList.parseToList;
 import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -647,8 +648,27 @@ public class Header {
         return getFirstValue(X_FORWARDED_PROTO);
     }
 
+    /**
+     * Returns the value of the first <tt>Content-Encoding</tt> field line only, which misses codings
+     * on further field lines.
+     *
+     * @deprecated Use {@link #getContentCodings()}. To be removed in 8.0.
+     */
+    @Deprecated(forRemoval = true)
     public String getContentEncoding() {
         return getFirstValue(CONTENT_ENCODING);
+    }
+
+    /**
+     * Returns the content codings of all <tt>Content-Encoding</tt> field lines, in the order they
+     * were applied. Several field lines form one list (RFC 9110 &sect;5.3), so
+     * <tt>Content-Encoding: gzip</tt> plus <tt>Content-Encoding: br</tt> yields <tt>[gzip, br]</tt>.
+     * Empty list elements are dropped (RFC 9110 &sect;5.6.1).
+     *
+     * @return an immutable list, empty if the message has no content coding
+     */
+    public List<String> getContentCodings() {
+        return List.copyOf(parseToList(getNormalizedValue(CONTENT_ENCODING)));
     }
 
     public String getCharset() {
