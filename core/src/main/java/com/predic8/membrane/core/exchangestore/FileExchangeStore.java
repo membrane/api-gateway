@@ -493,7 +493,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
                         final List<Path> batch;
                         try {
                             batch = newestExchangeFilesOfDay(day, olderThan, size);
-                        } catch (IOException e) {
+                        } catch (IOException | UncheckedIOException e) {
+                            // An error while iterating a directory listing is unchecked: it must not stop the startup.
                             log.warn("Could not list {}: {}", day, e.getMessage());
                             break;
                         }
@@ -561,7 +562,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
                     .filter(d -> d.getFileName().toString().matches("\\d{1,4}"))
                     .sorted(Comparator.comparingInt((Path d) -> Integer.parseInt(d.getFileName().toString())).reversed())
                     .toList();
-        } catch (IOException e) {
+        } catch (IOException | UncheckedIOException e) {
             log.warn("Could not list {}: {}", parent, e.getMessage());
             return List.of();
         }
@@ -656,32 +657,32 @@ public class FileExchangeStore extends AbstractExchangeStore {
         proxy.setInboundTls(s.inboundTls());
         exc.setProxy(proxy);
         exc.setServer(s.server());
-        try {
-            if (s.request() != null) {
-                final var req = new Request();
-                req.setMethod(s.request().method());
-                req.setUri(s.request().uri());
-                fill(req, s.request(), entry.file(), withBodies);
-                exc.setRequest(req);
-                if (s.request().bodyLength() != null)
-                    exc.setProperty(REQUEST_BODY_LENGTH, s.request().bodyLength());
-            }
-            if (s.response() != null) {
-                final var res = new Response();
-                res.setStatusCode(s.response().statusCode());
-                res.setStatusMessage(s.response().statusMessage());
-                fill(res, s.response(), entry.file(), withBodies);
-                exc.setResponse(res);
-                if (s.response().bodyLength() != null)
-                    exc.setProperty(RESPONSE_BODY_LENGTH, s.response().bodyLength());
-            }
-        } catch (IOException e) {
-            log.warn("Could not read the messages of {}: {}", entry.file(), e.getMessage());
+        if (s.request() != null) {
+            final var req = new Request();
+            req.setMethod(s.request().method());
+            req.setUri(s.request().uri());
+            fill(req, s.request(), entry.file(), withBodies);
+            exc.setRequest(req);
+            if (s.request().bodyLength() != null)
+                exc.setProperty(REQUEST_BODY_LENGTH, s.request().bodyLength());
+        }
+        if (s.response() != null) {
+            final var res = new Response();
+            res.setStatusCode(s.response().statusCode());
+            res.setStatusMessage(s.response().statusMessage());
+            fill(res, s.response(), entry.file(), withBodies);
+            exc.setResponse(res);
+            if (s.response().bodyLength() != null)
+                exc.setProperty(RESPONSE_BODY_LENGTH, s.response().bodyLength());
         }
         return exc;
     }
 
-    private static void fill(Message msg, StoredMessage stored, Path exchangeFile, boolean withBody) throws IOException {
+    /**
+     * A body that cannot be read is replaced by an empty one marked as truncated; the other message and the metadata
+     * are kept.
+     */
+    private static void fill(Message msg, StoredMessage stored, Path exchangeFile, boolean withBody) {
         msg.setVersion(stored.version());
         final var header = new Header();
         if (stored.headers() != null)
@@ -695,7 +696,18 @@ public class FileExchangeStore extends AbstractExchangeStore {
                 header.setContentType(withUtf8Charset(contentType));
         }
         msg.setHeader(header);
-        msg.setBody(withBody && stored.file() != null ? readBody(exchangeFile.resolveSibling(stored.file()), stored.headersInFile()) : new EmptyBody());
+        if (!withBody || stored.file() == null) {
+            msg.setBody(new EmptyBody());
+            return;
+        }
+        final var file = exchangeFile.resolveSibling(stored.file());
+        try {
+            msg.setBody(readBody(file, stored.headersInFile()));
+        } catch (IOException e) {
+            log.warn("Could not read {}: {}", file, e.getMessage());
+            msg.setBody(new EmptyBody());
+            msg.setBodyTruncated(true);
+        }
     }
 
     static String withUtf8Charset(String contentType) {

@@ -134,6 +134,9 @@ final class ApisResource {
     Response start(ApiRequest req) throws CloneNotSupportedException {
         ctx.requireSelf(req.path(0));
         final var i = find(req.path(1));
+        // Replacing an active API would leave the running one outside of the rule list.
+        if (i.proxy().isActive())
+            throw new ApiException(409, "Conflict.", "The API is active already.");
         final var restarted = i.proxy().clone();
         ctx.router().getRuleManager().replaceRule(i.proxy(), restarted);
         return ok(summary(restarted, i.order()));
@@ -176,11 +179,19 @@ final class ApisResource {
         return result;
     }
 
+    /**
+     * The ID consists of name and port, so it is not unique if two APIs on a port have the same name. Such an ID is
+     * rejected instead of acting on one of the APIs that share it.
+     */
     private Indexed find(String apiId) {
-        return indexed().stream()
+        final var matches = indexed().stream()
                 .filter(i -> apiId(i.proxy()).equals(apiId))
-                .findFirst()
-                .orElseThrow(() -> notFound("Unknown API."));
+                .toList();
+        if (matches.isEmpty())
+            throw notFound("Unknown API.");
+        if (matches.size() > 1)
+            throw new ApiException(409, "Conflict.", "%d APIs share the ID '%s'. Give them different names.".formatted(matches.size(), apiId));
+        return matches.getFirst();
     }
 
     private ApiSummary summary(Proxy proxy, int order) {
