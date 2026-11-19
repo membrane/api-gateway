@@ -19,6 +19,11 @@ export function docLink(url: string | null | undefined): string | undefined {
   return url && /^https:\/\//i.test(url) ? url : undefined;
 }
 
+/** A fully qualified Java class name, e.g. com.predic8.membrane.core.interceptor.flow.ResponseInterceptor. */
+export function isClassName(s: string): boolean {
+  return /^[a-z_$][\w$]*(\.[\w$]+)+$/.test(s);
+}
+
 const FLOW_LABELS: Record<string, string> = {
   request: "request only",
   response: "response only",

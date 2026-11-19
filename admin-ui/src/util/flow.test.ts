@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countPlugins, docLink, flowLabel, plainText } from "./flow";
+import { countPlugins, docLink, flowLabel, isClassName, plainText } from "./flow";
 
 describe("flow", () => {
   it("shows descriptions as plain text", () => {
@@ -13,6 +13,13 @@ describe("flow", () => {
     expect(docLink("javascript:alert(1)")).toBeUndefined();
     expect(docLink("http://example.com")).toBeUndefined();
     expect(docLink(null)).toBeUndefined();
+  });
+
+  it("recognizes Java class names", () => {
+    expect(isClassName("com.predic8.membrane.core.interceptor.flow.ResponseInterceptor")).toBe(true);
+    expect(isClassName("rate limiter")).toBe(false);
+    expect(isClassName("Internal routing")).toBe(false);
+    expect(isClassName("log")).toBe(false);
   });
 
   it("labels plugins that run in one direction only", () => {
