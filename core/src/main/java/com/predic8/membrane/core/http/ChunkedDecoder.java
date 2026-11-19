@@ -86,8 +86,8 @@ final class ChunkedDecoder {
      *
      * @param maxLength the maximum length of the chunk in bytes
      * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}, even if its size is beyond
-     *                               what the decoder accepts as well. The stream is then left inside the chunk
-     *                               and cannot be decoded any further.
+     *                               what the decoder accepts as well, see {@link #readChunkSize(InputStream, long)}.
+     *                               The stream is then left inside the chunk and cannot be decoded any further.
      */
     Chunk next(long maxLength) throws IOException {
         if (done) {
@@ -175,7 +175,10 @@ final class ChunkedDecoder {
      * The chunk extensions are skipped.
      *
      * @param maxLength the maximum length of the chunk in bytes. It is checked before the decoder's own limits
-     *                  on the chunk size, so that a chunk over it is reported as too long whatever its size.
+     *                  on the chunk size, so that a chunk over it is reported as too long, even beyond them. The
+     *                  decoder reads at most 8 hex digits, leading zeros included: a longer chunk size is reported
+     *                  as too long only if the digits up to the 9th already exceed {@code maxLength}, and refused as
+     *                  malformed otherwise, since its size is not known.
      * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}
      */
     static int readChunkSize(InputStream in, long maxLength) throws IOException {

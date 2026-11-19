@@ -124,6 +124,19 @@ class ChunkedDecoderTest {
     }
 
     /**
+     * Leading zeros count towards the 8 hex digits the decoder reads. At the 9th digit nothing is known about the
+     * size yet ({@code 0000000000000001} would be a single byte), so the chunk size is refused as malformed, not
+     * reported as too long.
+     */
+    @Test
+    void chunkSizePaddedBeyondTheDigitsTheDecoderReadsIsMalformedNotTooLong() {
+        final var decoder = new ChunkedDecoder(stream("0000000006400001\r\n"));
+
+        final var e = assertThrows(IOException.class, () -> decoder.next(1024));
+        assertFalse(e instanceof ChunkTooLongException, e.toString());
+    }
+
+    /**
      * Without a maximum length, the decoder's own limits on the chunk size still apply.
      */
     @ParameterizedTest
