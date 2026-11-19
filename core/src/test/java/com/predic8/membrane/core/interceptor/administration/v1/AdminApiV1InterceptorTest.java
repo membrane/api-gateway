@@ -429,6 +429,26 @@ class AdminApiV1InterceptorTest {
     }
 
     @Test
+    void noCurlForATruncatedRequest() throws Exception {
+        final var exc = snap("/a", 200);
+        store.getExchangeById(exc.getId()).getRequest().setBodyTruncated(true);
+        assertEquals(409, get(API + "/exchanges/node-a/" + exc.getId() + "/curl").getStatusCode());
+    }
+
+    @Test
+    void balancerNamesMatchingSeveralBalancersAreNotChanged() throws Exception {
+        addBalancer();
+        final var other = new LoadBalancingInterceptor();
+        other.setName(DEFAULT_NAME.toUpperCase());
+        final var proxy = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 3995, null), "localhost", 80);
+        proxy.getFlow().add(other);
+        proxy.init(router);
+        router.getRuleManager().addProxy(proxy, MANUAL);
+
+        assertEquals(409, send(Request.post(node("localhost:8080") + "/down"), false).getStatusCode());
+    }
+
+    @Test
     void storeReportsLimitedMemoryCapabilities() throws Exception {
         final var s = json(get(API + "/exchanges/store")).get("stores").get(0);
         assertEquals("limitedMemory", s.get("type").asText());

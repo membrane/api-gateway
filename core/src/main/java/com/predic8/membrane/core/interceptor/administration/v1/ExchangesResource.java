@@ -250,6 +250,8 @@ final class ExchangesResource {
         final var exc = exchange(req);
         if (exc.getRequest() == null)
             throw notFound("The exchange has no request.");
+        if (exc.getRequest().isBodyTruncated())
+            throw new ApiException(409, "Conflict.", "The store holds only the beginning of the request body, so a curl command would send a different request.");
         final var target = req.enumParam("target", "gateway", Set.of("gateway", "backend"));
         return untrustedText(MessageText.curl(exc, "backend".equals(target)));
     }
