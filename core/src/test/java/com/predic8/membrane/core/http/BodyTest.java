@@ -417,6 +417,57 @@ public class BodyTest {
 	}
 
 	/**
+	 * Like {@link #bodyOfUnknownLengthIsReadInGrowingChunks()}, up to the declared length and not beyond.
+	 */
+	@Test
+	void bodyOfKnownLengthIsReadInGrowingChunks() {
+		final var content = new byte[30_000];
+		new java.util.Random(0).nextBytes(content);
+		final var in = new ByteArrayInputStream(concat(content, "NEXT".getBytes(UTF_8)));
+		final var body = new Body(in, content.length);
+		body.read();
+		assertArrayEquals(content, body.getContent());
+		assertEquals(List.of(8192, 16384, 30_000 - 8192 - 16384), body.chunks.stream().map(Chunk::getLength).toList());
+		assertEquals("NEXT".length(), in.available(), "only the body itself may be consumed");
+	}
+
+	/**
+	 * Memory follows the bytes that arrive, not the length the sender announces: a client announcing a large
+	 * body and sending a few bytes must not make Membrane allocate the whole length.
+	 */
+	@Test
+	void announcedLengthIsNotAllocatedUpFront() {
+		final var in = new LargestArrayRecordingStream("part".getBytes(UTF_8));
+		final var body = new Body(in, 10_000_000);
+
+		assertInstanceOf(EOFException.class, assertThrows(ReadingBodyException.class, body::read).getCause());
+		assertTrue(in.largestArray <= 8192, "largest array: " + in.largestArray);
+	}
+
+	private static byte[] concat(byte[] first, byte[] second) {
+		final var result = Arrays.copyOf(first, first.length + second.length);
+		System.arraycopy(second, 0, result, first.length, second.length);
+		return result;
+	}
+
+	/**
+	 * Records the largest array a reader handed to it to be filled.
+	 */
+	private static class LargestArrayRecordingStream extends FilterInputStream {
+		int largestArray;
+
+		LargestArrayRecordingStream(byte[] content) {
+			super(new ByteArrayInputStream(content));
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			largestArray = Math.max(largestArray, b.length);
+			return super.read(b, off, len);
+		}
+	}
+
+	/**
 	 * Copying the chunks into one array would need the body twice in memory, and fails above 2 GiB.
 	 */
 	@Test

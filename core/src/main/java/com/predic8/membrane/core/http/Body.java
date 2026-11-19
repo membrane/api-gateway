@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,46 +109,44 @@ public class Body extends AbstractBody {
 	}
 
 	/**
-	 * Reads the body into {@link #chunks}, in chunks of at most {@code MAX_CHUNK_LENGTH} bytes, passing
-	 * each chunk to the observers.
+	 * Reads the body into {@link #chunks}, passing each chunk to the observers. The chunks start at the
+	 * buffer size and double up to {@code MAX_CHUNK_LENGTH}, so memory follows the bytes that arrive, not
+	 * the length the sender announces.
 	 * <p>
-	 * A body of known length is not read at all if it is longer than {@code maxLength}. A body of unknown
-	 * length is read no further than one byte beyond {@code maxLength}, in chunks that start at the buffer
-	 * size and double up to {@code MAX_CHUNK_LENGTH}, so a short body does not get a large array.
+	 * A body of known length is not read at all if it is longer than {@code maxLength}, and never beyond
+	 * its length. A body of unknown length is read no further than one byte beyond {@code maxLength}.
 	 *
 	 * @throws EOFException if a body of known length ends early
 	 */
 	@Override
 	protected boolean readLocal(long maxLength) throws IOException {
-		if (length != -1) {
-			if (length > maxLength)
-				return false;
-			long l = length;
-			while (l > 0) {
-				int chunkLength = l > MAX_CHUNK_LENGTH ? MAX_CHUNK_LENGTH : (int) l;
-				addChunk(new Chunk(ByteUtil.readByteArray(inputStream, chunkLength)));
-				l -= chunkLength;
-			}
-			return true;
-		}
+		if (length > maxLength)
+			return false;
+
+		final long end;
+		if (length != -1)
+			end = length;
+		else // one byte beyond the limit is enough to tell that the body is too long
+			end = maxLength == Long.MAX_VALUE ? Long.MAX_VALUE : maxLength + 1;
 
 		long read = 0;
 		int capacity = Math.min(BUFFER_SIZE, MAX_CHUNK_LENGTH);
-		while (true) {
-			// one byte beyond the limit is enough to tell that the body is too long
-			final var pieceLength = maxLength - read < capacity ? (int) (maxLength - read + 1) : capacity;
+		while (read < end) {
+			final var pieceLength = (int) Math.min(capacity, end - read);
 			final var piece = new byte[pieceLength];
 			final var n = inputStream.readNBytes(piece, 0, pieceLength);
 			if (n > 0) {
 				addChunk(new Chunk(n == pieceLength ? piece : Arrays.copyOf(piece, n)));
 				read += n;
 			}
-			if (read > maxLength)
-				return false;
-			if (n < pieceLength)
-				return true; // end of the stream
+			if (n < pieceLength) { // end of the stream
+				if (length != -1)
+					throw new EOFException("Body ended %d bytes before the declared length of %d while being read.".formatted(length - read, length));
+				return true;
+			}
 			capacity = (int) Math.min(2L * capacity, MAX_CHUNK_LENGTH);
 		}
+		return read <= maxLength;
 	}
 
 	private void addChunk(Chunk chunk) {

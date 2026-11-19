@@ -8,3 +8,4 @@ area: Plugins
   - Responses to `HEAD` requests and `304` responses are no longer rejected because of their `Content-Length` [#3690](https://github.com/membrane/api-gateway/issues/3690)
   - XOP/MTOM packages are forwarded unchanged. Before, they were forwarded as reassembled XML with the multipart `Content-Type` [#3691](https://github.com/membrane/api-gateway/issues/3691)
   - The rest of a request body over the limit is not read any more; the connection is closed after the error response
+- A body with a `Content-Length` that is read into memory, by `limit` or any other plugin, takes up memory as its bytes arrive, not for its whole length at once
