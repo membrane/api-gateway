@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: two document/literal operations whose inputs carry the same element (which WS-I BP R2710
+  rules out), next to an operation with an input element of its own. The Body cannot tell which of
+  the two operations a request belongs to.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="https://example.com/shared"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/shared" name="shared">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/shared">
+            <xsd:element name="query">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="ping">
+                <xsd:complexType/>
+            </xsd:element>
+            <xsd:element name="result">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="value" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="Query">
+        <wsdl:part name="parameters" element="tns:query"/>
+    </wsdl:message>
+    <wsdl:message name="Ping">
+        <wsdl:part name="parameters" element="tns:ping"/>
+    </wsdl:message>
+    <wsdl:message name="Result">
+        <wsdl:part name="parameters" element="tns:result"/>
+    </wsdl:message>
+    <wsdl:portType name="SharedPortType">
+        <wsdl:operation name="read">
+            <wsdl:input message="tns:Query"/>
+            <wsdl:output message="tns:Result"/>
+        </wsdl:operation>
+        <wsdl:operation name="delete">
+            <wsdl:input message="tns:Query"/>
+            <wsdl:output message="tns:Result"/>
+        </wsdl:operation>
+        <wsdl:operation name="ping">
+            <wsdl:input message="tns:Ping"/>
+            <wsdl:output message="tns:Result"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="SharedBinding" type="tns:SharedPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="read">
+            <s:operation soapAction="https://example.com/shared/read"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="delete">
+            <s:operation soapAction="https://example.com/shared/delete"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="ping">
+            <s:operation soapAction="https://example.com/shared/ping"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="SharedService">
+        <wsdl:port name="SharedPort" binding="tns:SharedBinding">
+            <s:address location="http://localhost:2001/shared"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

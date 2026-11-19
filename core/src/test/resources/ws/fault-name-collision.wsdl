@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests: two faults whose elements share the local name Error but live in different namespaces,
+  with different content. charge declares both; refund declares the billing one again, so the
+  same fault reached through two operations must not count as a collision.
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="https://example.com/payment"
+                  xmlns:common="https://example.com/common"
+                  xmlns:billing="https://example.com/billing"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/payment" name="payment">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/payment">
+            <xsd:element name="charge">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="amount" type="xsd:decimal"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="chargeResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="refund">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="refundResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="done" type="xsd:boolean"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+        <xsd:schema targetNamespace="https://example.com/common">
+            <xsd:element name="Error">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="code" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+        <xsd:schema targetNamespace="https://example.com/billing">
+            <xsd:element name="Error">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="balance" type="xsd:decimal"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="Charge">
+        <wsdl:part name="parameters" element="tns:charge"/>
+    </wsdl:message>
+    <wsdl:message name="ChargeResponse">
+        <wsdl:part name="parameters" element="tns:chargeResponse"/>
+    </wsdl:message>
+    <wsdl:message name="Refund">
+        <wsdl:part name="parameters" element="tns:refund"/>
+    </wsdl:message>
+    <wsdl:message name="RefundResponse">
+        <wsdl:part name="parameters" element="tns:refundResponse"/>
+    </wsdl:message>
+    <wsdl:message name="CommonError">
+        <wsdl:part name="fault" element="common:Error"/>
+    </wsdl:message>
+    <wsdl:message name="BillingError">
+        <wsdl:part name="fault" element="billing:Error"/>
+    </wsdl:message>
+    <wsdl:portType name="PaymentPortType">
+        <wsdl:operation name="charge">
+            <wsdl:input message="tns:Charge"/>
+            <wsdl:output message="tns:ChargeResponse"/>
+            <wsdl:fault name="CommonError" message="tns:CommonError"/>
+            <wsdl:fault name="BillingError" message="tns:BillingError"/>
+        </wsdl:operation>
+        <wsdl:operation name="refund">
+            <wsdl:input message="tns:Refund"/>
+            <wsdl:output message="tns:RefundResponse"/>
+            <wsdl:fault name="BillingError" message="tns:BillingError"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="PaymentBinding" type="tns:PaymentPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="charge">
+            <s:operation soapAction="https://example.com/payment/charge"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+            <wsdl:fault name="CommonError"><s:fault name="CommonError" use="literal"/></wsdl:fault>
+            <wsdl:fault name="BillingError"><s:fault name="BillingError" use="literal"/></wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="refund">
+            <s:operation soapAction="https://example.com/payment/refund"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+            <wsdl:fault name="BillingError"><s:fault name="BillingError" use="literal"/></wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="PaymentService">
+        <wsdl:port name="PaymentPort" binding="tns:PaymentBinding">
+            <s:address location="http://localhost:2001/payment"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

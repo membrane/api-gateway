@@ -143,6 +143,15 @@ public class ProxyConfiguration {
 	/**
 	 * @description Whether to send a Basic Authentication header with proxy requests.
 	 *              If set to true, &lt;username&gt; and &lt;password&gt; must be provided.
+	 *              For a plain HTTP target, the credentials are sent in the <code>Proxy-Authorization</code>
+	 *              header of the request and replace a <code>Proxy-Authorization</code> header sent by the client.
+	 *              For an HTTPS target, they are sent only with the <code>CONNECT</code> request that opens the tunnel,
+	 *              and the request inside the tunnel carries the client's original header, if any.
+	 *              After a plain HTTP attempt through the proxy, the client's original header is restored,
+	 *              so a retry through an HTTPS tunnel or without the proxy does not carry the credentials,
+	 *              and after the call the request holds the client's original header.
+	 *              Whether a plain HTTP proxy removes the <code>Proxy-Authorization</code> header before
+	 *              forwarding the request is up to the proxy.
 	 * @default false
 	 */
 	@MCAttribute

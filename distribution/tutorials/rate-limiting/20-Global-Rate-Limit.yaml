@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.9.0.json
+#
+# Tutorial: Global Rate Limit
+#
+# A rateLimiter under global applies to all APIs. An API can add a stricter
+# limit of its own.
+#
+# 1.) Start Membrane:
+#     with Docker:
+#       Linux/Mac:
+#         ./run-docker.sh -c 20-Global-Rate-Limit.yaml
+#       Windows:
+#         run-docker.cmd -c 20-Global-Rate-Limit.yaml
+#
+#     or with Java:
+#       Linux/Mac:
+#         ./membrane.sh -c 20-Global-Rate-Limit.yaml
+#       Windows:
+#         membrane.cmd -c 20-Global-Rate-Limit.yaml
+#
+# 2.) Call the products API:
+#       curl -i localhost:2000/products
+#
+#       HTTP/1.1 200 OK
+#       X-RateLimit-Limit: 10
+#       X-RateLimit-Remaining: 9
+#       ...
+#
+# 3.) Call the login API. The headers show its stricter limit:
+#       curl -i -X POST localhost:2000/login
+#
+#       HTTP/1.1 200 OK
+#       X-RateLimit-Limit: 2
+#       X-RateLimit-Remaining: 1
+#       ...
+#
+# 4.) Call the login API two more times:
+#       curl -i -X POST localhost:2000/login
+#       curl -i -X POST localhost:2000/login
+#
+# 5.) Look at the rejection:
+#
+#       HTTP/1.1 429 Too Many Requests
+#       ...
+#       X-RateLimit-Limit: 2
+#       X-RateLimit-Remaining: 0
+#
+# 6.) Call the products API again:
+#       curl -i localhost:2000/products
+#
+#       HTTP/1.1 200 OK
+#       X-RateLimit-Limit: 10
+#       X-RateLimit-Remaining: 5
+#       ...
+#
+#     The login requests were counted by the global limit as well.
+
+global:
+  - rateLimiter:
+      requestLimit: 10
+      requestLimitDuration: PT1M
+
+---
+api:
+  name: Products
+  port: 2000
+  path:
+    uri: /products
+  flow:
+    - static:
+        src: Products
+    - return:
+        status: 200
+
+---
+api:
+  name: Login
+  port: 2000
+  path:
+    uri: /login
+  flow:
+    - rateLimiter:
+        requestLimit: 2
+        requestLimitDuration: PT1M
+    - static:
+        src: Logged in
+    - return:
+        status: 200
+
+# NOTE:
+#   - When several rate limiters apply to a request, the X-RateLimit-* headers
+#     describe the one with the fewest requests left.
+#   - Each rateLimiter has its own counters. The global one counts the requests
+#     of all APIs together.
+#
+# See also:
+#   - ../advanced/120-Interceptor-Chains.yaml to share interceptors between some APIs

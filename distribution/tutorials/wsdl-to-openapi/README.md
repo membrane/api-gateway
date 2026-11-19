@@ -17,6 +17,11 @@ The tutorials build on each other, from simple to advanced:
    construct the converter maps, showing what each becomes in the OpenAPI and in the JSON.
 4. [40-WSDL-Faults.yaml](40-WSDL-Faults.yaml) — what a SOAP fault becomes for a JSON client: a
    problem details document carrying the declared fault's content.
+5. [50-JSON-Client-to-SOAP-Service.yaml](50-JSON-Client-to-SOAP-Service.yaml) — convert single messages with
+   `json2Soap` and `soap2Json`: call a SOAP service with JSON, without generating an API. Types,
+   element order and lists come from the XML Schema in the WSDL, not from guessing.
+6. [60-SOAP-Client-to-JSON-Backend.yaml](60-SOAP-Client-to-JSON-Backend.yaml) — the other direction: a SOAP
+   interface for a JSON backend, with a backend error turned into a SOAP fault.
 
 ## Next Steps
 
