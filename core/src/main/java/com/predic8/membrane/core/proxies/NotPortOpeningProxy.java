@@ -14,5 +14,17 @@
 
 package com.predic8.membrane.core.proxies;
 
+/**
+ * An API that opens no port. It gets its exchanges in other ways: from other APIs through <code>internal://</code>, or
+ * through an inbound of its own, e.g. messages from a broker or a schedule.
+ */
 public interface NotPortOpeningProxy {
+
+    /**
+     * Stops the API's own inbound, so that it starts no further exchanges. Exchanges in progress may finish. Called
+     * when the router stops or reloads its configuration, like closing the ports stops the inbound of the other APIs,
+     * and before the HTTP clients are closed. Can be called more than once.
+     */
+    default void stopInbound() {
+    }
 }

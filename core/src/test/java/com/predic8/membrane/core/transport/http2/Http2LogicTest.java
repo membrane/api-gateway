@@ -77,7 +77,10 @@ class Http2LogicTest {
                 // A GET request on stream 2: a client opens streams with odd ids only (RFC 9113 §5.1.1).
                 arguments("HEADERS opening a stream with an even id", new byte[]{0, 0, 3, 0x1, 0x5, 0, 0, 0, 2, (byte) 0x82, (byte) 0x84, (byte) 0x86}),
                 // A stream cannot depend on itself (RFC 9113 §5.3.1), also while it is idle.
-                arguments("PRIORITY of an idle stream depending on itself", new byte[]{0, 0, 5, 0x2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 15})
+                arguments("PRIORITY of an idle stream depending on itself", new byte[]{0, 0, 5, 0x2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 15}),
+                // A GET request on stream 1 whose HEADERS carry a priority depending on stream 1.
+                arguments("HEADERS of a stream depending on itself", new byte[]{
+                        0, 0, 8, 0x1, 0x25, 0, 0, 0, 1, 0, 0, 0, 1, 15, (byte) 0x82, (byte) 0x84, (byte) 0x86})
         );
     }
 
@@ -333,7 +336,13 @@ class Http2LogicTest {
                 arguments("CONNECT without :authority", (Object) fields(":method", "CONNECT")),
                 arguments("CONNECT with :path", (Object) fields(":method", "CONNECT", ":authority", "example.com:443", ":path", "/")),
                 arguments("content-length but no body", (Object) withGet("content-length", "5")),
-                arguments("invalid content-length", (Object) withGet("content-length", "abc"))
+                arguments("invalid content-length", (Object) withGet("content-length", "abc")),
+                // :authority and host must name the same host (RFC 9113 §8.3.1).
+                arguments("host differing from :authority", (Object) withGet("host", "other.example")),
+                arguments("two different host fields", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "a.example", "host", "b.example")),
+                arguments("host with a port :authority lacks", (Object) withGet("host", "localhost:8443")),
+                // 443 is not the default port of http.
+                arguments("host with the default port of another scheme", (Object) fields(":method", "GET", ":scheme", "http", ":path", "/", ":authority", "localhost", "host", "localhost:443"))
         );
     }
 
@@ -487,7 +496,11 @@ class Http2LogicTest {
     static Stream<Arguments> wellFormedRequests() {
         return Stream.of(
                 arguments("te: trailers", (Object) withGet("te", "trailers")),
-                arguments("CONNECT", (Object) fields(":method", "CONNECT", ":authority", "example.com:443"))
+                arguments("CONNECT", (Object) fields(":method", "CONNECT", ":authority", "example.com:443")),
+                // The same host, as the scheme's default port may be left out (RFC 3986 §6.2.3).
+                arguments("host with the default port :authority leaves out", (Object) withGet("host", "LOCALHOST:443")),
+                arguments(":authority with the default port host leaves out", (Object) fields(":method", "GET", ":scheme", "http", ":path", "/", ":authority", "localhost:80", "host", "localhost")),
+                arguments("host fields differing only by the default port", (Object) fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "[::1]", "host", "[::1]:443"))
         );
     }
 
@@ -500,6 +513,53 @@ class Http2LogicTest {
 
         assertNotNull(handler.message);
         assertEquals(0, handler.malformedStreamId);
+    }
+
+    /**
+     * A host field that repeats :authority is allowed (RFC 9113 §8.3.1). The request is forwarded with one Host field,
+     * so that the gateway and an HTTP/1.1 backend see the same host.
+     */
+    @Test
+    void hostRepeatingAuthorityGivesOneHostField() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096), withGet("host", "LOCALHOST")), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals(1, handler.message.getHeader().getNumberOf("Host"));
+        assertEquals("localhost", handler.message.getHeader().getHost());
+    }
+
+    /** Several host fields naming the same host are allowed without :authority too; one Host field is forwarded. */
+    @Test
+    void matchingHostFieldsWithoutAuthorityGiveOneHostField() throws Exception {
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(headersFrame(true, new Encoder(4096),
+                fields(":method", "GET", ":scheme", "https", ":path", "/", "host", "example.com", "host", "EXAMPLE.COM")), handler).handle());
+
+        assertNotNull(handler.message);
+        assertEquals(0, handler.malformedStreamId);
+        assertEquals(1, handler.message.getHeader().getNumberOf("Host"));
+        assertEquals("example.com", handler.message.getHeader().getHost());
+    }
+
+    /**
+     * DATA still in flight for a stream reset because its header block is malformed is dropped, not queued for a body
+     * nobody reads. handle() does not start the frame sender, so the reset is never written and the stream stays open.
+     */
+    @Test
+    void dataAfterMalformedHeadersIsDropped() throws Exception {
+        final var in = new ByteArrayOutputStream();
+        in.write(headersFrame(false, new Encoder(4096), withGet("host", "example.com")));
+        in.write(dataFrame(true, "abc"));
+        final var handler = new RecordingHandler();
+
+        assertThrows(EndOfStreamException.class, () -> createLogic(in.toByteArray(), handler).handle());
+
+        assertEquals(1, handler.malformedStreamId);
+        // Only the abort marker, which handle() adds to every open stream when the input ends.
+        assertEquals(1, handler.malformedStream.getReceivedDataFramesQueued());
     }
 
     /** Trailers carry no pseudo-headers (RFC 9113 §8.1). The request was already handed over, so its body fails. */
@@ -865,6 +925,7 @@ class Http2LogicTest {
         /** If set, every request handed over is reported as being processed, and none as finished. */
         Http2Logic logic;
         int malformedStreamId;
+        StreamInfo malformedStream;
         int oversizedStreamId;
 
         @Override
@@ -888,6 +949,7 @@ class Http2LogicTest {
         @Override
         public void handleMalformedHeaders(StreamInfo streamInfo) {
             malformedStreamId = streamInfo.getStreamId();
+            malformedStream = streamInfo;
         }
     }
 }

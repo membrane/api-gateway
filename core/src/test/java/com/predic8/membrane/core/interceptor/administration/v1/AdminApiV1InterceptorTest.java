@@ -207,6 +207,24 @@ class AdminApiV1InterceptorTest {
     }
 
     @Test
+    void startOfAnActiveApiIsAConflict() throws Exception {
+        assertEquals(409, send(Request.post(VICTIM + "/start"), false).getStatusCode());
+        assertSame(victim, RuleUtil.findRuleByIdentifier(router, "victim:3999"));
+    }
+
+    @Test
+    void apisSharingAnIdAreNotChanged() throws Exception {
+        final var twin = new ServiceProxy(new ServiceProxyKey("*", "GET", "/other", 3999, null), "backend.example.com", 8080);
+        twin.setName("victim");
+        twin.init(router);
+        router.getRuleManager().addProxy(twin, MANUAL);
+
+        assertEquals(409, send(Request.delete(VICTIM), false).getStatusCode());
+        assertTrue(router.getRuleManager().getRules().contains(victim));
+        assertTrue(router.getRuleManager().getRules().contains(twin));
+    }
+
+    @Test
     void deletesApi() throws Exception {
         assertEquals(204, send(Request.delete(VICTIM), false).getStatusCode());
         assertNull(RuleUtil.findRuleByIdentifier(router, "victim:3999"));

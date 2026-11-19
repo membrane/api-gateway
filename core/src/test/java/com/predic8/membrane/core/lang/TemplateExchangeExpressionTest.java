@@ -63,6 +63,13 @@ class TemplateExchangeExpressionTest {
     }
 
     @Test
+    void empty() {
+        final var empty = new TemplateExchangeExpression(adapter, language, "", TEXT_SERIALIZATION);
+        assertEquals("", empty.evaluate(exc, REQUEST, String.class));
+        assertEquals("", empty.evaluate(exc, REQUEST, Object.class));
+    }
+
+    @Test
     void header() {
         assertEquals("Header: 42", eval(exc, "Header: ${header.bar}"));
     }

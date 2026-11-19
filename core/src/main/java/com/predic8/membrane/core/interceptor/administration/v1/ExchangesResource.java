@@ -242,7 +242,8 @@ final class ExchangesResource {
         final var exc = exchange(req);
         final var msg = message(exc, req.path(2));
         final var contentType = isResponse(req.path(2)) ? exc.getResponseContentType() : exc.getRequestContentType();
-        return ok(MessageText.formatted(msg, contentType, req.intParam("maxBytes", 1_048_576, 1, 16 * 1_048_576)));
+        return ok(MessageText.formatted(msg, contentType, req.intParam("maxBytes", 1_048_576, 1, 16 * 1_048_576),
+                contentLength(exc, isResponse(req.path(2)))));
     }
 
     Response curl(ApiRequest req) throws Exception {

@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
+import com.predic8.membrane.core.interceptor.jms.JmsConsumerProxy;
+import com.predic8.membrane.core.interceptor.kafka.KafkaConsumerProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
@@ -171,6 +173,50 @@ class ApiInfoTest {
 
         assertNull(proxy.getBasePaths());
         assertEquals("http://127.0.0.1:2000/shop/v2/", buildUrl(proxy));
+    }
+
+    @Test
+    @DisplayName("jmsConsumer with the default name: kind and destination only")
+    void jmsConsumerWithDefaultName() {
+        final var consumer = new JmsConsumerProxy();
+        consumer.setQueue("orders");
+        consumer.setName("JMSConsumer: orders");
+
+        assertEquals("JMSConsumer:", proxyKind(consumer));
+        assertEquals("queue:orders", proxyLabel(consumer));
+    }
+
+    @Test
+    @DisplayName("Named jmsConsumer on a topic: name, then the destination")
+    void namedJmsConsumerOnTopic() {
+        final var consumer = new JmsConsumerProxy();
+        consumer.setTopic("news");
+        consumer.setName("news-in");
+
+        assertEquals("news-in topic:news", proxyLabel(consumer));
+    }
+
+    @Test
+    @DisplayName("kafkaConsumer with the default name: kind, topic and group only")
+    void kafkaConsumerWithDefaultName() {
+        final var consumer = new KafkaConsumerProxy();
+        consumer.setTopic("orders");
+        consumer.setGroupId("membrane");
+        consumer.setName("orders-membrane");
+
+        assertEquals("KafkaConsumer:", proxyKind(consumer));
+        assertEquals("topic:orders group:membrane", proxyLabel(consumer));
+    }
+
+    @Test
+    @DisplayName("Named kafkaConsumer: name, then topic and group")
+    void namedKafkaConsumer() {
+        final var consumer = new KafkaConsumerProxy();
+        consumer.setTopic("orders");
+        consumer.setGroupId("membrane");
+        consumer.setName("orders-in");
+
+        assertEquals("orders-in topic:orders group:membrane", proxyLabel(consumer));
     }
 
     private static APIProxy openApiProxy(String fixture) {

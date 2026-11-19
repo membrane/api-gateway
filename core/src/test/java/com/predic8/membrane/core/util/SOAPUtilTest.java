@@ -24,11 +24,18 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
+import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
+import static com.predic8.membrane.core.http.Header.SERVER;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
 import static com.predic8.membrane.core.http.Request.post;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -70,6 +77,44 @@ class SOAPUtilTest {
     void validateSOAPEnvelopeRethrowsUnreadableBody() throws Exception {
         assertThrows(ReadingBodyException.class,
                 () -> SOAPUtil.validateSOAPEnvelope(new XOPReconstitutor(), undecodableBody()));
+    }
+
+    /** SOAP 1.1 section 6.2: every fault is sent with 500. */
+    @Test
+    void soap11FaultResponse() {
+        final var response = SOAPUtil.createSOAPFaultResponse(Client, "rejected", Map.of(), SOAP11);
+        assertEquals(500, response.getStatusCode());
+        assertEquals("Internal Server Error", response.getStatusMessage());
+        assertEquals(TEXT_XML_UTF8, response.getHeader().getContentType());
+        assertEquals(PRODUCT_NAME, response.getHeader().getFirstValue(SERVER));
+        assertTrue(response.getBodyAsStringDecoded().contains(SOAP11_NS));
+    }
+
+    @Test
+    void soap11ServerFaultResponse() {
+        assertEquals(500, SOAPUtil.createSOAPFaultResponse(Server, "failed", Map.of(), SOAP11).getStatusCode());
+    }
+
+    /**
+     * SOAP 1.2 Part 2, section 7.5.2.2: a Sender fault is sent with 400. SOAP 1.2 is sent as
+     * application/soap+xml (section 7.1.4); a SOAP 1.2 client may reject a text/xml response.
+     */
+    @Test
+    void soap12SenderFaultResponse() {
+        final var response = SOAPUtil.createSOAPFaultResponse(Client, "rejected", Map.of(), SOAP12);
+        assertEquals(400, response.getStatusCode());
+        assertEquals("Bad Request", response.getStatusMessage());
+        assertEquals("application/soap+xml;charset=UTF-8", response.getHeader().getContentType());
+        assertEquals(PRODUCT_NAME, response.getHeader().getFirstValue(SERVER));
+        assertTrue(response.getBodyAsStringDecoded().contains(SOAP12_NS));
+    }
+
+    /** SOAP 1.2 Part 2, section 7.5.2.2: every fault but a Sender fault is sent with 500. */
+    @Test
+    void soap12ReceiverFaultResponse() {
+        final var response = SOAPUtil.createSOAPFaultResponse(Server, "failed", Map.of(), SOAP12);
+        assertEquals(500, response.getStatusCode());
+        assertEquals("Internal Server Error", response.getStatusMessage());
     }
 
     /** Announced as gzip, but the compressed data stops two bytes into the stream. */

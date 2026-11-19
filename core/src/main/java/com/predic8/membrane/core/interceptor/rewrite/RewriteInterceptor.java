@@ -42,6 +42,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
 import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
+import static com.predic8.membrane.core.util.URLUtil.getSchemeAndAuthority;
 import static com.predic8.membrane.core.util.text.TextUtil.capitalizeFirstCharacter;
 import static com.predic8.membrane.core.util.text.TextUtil.toEnglishList;
 import static java.util.Locale.US;
@@ -152,7 +153,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
          * @description Replacement for the matched part. <code>$1</code>, <code>$2</code>, ... insert the groups
          * captured by <code>from</code>. An absolute URL such as <code>https://example.com/$1</code> redirects by
          * default; with <code>do: rewrite</code> it replaces the backend instead, if the target URL has no path or
-         * only <code>/</code>. A target URL with a longer path is always called as configured.
+         * only <code>/</code>. A target URL with a longer path is always called as configured. A redirect goes to
+         * the host of the request or to the scheme and host written in <code>to</code>: a request whose captured
+         * groups, or the part of the path in front of a match without <code>^</code>, would change them, e.g. into
+         * <code>//example.com/</code>, is answered with 400.
          * @example /shop/v2/$1
          */
         @Required
@@ -205,7 +209,14 @@ public class RewriteInterceptor extends AbstractInterceptor {
         // URL with a base path is the destination of every request and must not end up in the Location header.
         if (mapping != null && mapping.getDo() != REWRITE) {
             log.debug("match found: {} redirecting to: {} for type: {}", mapping.from, mapping.to, mapping.getDo());
-            exc.setResponse(Response.redirect(replace(requestPathQuery, mapping), mapping.getDo() == REDIRECT_PERMANENT).build());
+            final var location = replace(requestPathQuery, mapping);
+            // Only the configuration may name the host of a redirect, not the request through a captured group or
+            // through the part of the path in front of an unanchored match.
+            if (!isConfiguredHost(location, mapping.to)) {
+                setError(exc, requestUri, "The redirect would lead to another host.");
+                return RETURN;
+            }
+            exc.setResponse(Response.redirect(location, mapping.getDo() == REDIRECT_PERMANENT).build());
             return RETURN;
         }
 
@@ -278,6 +289,33 @@ public class RewriteInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * The location stays on the host of the request, or it has exactly the scheme and authority that 'to' names in
+     * front of its first group reference, so a group can't extend them, e.g. with "@evil.example" or ".evil.example".
+     * A browser ignores tabs, newlines and leading spaces or control characters, so a location with any of them is
+     * not trusted.
+     */
+    static boolean isConfiguredHost(String location, String to) {
+        for (var i = 0; i < location.length(); i++) {
+            if (location.charAt(i) <= ' ')
+                return false;
+        }
+        final var host = getSchemeAndAuthority(location);
+        return host.isEmpty() || host.equals(getSchemeAndAuthority(literalPrefix(to)));
+    }
+
+    /**
+     * The replacement text in front of its first group reference ('$') or escape ('\').
+     */
+    static String literalPrefix(String replacement) {
+        for (var i = 0; i < replacement.length(); i++) {
+            final var c = replacement.charAt(i);
+            if (c == '$' || c == '\\')
+                return replacement.substring(0, i);
+        }
+        return replacement;
+    }
+
+    /**
      * A target URL template without a path, e.g. http://${header.region}.backend, reaches the destinations
      * unevaluated (see DispatchingInterceptor), so its '{' and '}' must not fail the parsing. The target only allows
      * templates with a strict URI factory, which already parsed any request path that is part of a destination.
@@ -293,16 +331,20 @@ public class RewriteInterceptor extends AbstractInterceptor {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException | IllegalArgumentException e) {
             log.info("Can't parse query: {}", destination);
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .addSubType("path")
-                    .title("Request URL could not be processed.")
-                    .detail(URL_NOT_PROCESSABLE, true)
-                    .internal("component", "rewrite")
-                    .internal("path", destination)
-                    .internal("reason", e.getMessage())
-                    .buildAndSetResponse(exc);
+            setError(exc, destination, e.getMessage());
             return null;
         }
+    }
+
+    private void setError(Exchange exc, String path, String reason) {
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .addSubType("path")
+                .title("Request URL could not be processed.")
+                .detail(URL_NOT_PROCESSABLE, true)
+                .internal("component", "rewrite")
+                .internal("path", path)
+                .internal("reason", reason)
+                .buildAndSetResponse(exc);
     }
 
     private void logMappings() {

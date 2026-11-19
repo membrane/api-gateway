@@ -58,13 +58,13 @@ public class ConcurrentConnectionLimitTest {
         sp.getFlow().add(RETURN);
 
         router.add(sp);
-        // The default TCP accept backlog (50, HttpTransport.backlog) is smaller than the
-        // `concurrency` burst (100) this test fires. When the backlog is exceeded, the OS queues
-        // /paces the excess SYNs instead of making them all available to accept() at once, which
-        // spreads acceptance across multiple 1s admission windows and lets more than
-        // `concurrentLimit` connections succeed. Match the backlog to the burst size so the
-        // whole burst lands in one tight accept() loop, before any "good" connection's 1s sleep
-        // elapses - this is what makes the assertions below deterministic.
+        // When the TCP accept backlog is smaller than the `concurrency` burst (100) this test
+        // fires, the OS queues/paces the excess SYNs instead of making them all available to
+        // accept() at once, which spreads acceptance across multiple 1s admission windows and
+        // lets more than `concurrentLimit` connections succeed. Set the backlog to the burst size
+        // explicitly, independent of the default, so the whole burst lands in one tight accept()
+        // loop, before any "good" connection's 1s sleep elapses - this is what makes the
+        // assertions below deterministic.
         ((HttpTransport) router.getTransport()).setBacklog(concurrency);
         router.start();
         router.getTransport().setConcurrentConnectionLimitPerIp(concurrentLimit);

@@ -358,6 +358,23 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void anUnreadableRequestBodyKeepsTheResponse() throws Exception {
+        final var store = store();
+        snap(store, "/a", "x", 200);
+        try (var files = Files.walk(dir)) {
+            final var request = files.filter(f -> f.toString().endsWith("-Request.msg")).findFirst().orElseThrow();
+            Files.delete(request);
+            Files.createDirectory(request); // exists, but cannot be read as a file
+        }
+
+        final var exc = store().getExchangeById(store.getAllExchangesAsList().getFirst().getId());
+
+        assertTrue(exc.getRequest().isBodyTruncated());
+        assertEquals("/a", exc.getRequest().getUri());
+        assertEquals("response-of-/a", exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
     void idsAreNotReusedAfterARestartWithASmallerIndex() throws Exception {
         final var writer = store();
         final var older = exchange("/older");

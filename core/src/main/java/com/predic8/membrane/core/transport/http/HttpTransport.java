@@ -65,7 +65,7 @@ public class HttpTransport extends Transport {
 	private int socketTimeout = 30000;
 	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
-	private int backlog = 50;
+	private int backlog = 500;
 
 	private final Map<Integer, Map<IpPort, HttpEndpointListener>> portListenerMapping = new HashMap<>();
 	private final List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<>();
@@ -311,8 +311,11 @@ public class HttpTransport extends Transport {
 
 	/**
 	 * @description Maximum number of incoming connections the operating system queues on a listening port before
-	 * Membrane accepts them. Beyond that, the operating system refuses or drops new connection attempts.
-	 * @default 50
+	 * Membrane accepts them. Beyond that, the operating system refuses or drops new connection attempts. The
+	 * operating system may cap the value, e.g. at 200 on Windows or at <code>net.core.somaxconn</code> on Linux.
+	 * The backlog is applied when the port is opened; changing it does not affect ports that stay open across a
+	 * configuration reload.
+	 * @default 500
 	 * @example 200
 	 */
 	@MCAttribute

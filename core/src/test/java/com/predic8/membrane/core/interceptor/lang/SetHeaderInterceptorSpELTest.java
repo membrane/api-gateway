@@ -162,6 +162,14 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     }
 
     @Test
+    void emptyValue() {
+        interceptor.setValue("");
+        interceptor.init(router);
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+        assertEquals("", getHeader("x-bar"));
+    }
+
+    @Test
     void failOnErrorTrue() {
         interceptor.setValue("42${wrong}");
         interceptor.setFailOnError(true);

@@ -266,6 +266,82 @@ public class RequestTest {
         assertEquals("hello", written.getBodyAsStringDecoded());
     }
 
+    /**
+     * A request whose Content-Length and Transfer-Encoding were removed, e.g. by a headerFilter, or that never had
+     * them, e.g. an HTTP/2 request without content-length, must still tell the next hop where its body ends.
+     * Otherwise the body is read as the next request on the connection.
+     */
+    @Nested
+    class FramingIsAddedOnWrite {
+
+        private static final String SMUGGLED = "GET /admin HTTP/1.1\r\nHost: backend\r\n\r\n";
+
+        @Test
+        void streamedBodyIsSentChunked() throws Exception {
+            final var request = post("http://example.com/products")
+                    .body(new ByteArrayInputStream(SMUGGLED.getBytes(UTF_8)))
+                    .build();
+
+            final var written = writeAndReadBack(request);
+
+            assertTrue(written.getHeader().isChunked());
+            assertEquals(SMUGGLED, written.getBodyAsStringDecoded());
+        }
+
+        @Test
+        void bodyThatWasReadGetsContentLength() throws Exception {
+            final var request = post("http://example.com/products").body(SMUGGLED).build();
+            request.getHeader().removeFields(Header.CONTENT_LENGTH);
+
+            final var written = writeAndReadBack(request);
+
+            assertEquals(SMUGGLED.length(), written.getHeader().getContentLength());
+            assertEquals(SMUGGLED, written.getBodyAsStringDecoded());
+        }
+
+        @Test
+        void http10RequestGetsContentLength() throws Exception {
+            final var request = post("http://example.com/products")
+                    .version("1.0")
+                    .body(new ByteArrayInputStream(SMUGGLED.getBytes(UTF_8)))
+                    .build();
+
+            final var written = writeAndReadBack(request);
+
+            assertFalse(written.getHeader().isChunked());
+            assertEquals(SMUGGLED.length(), written.getHeader().getContentLength());
+        }
+
+        /**
+         * A servlet container hands over every request with a body stream, even a GET without a body.
+         */
+        @Test
+        void getWithEmptyStreamGetsNoFraming() throws Exception {
+            final var request = Request.get("http://example.com/products")
+                    .body(new ByteArrayInputStream(new byte[0]))
+                    .build();
+
+            final var out = new ByteArrayOutputStream();
+            request.write(out, true);
+
+            assertFalse(request.getHeader().isChunked(), out.toString(UTF_8));
+            assertFalse(request.getHeader().hasContentLength(), out.toString(UTF_8));
+            assertTrue(out.toString(UTF_8).endsWith("\r\n\r\n"));
+        }
+
+        private static Request writeAndReadBack(Request request) throws Exception {
+            final var out = new ByteArrayOutputStream();
+            request.write(out, true);
+
+            final var in = new ByteArrayInputStream(out.toByteArray());
+            final var written = new Request();
+            written.read(in, true);
+            written.getBody().getContent();
+            assertEquals(0, in.available(), () -> "Bytes after the request: " + out.toString(UTF_8));
+            return written;
+        }
+    }
+
     @Test
     void isHTTP11() {
         assertTrue(request.isHTTP11());
@@ -402,7 +478,7 @@ public class RequestTest {
      */
     @Test
     void transferEncodingNotEndingInChunkedIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -412,7 +488,7 @@ public class RequestTest {
 
     @Test
     void transferEncodingNotEndingInChunkedIsRejectedDespiteContentLength() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -423,7 +499,7 @@ public class RequestTest {
 
     @Test
     void transferEncodingWithChunkedNotFinalIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: chunked, gzip
@@ -434,12 +510,13 @@ public class RequestTest {
     /**
      * The two field lines combine to "gzip, chunked", which ends in "chunked" and is therefore
      * valid chunked framing - exactly like the single-field form in
-     * {@link #transferEncodingEndingInChunkedIsAccepted()}. This used to assert rejection, which
-     * only described what Header.isChunked() did when it read the first field line alone (#3327).
+     * {@link #transferCodingOtherThanChunkedIsRejected()}, so it is rejected for its gzip coding
+     * (#3789), not for its framing. Reading the first field line alone would reject it as
+     * unframed, reading the last one alone would accept it (#3327).
      */
     @Test
-    void transferEncodingEndingInChunkedAcrossSeveralFieldsIsAccepted() throws Exception {
-        assertInstanceOf(ChunkedBody.class, readRequest("""
+    void transferCodingOtherThanChunkedAcrossSeveralFieldsIsRejected() {
+        assertThrowsExactly(UnsupportedTransferCodingException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -447,7 +524,7 @@ public class RequestTest {
 
                 0
 
-                """).getBody());
+                """));
     }
 
     /**
@@ -458,7 +535,7 @@ public class RequestTest {
      */
     @Test
     void emptyTransferEncodingIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding:
@@ -475,7 +552,7 @@ public class RequestTest {
      */
     @Test
     void transferEncodingWithChunkedNotFinalAcrossSeveralFieldsIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: chunked
@@ -491,7 +568,7 @@ public class RequestTest {
      */
     @Test
     void chunkedWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: chunked
@@ -506,7 +583,7 @@ public class RequestTest {
 
     @Test
     void chunkedAcrossSeveralFieldsWithContentLengthIsRejected() {
-        assertThrows(MalformedHeaderException.class, () -> readRequest("""
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip
@@ -518,12 +595,47 @@ public class RequestTest {
                 """));
     }
 
+    /**
+     * Membrane decodes only "chunked": plugins would read the gzip-coded bytes as content (#3789).
+     */
     @Test
-    void transferEncodingEndingInChunkedIsAccepted() throws Exception {
-        assertInstanceOf(ChunkedBody.class, readRequest("""
+    void transferCodingOtherThanChunkedIsRejected() {
+        assertThrowsExactly(UnsupportedTransferCodingException.class, () -> readRequest("""
                 POST /products HTTP/1.1
                 Host: example.com
                 Transfer-Encoding: gzip, chunked
+
+                0
+
+                """));
+    }
+
+    /**
+     * RFC 9112 7.1: a sender must not apply "chunked" more than once. Decoding it once would leave
+     * the inner chunked framing in the content. The request is malformed, not using a coding
+     * Membrane does not understand, so it is not an UnsupportedTransferCodingException (501).
+     */
+    @Test
+    void chunkedAppliedTwiceIsRejected() {
+        assertThrowsExactly(MalformedHeaderException.class, () -> readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: chunked, chunked
+
+                0
+
+                """));
+    }
+
+    /**
+     * Coding names are case-insensitive and empty list elements are ignored (RFC 9110 5.6.1.2).
+     */
+    @Test
+    void chunkedWithEmptyListElementsIsAccepted() throws Exception {
+        assertInstanceOf(ChunkedBody.class, readRequest("""
+                POST /products HTTP/1.1
+                Host: example.com
+                Transfer-Encoding: , Chunked,
 
                 0
 
