@@ -77,6 +77,18 @@ final class ChunkedDecoder {
      * @throws IOException if reading fails or the framing is invalid
      */
     Chunk next() throws IOException {
+        return next(Long.MAX_VALUE);
+    }
+
+    /**
+     * Like {@link #next()}, but checks the chunk size before the chunk is read, so that a sender cannot make
+     * the decoder allocate the chunk, or wait for its data, just by announcing it.
+     *
+     * @param maxLength the maximum length of the chunk in bytes
+     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}. The stream is then left
+     *                               inside the chunk and cannot be decoded any further.
+     */
+    Chunk next(long maxLength) throws IOException {
         if (done) {
             return null;
         }
@@ -85,6 +97,9 @@ final class ChunkedDecoder {
             trailer = readTrailer(in);
             done = true;
             return null;
+        }
+        if (chunkSize > maxLength) {
+            throw new ChunkTooLongException();
         }
         final var chunk = new Chunk(readByteArray(in, chunkSize));
         expect(in, CR);
@@ -251,6 +266,15 @@ final class ChunkedDecoder {
             throw new EOFException("Stream ended inside a chunked body");
         }
         return c;
+    }
+
+    /**
+     * A chunk is longer than the length the caller of {@link #next(long)} accepts.
+     */
+    static final class ChunkTooLongException extends IOException {
+        ChunkTooLongException() {
+            super("Chunk is longer than the maximum length.");
+        }
     }
 
     /**

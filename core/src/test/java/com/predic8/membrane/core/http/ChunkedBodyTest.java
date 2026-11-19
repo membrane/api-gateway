@@ -426,12 +426,32 @@ public class ChunkedBodyTest {
     }
 
     @Test
-    void readUpToStopsAfterTheChunkThatExceedsTheLimit() {
+    void readUpToStopsAtTheSizeOfTheChunkThatExceedsTheLimit() {
         final var in = new ByteArrayInputStream(chunks().add("first").add("second").add("third").build());
         final var body = new ChunkedBody(in);
         assertEquals(new TooLong(true), body.readUpTo(8));
         assertTrue(body.hasFailed());
-        assertEquals(("5" + CRLF + "third" + CRLF + "0" + CRLF + CRLF).length(), in.available());
+        assertEquals(("second" + CRLF + "5" + CRLF + "third" + CRLF + "0" + CRLF + CRLF).length(), in.available());
+    }
+
+    /**
+     * A sender cannot make the gateway allocate a large chunk, nor wait for its data, by announcing it.
+     */
+    @Test
+    void readUpToRejectsAChunkLongerThanTheLimitBeforeReadingIt() {
+        final var in = new ByteArrayInputStream(("6400000" + CRLF).getBytes(US_ASCII));
+        final var body = new ChunkedBody(in);
+        assertEquals(new TooLong(true), body.readUpTo(1024));
+        assertTrue(body.hasFailed());
+    }
+
+    @Test
+    void readUpToCountsAPartialReadThatAlreadyExceedsTheLimit() throws IOException {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").build()));
+        assertEquals('f', body.getContentAsStream().read());
+
+        assertEquals(new TooLong(true), body.readUpTo(3));
+        assertTrue(body.hasFailed());
     }
 
     /**

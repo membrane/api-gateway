@@ -91,6 +91,27 @@ class ChunkedDecoderTest {
     }
 
     @Test
+    void chunkUpToTheMaximumLengthIsRead() throws IOException {
+        final var decoder = new ChunkedDecoder(stream("3\r\nabc\r\n0\r\n\r\n"));
+
+        assertEquals("abc", text(decoder.next(3)));
+        assertNull(decoder.next(0));
+    }
+
+    /**
+     * The chunk size alone tells that the chunk is too long, so no array is allocated for it and no data
+     * is waited for.
+     */
+    @Test
+    void chunkLongerThanTheMaximumLengthIsRejectedBeforeItsDataIsRead() {
+        final var in = stream("6400000\r\nabc");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertThrows(ChunkTooLongException.class, () -> decoder.next(1024));
+        assertEquals("abc", new String(in.readAllBytes(), US_ASCII), "the data of the chunk must not be read");
+    }
+
+    @Test
     void oversizedTrailerLineIsRejected() {
         final var decoder = new ChunkedDecoder(stream("0\r\nX: " + "a".repeat(MAX_LINE_LENGTH) + "\r\n\r\n"));
 

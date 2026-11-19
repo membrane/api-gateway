@@ -91,20 +91,25 @@ public class ChunkedBody extends AbstractBody {
     }
 
     /**
-     * Reads no further than the chunk that takes the body beyond {@code maxLength}. The chunks a partial
-     * read through {@link #getContentAsStream()} already holds count towards it.
+     * Reads no further than the size of the chunk that would take the body beyond {@code maxLength}; that
+     * chunk is neither allocated nor read. The chunks a partial read through {@link #getContentAsStream()}
+     * already holds count towards it.
      */
     @Override
     protected boolean readLocal(long maxLength) throws IOException {
         // the observers get the chunks only once the whole body has been read
         var length = getLengthOfChunks();
+        if (length > maxLength)
+            return false;
         final var chunkList = new ArrayList<Chunk>();
-        Chunk chunk;
-        while ((chunk = decoder.next()) != null) {
-            chunkList.add(chunk);
-            length += chunk.getLength();
-            if (length > maxLength)
-                return false;
+        try {
+            Chunk chunk;
+            while ((chunk = decoder.next(maxLength - length)) != null) {
+                chunkList.add(chunk);
+                length += chunk.getLength();
+            }
+        } catch (ChunkedDecoder.ChunkTooLongException e) {
+            return false;
         }
         chunks.addAll(chunkList);
         trailer = decoder.getTrailer();
