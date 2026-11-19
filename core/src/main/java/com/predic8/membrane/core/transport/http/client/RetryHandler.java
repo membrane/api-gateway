@@ -346,6 +346,14 @@ public class RetryHandler {
     /**
      * @description Number of <em>additional</em> retry attempts after the initial call. A value of 0 or
      *              less disables retries, so only the initial call is made.
+     *              With 0, the request body is streamed to the backend without keeping a copy, so it
+     *              cannot be read in the response flow anymore. To use it there, read it in the request
+     *              flow first, e.g. in a script:
+     *              <pre><code>request:
+     *  - groovy:
+     *      src: |
+     *        request.bodyAsStringDecoded
+     *        CONTINUE</code></pre>
      * @default 2
      * @example 5
      */
