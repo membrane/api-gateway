@@ -128,7 +128,7 @@
     - globalInbound
     - globalOutbound
 - Remove deprecated finalize blocks
-- Remove `Header.getContentEncoding()` (deprecated in #3819): it reads only the first `Content-Encoding` field line. Callers, including scripts, use `getContentCodings()`.
+  - Remove `Header.getContentEncoding()` (deprecated in #3819): it reads only the first `Content-Encoding` field line. Callers, including scripts, use `getContentCodings()`.
 - Remove XML configuration
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor (?):
