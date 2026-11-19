@@ -432,6 +432,18 @@ public class BodyTest {
 	}
 
 	/**
+	 * From 512 KiB on, a piece can be a humongous object on G1, which takes whole regions. A piece of a
+	 * power-of-two size plus its array header would take one more region than its content needs.
+	 */
+	@Test
+	void largePiecesLeaveRoomForTheArrayHeader() {
+		final var body = new Body(new ByteArrayInputStream(new byte[2 * 1024 * 1024]), 2 * 1024 * 1024);
+		body.read();
+		assertEquals(List.of(8192, 16384, 32768, 65536, 131072, 262144, 524288 - 64, 1048576 - 64, 8320),
+				body.chunks.stream().map(Chunk::getLength).toList());
+	}
+
+	/**
 	 * Memory follows the bytes that arrive, not the length the sender announces: a client announcing a large
 	 * body and sending a few bytes must not make Membrane allocate the whole length.
 	 */

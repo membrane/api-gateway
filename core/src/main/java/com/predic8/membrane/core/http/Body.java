@@ -50,6 +50,18 @@ public class Body extends AbstractBody {
 	private final static int BUFFER_SIZE;
 	private final static int MAX_CHUNK_LENGTH;
 
+	/**
+	 * A G1 region is at least 1 MiB, so from half of that on, an array can be a humongous object, which takes
+	 * whole regions. A piece of a power-of-two size plus its array header would take one more region than its
+	 * content needs, so such pieces leave {@link #ARRAY_HEADER_ROOM} free.
+	 */
+	private static final int HUMONGOUS_PIECE_LENGTH = 512 * 1024;
+
+	/**
+	 * At least the size of an array header, whatever the object layout of the JVM.
+	 */
+	private static final int ARRAY_HEADER_ROOM = 64;
+
 	static {
 		var bufferSize = System.getProperty(MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE);
 		BUFFER_SIZE = bufferSize == null ? MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE_DEFAULT : Integer.parseInt(bufferSize);
@@ -111,7 +123,8 @@ public class Body extends AbstractBody {
 	/**
 	 * Reads the body into {@link #chunks}, passing each chunk to the observers. The chunks start at the
 	 * buffer size and double up to {@code MAX_CHUNK_LENGTH}, so memory follows the bytes that arrive, not
-	 * the length the sender announces.
+	 * the length the sender announces. Large chunks leave room for the array header, see
+	 * {@link #HUMONGOUS_PIECE_LENGTH}.
 	 * <p>
 	 * A body of known length is not read at all if it is longer than {@code maxLength}, and never beyond
 	 * its length. A body of unknown length is read no further than one byte beyond {@code maxLength}.
@@ -132,7 +145,8 @@ public class Body extends AbstractBody {
 		long read = 0;
 		int capacity = Math.min(BUFFER_SIZE, MAX_CHUNK_LENGTH);
 		while (read < end) {
-			final var pieceLength = (int) Math.min(capacity, end - read);
+			final var pieceCapacity = capacity >= HUMONGOUS_PIECE_LENGTH ? capacity - ARRAY_HEADER_ROOM : capacity;
+			final var pieceLength = (int) Math.min(pieceCapacity, end - read);
 			final var piece = new byte[pieceLength];
 			final var n = inputStream.readNBytes(piece, 0, pieceLength);
 			if (n > 0) {
