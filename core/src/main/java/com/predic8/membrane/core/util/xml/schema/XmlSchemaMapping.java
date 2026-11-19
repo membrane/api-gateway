@@ -24,7 +24,7 @@ import org.xml.sax.InputSource;
 import javax.xml.namespace.QName;
 import java.util.*;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
+import static com.predic8.membrane.core.util.json.JsonUtil.readSingleValue;
 import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.qualifiedKey;
 import static com.predic8.membrane.core.util.xml.schema.XsdDomUtil.xsdChildren;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getIns
  */
 public final class XmlSchemaMapping {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /** A global element: its JSON key, the schema that types it, and the transformer that writes it. */
     private record Root(QName element, String key, io.swagger.v3.oas.models.media.Schema<?> schema,
@@ -153,7 +153,7 @@ public final class XmlSchemaMapping {
      * @throws org.w3c.dom.DOMException   if a key is not a valid XML name
      */
     public byte[] toXml(String json) throws Exception {
-        final var node = MAPPER.readTree(json);
+        final var node = readSingleValue(json);
         if (node == null || !node.isObject() || node.size() != 1) {
             throw new IllegalArgumentException("The JSON must be an object with exactly one property, named after the root element.");
         }
