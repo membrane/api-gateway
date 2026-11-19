@@ -127,6 +127,20 @@ class CallToolsResourceTest {
     }
 
     @Test
+    void replayOfATruncatedBodyNeedsAReplacement() throws Exception {
+        final var exc = recorded("/orders", "{\"a\":1}");
+        store.getExchangeById(exc.getId()).getRequest().setBodyTruncated(true);
+        final var url = API + "/exchanges/node-a/" + exc.getId() + "/replay";
+
+        assertEquals(409, send(Request.post(url), false).getStatusCode());
+        assertNull(received.poll());
+
+        final var res = send(Request.post(url).contentType("application/json").body("{\"target\":\"backend\",\"body\":\"complete\"}"), false);
+        assertEquals(200, res.getStatusCode(), res.getBodyAsStringDecoded());
+        assertEquals("POST /orders acme complete", received.poll(5, TimeUnit.SECONDS));
+    }
+
+    @Test
     void replayIsForbiddenOnReadOnlyConsole() throws Exception {
         final var exc = recorded("/orders", "x");
         assertEquals(403, send(Request.post(API + "/exchanges/node-a/" + exc.getId() + "/replay"), true).getStatusCode());

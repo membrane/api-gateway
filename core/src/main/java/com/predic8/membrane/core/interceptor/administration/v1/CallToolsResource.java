@@ -38,6 +38,7 @@ final class CallToolsResource {
 
     static final int MAX_EXPORT = 1000;
     private static final int MAX_DIFF_BYTES = 1_048_576;
+    static final int MAX_REPLAY_BODY_BYTES = 16 * 1_048_576;
 
     private static final Pattern TOKEN = Pattern.compile("[!#$%&'*+.^_`|~0-9A-Za-z-]+");
     private static final Pattern PATH = Pattern.compile("/[^\\s]*");
@@ -252,7 +253,7 @@ final class CallToolsResource {
             builder.header(h.name(), h.value());
         final byte[] content = body.containsKey("body")
                 ? stringOr(body, "body", "").getBytes(UTF_8)
-                : recorded.isBodyEmpty() ? new byte[0] : recorded.getBodyAsStreamDecoded().readAllBytes();
+                : recordedBody(recorded);
         if (content.length > 0)
             builder.body(content);
         final var replay = new Exchange(null);
@@ -278,6 +279,24 @@ final class CallToolsResource {
         return ok(new ReplayResult(target, destination, res.getStatusCode(), res.getStatusMessage(),
                 System.currentTimeMillis() - start, headers,
                 MessageText.formatted(res, res.getHeader().getContentType(), 1_048_576)));
+    }
+
+    /**
+     * The decoded body of the recorded request, which a replay sends unless the caller replaces it. A store can hold
+     * large bodies, so they are read only up to {@link #MAX_REPLAY_BODY_BYTES}.
+     */
+    private static byte[] recordedBody(Request recorded) throws IOException {
+        if (recorded.isBodyEmpty())
+            return new byte[0];
+        if (recorded.isBodyTruncated())
+            throw new ApiException(409, "Conflict.", "The store holds only the beginning of the request body. Send the complete body in property 'body'.");
+        final byte[] content;
+        try (var in = recorded.getBodyAsStreamDecoded()) {
+            content = in.readNBytes(MAX_REPLAY_BODY_BYTES + 1);
+        }
+        if (content.length > MAX_REPLAY_BODY_BYTES)
+            throw payloadTooLarge("Only request bodies up to %d bytes can be replayed.".formatted(MAX_REPLAY_BODY_BYTES));
+        return content;
     }
 
     private static List<ExchangesResource.HeaderEntry> headers(Map<String, Object> body, Request recorded) {
