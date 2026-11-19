@@ -8,6 +8,12 @@ info:
 
     **Preview.** This API may still change in minor releases until it is declared stable.
 
+    **Authentication.** With the `apiKey` attribute of `adminConsole`, every request must carry
+    the key in `X-Api-Key` (`401` otherwise); the key holder has all roles. Without it, callers
+    are anonymous and may do what a `readOnly` console permits. The `session` scheme and user
+    roles are planned. Protect the admin port as for the existing console, e.g. with
+    `basicAuthentication` in front of `adminConsole` or by binding it to a local address.
+
     **Instances.** Every response that contains runtime data is tagged with the name of the
     instance it comes from. A console configured with `peers` aggregates: it forwards each
     request to all peers in parallel, merges the results and reports the state of every peer in
