@@ -289,6 +289,27 @@ class AggregatorTest {
         assertEquals(List.of(early, late), list);
     }
 
+    @Test
+    void comparatorKeepsTheTimeOrderOfEachInstance() {
+        final var older = om.createObjectNode().put("instance", "node-b").put("time", "2026-11-05T10:00:00Z").put("id", 10);
+        final var newer = om.createObjectNode().put("instance", "node-b").put("time", "2026-11-05T10:00:01Z").put("id", 11);
+        final var other = om.createObjectNode().put("instance", "node-a").put("time", "2026-11-05T10:00:02Z").put("id", 1);
+        final var list = new ArrayList<JsonNode>(List.of(other, older, newer));
+        list.sort(Aggregator.comparator("instance", true));
+        assertEquals(List.of(newer, older, other), list);
+        list.sort(Aggregator.comparator("instance", false));
+        assertEquals(List.of(other, older, newer), list);
+    }
+
+    @Test
+    void tooLargeWriteIsNotForwardedToThePeer() throws Exception {
+        final var body = "{\"name\":\"%s\"}".formatted("a".repeat(ApiJson.MAX_REQUEST_BODY_BYTES));
+        final var res = http.send(HttpRequest.newBuilder(URI.create(CONSOLE + "/balancers/node-b/Default/clusters"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(413, res.statusCode(), res.body());
+    }
+
     private static String status(JsonNode page, String instance) {
         for (final var i : page.get("instances"))
             if (instance.equals(i.get("instance").asText()))

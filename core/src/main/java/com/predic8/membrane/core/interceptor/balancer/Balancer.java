@@ -160,6 +160,19 @@ public class Balancer {
 		return cluster != null && cluster.getNodes().contains(new Node(host, port));
 	}
 
+	/**
+	 * Unlike {@link #up(String, String, int)} and the other node operations, this never creates the cluster or
+	 * the node, so it cannot bring back a node that was removed concurrently.
+	 *
+	 * @return the node with the new status, or null if the cluster or the node does not exist
+	 */
+	public Node setExistingNodeStatus(String cName, String host, int port, Node.Status status) {
+		if (cName == null)
+			return null;
+		final var cluster = clusters.get(cName);
+		return cluster == null ? null : cluster.setExistingNodeStatus(new Node(host, port), status);
+	}
+
 	public Node getNode(String cluster, String host, int port) {
 		return getCluster(cluster).getNode(new Node(host, port));
 	}

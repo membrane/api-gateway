@@ -87,7 +87,8 @@ final class Aggregator {
             return route.handler().handle(req, principal);
         final var peer = peerNamed(instance).orElseThrow(() -> notFound("Unknown instance."));
         final var msg = req.exchange().getRequest();
-        final var body = msg.isBodyEmpty() ? null : msg.getBodyAsStreamDecoded().readAllBytes();
+        // The peer limits the body as well, but only after this instance read and sent it.
+        final var body = msg.isBodyEmpty() ? null : ApiJson.readBody(msg);
         final PeerResponse res;
         try {
             res = client.send(peer, msg.getMethod(), rawPath + (rawQuery == null ? "" : "?" + rawQuery),
@@ -240,35 +241,41 @@ final class Aggregator {
 
     /**
      * Long poll on the selected instances; returns when any of them answers (a modification or its own timeout) or
-     * the timeout elapsed. Failing peers count as unchanged, so they do not end the wait early.
+     * the timeout elapsed. Failing peers count as unchanged, so they do not end the wait early. So does this instance
+     * if it does not support the filter while a peer may: the merge then reports it as unsupported. The waits that
+     * are still running when this returns are cancelled.
      */
     private void waitForAnyModification(Route route, ApiRequest req, Principal principal, String rawPath) throws Exception {
         final var timeout = req.intParam("timeout", 30, 1, 60);
         final var answered = new CompletableFuture<Void>();
-        var waiting = 0;
+        final var waits = new ArrayList<Future<?>>();
         final var selected = req.params("instance");
-        if (selected.isEmpty() || selected.contains(ctx.instanceName())) {
-            waiting++;
-            CompletableFuture.runAsync(() -> {
-                try {
-                    route.handler().handle(req, principal);
-                    answered.complete(null);
-                } catch (Exception e) {
-                    answered.completeExceptionally(e);
-                }
-            }, localCalls);
-        }
-        for (final var peer : selectedPeers(req)) {
-            waiting++;
-            client.send(peer, "GET", rawPath + "?" + query(req, Map.of()), null, null, Duration.ofSeconds(timeout + 10L))
-                    .thenAccept(r -> {
-                        if (r.status() / 100 == 2)
-                            answered.complete(null);
-                    });
-        }
-        if (waiting == 0)
-            return;
+        final var peers = selectedPeers(req);
         try {
+            if (selected.isEmpty() || selected.contains(ctx.instanceName())) {
+                waits.add(localCalls.submit(() -> {
+                    try {
+                        route.handler().handle(req, principal);
+                        answered.complete(null);
+                    } catch (ApiException e) {
+                        if (e.getStatus() != 501 || peers.isEmpty())
+                            answered.completeExceptionally(e);
+                    } catch (Exception e) {
+                        answered.completeExceptionally(e);
+                    }
+                }));
+            }
+            for (final var peer : peers) {
+                // Keep the future of the request itself: cancelling a dependent stage would not cancel the request.
+                final var sent = client.send(peer, "GET", rawPath + "?" + query(req, Map.of()), null, null, Duration.ofSeconds(timeout + 10L));
+                waits.add(sent);
+                sent.thenAccept(r -> {
+                    if (r.status() / 100 == 2)
+                        answered.complete(null);
+                });
+            }
+            if (waits.isEmpty())
+                return;
             answered.get(timeout + 10L, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof ApiException ae)
@@ -276,6 +283,9 @@ final class Aggregator {
             throw e;
         } catch (TimeoutException e) {
             // nothing changed anywhere, or all selected peers failed
+        } finally {
+            // A quiet instance would otherwise keep waiting, and a new long poll starts the next wait.
+            waits.forEach(w -> w.cancel(true));
         }
     }
 
@@ -450,6 +460,15 @@ final class Aggregator {
     // ------------------------------------------------------------------ sorting
 
     static Comparator<JsonNode> comparator(String sort, boolean desc) {
+        if ("instance".equals(sort)) {
+            // Each instance returns its page sorted by time in the requested order (ties in store order, i.e. by ID),
+            // so the merge keeps that order within an instance. Otherwise a page could start with an exchange the
+            // instance did not return.
+            Comparator<JsonNode> byInstance = Comparator.comparing(n -> n.path("instance").asText());
+            if (desc)
+                byInstance = byInstance.reversed();
+            return byInstance.thenComparing(comparator("time", desc));
+        }
         final Function<JsonNode, JsonNode> key = "port".equals(sort)
                 ? n -> n.path("match").path("port")
                 : n -> n.path(sort);
