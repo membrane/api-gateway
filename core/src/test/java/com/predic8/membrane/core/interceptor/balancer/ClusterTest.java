@@ -46,6 +46,17 @@ class ClusterTest {
     }
 
     @Test
+    void setExistingNodeStatusChangesOnlyExistingNodes() {
+        final var cluster = new Cluster("c");
+        cluster.addNode(new Node("backend.example.com", 8080));
+
+        assertEquals(Node.Status.TAKEOUT, cluster.setExistingNodeStatus(new Node("backend.example.com", 8080), Node.Status.TAKEOUT).getStatus());
+        assertNull(cluster.setExistingNodeStatus(new Node("other.example.com", 8080), Node.Status.UP));
+
+        assertEquals(1, cluster.getNodes().size());
+    }
+
+    @Test
     void concurrentAddNodeAddsTheNodeOnce() throws Exception {
         final var cluster = new Cluster("c");
         final var threads = 16;
