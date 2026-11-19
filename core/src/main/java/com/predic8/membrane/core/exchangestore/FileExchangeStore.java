@@ -278,12 +278,23 @@ public class FileExchangeStore extends AbstractExchangeStore {
      */
     private static void writeAtomically(Path file, String content) throws IOException {
         final var tmp = file.resolveSibling(file.getFileName() + ".tmp");
-        Files.writeString(tmp, content, UTF_8);
         try {
-            Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            Files.writeString(tmp, content, UTF_8);
+            moveIntoPlace(tmp, file);
         } catch (IOException e) {
             Files.deleteIfExists(tmp);
             throw e;
+        }
+    }
+
+    /**
+     * Moves atomically where the file system supports it, so readers see either the old or the new file.
+     */
+    private static void moveIntoPlace(Path tmp, Path file) throws IOException {
+        try {
+            Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
@@ -319,7 +330,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
             try (FileOutputStream os = new FileOutputStream(tmp.toFile())) {
                 writeMessage(msg, body, os);
             }
-            Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            moveIntoPlace(tmp, file);
         } catch (Exception e) {
             Files.deleteIfExists(tmp);
             throw e;
@@ -420,7 +431,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
         final var loaded = new ArrayList<Loaded>();
         visitNewestExchangeFiles(Path.of(dir), maxIndexed, file -> {
             try {
-                loaded.add(new Loaded(om.readValue(file.toFile(), StoredExchange.class), file));
+                final var stored = om.readValue(file.toFile(), StoredExchange.class);
+                if (stored == null)
+                    throw new IOException("The file contains no exchange.");
+                loaded.add(new Loaded(stored, file));
             } catch (Exception e) {
                 log.warn("Skipping unreadable exchange file {}: {}", file, e.getMessage());
             }
@@ -440,10 +454,12 @@ public class FileExchangeStore extends AbstractExchangeStore {
     private synchronized long newId() {
         final var id = nextId.incrementAndGet();
         if (id > reservedId && dir != null) {
-            reservedId = id + ID_BLOCK - 1;
+            final var reserve = id + ID_BLOCK - 1;
             try {
-                writeAtomically(Path.of(dir, RESERVED_ID_FILE), Long.toString(reservedId));
+                writeAtomically(Path.of(dir, RESERVED_ID_FILE), Long.toString(reserve));
+                reservedId = reserve;
             } catch (IOException e) {
+                // reservedId stays, so the next ID tries again.
                 log.warn("Could not write {}: IDs can be assigned again after a restart. {}", RESERVED_ID_FILE, e.getMessage());
             }
         }
