@@ -48,6 +48,10 @@
   - Add a release note saying the flag was removed, and that operators on an unpatched JDK can keep it with `-XX:-UseBASE64Intrinsics` in `JAVA_OPTS`.
 
 ## Priority 3
+- LimitInterceptor:
+  - We are going to change the limiter to read first the body completely to save time.
+  - Maybe we can reintroduce the streaming approach so that we can limit the request body without reading it completely.
+  - Attention: this can be complicated because of chunking, compression, xop and other encodings.
 - OpenAPI: validate `in: cookie` parameters
   - Path, query and header parameters are validated; cookie parameters currently are not.
 - OpenAPI: support `style: matrix` path parameters (#3544)
