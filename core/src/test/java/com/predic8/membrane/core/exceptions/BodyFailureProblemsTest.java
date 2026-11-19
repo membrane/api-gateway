@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.net.SocketException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.predic8.membrane.core.exceptions.BodyFailureProblems.bodyFailure;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.test.TestAppender.captureLog;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -197,6 +199,32 @@ class BodyFailureProblemsTest {
         assertEquals("https://membrane-api.io/problems/user/xop", json.get(TYPE).asText());
         assertEquals("XOP package could not be reassembled", json.get(TITLE).asText());
         assertEquals("Did not find multipart with id bin@test.", json.get(DETAIL).asText());
+    }
+
+    @Test
+    @DisplayName("A request body longer than a limit is answered as limit answers it, not as a broken body")
+    void requestBodyLongerThanALimit() throws Exception {
+        Exchange exc = Request.post("/").buildExchange();
+        exc.getRequest().setBody(new Body(new ByteArrayInputStream("0123456789".getBytes(UTF_8)), 10));
+        exc.getRequest().getBody().readUpTo(3);
+
+        Response r = bodyFailure(false, "validator", exc, exc.getRequest().getBody().getObservedException()).build();
+
+        assertEquals(413, r.getStatusCode());
+        assertEquals(3, parseJson(r).get("maxBodyLength").asLong());
+    }
+
+    @Test
+    @DisplayName("A response body longer than a limit is the backend's fault")
+    void responseBodyLongerThanALimit() throws Exception {
+        Exchange exc = Request.post("/").body("x").buildExchange();
+        exc.setResponse(Response.ok().build());
+        exc.getResponse().setBody(new Body(new ByteArrayInputStream("0123456789".getBytes(UTF_8))));
+        exc.getResponse().getBody().readUpTo(3);
+
+        Response r = bodyFailure(false, "validator", exc, exc.getResponse().getBody().getObservedException()).build();
+
+        assertEquals(502, r.getStatusCode());
     }
 
     /**

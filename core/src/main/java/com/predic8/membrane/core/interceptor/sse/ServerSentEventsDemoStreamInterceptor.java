@@ -80,7 +80,8 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
     private class StreamingBody extends AbstractBody {
 
         @Override
-        protected void readLocal() {
+        protected boolean readLocal(long maxLength) {
+            return true;
         }
 
         @Override

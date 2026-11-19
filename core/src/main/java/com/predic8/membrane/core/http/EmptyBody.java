@@ -33,8 +33,8 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected void readLocal() {
-		//ignore
+	protected boolean readLocal(long maxLength) {
+		return true; // there is nothing to read
 	}
 
 	@Override

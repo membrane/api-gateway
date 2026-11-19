@@ -169,6 +169,27 @@ public class HttpKeepAliveTest {
 	}
 
 	/**
+	 * The rest of a request body left unread on the connection would be read as the next request, so the
+	 * connection is closed. The response says so, whichever plugin left the body unread.
+	 */
+	@Test
+	void responseToRequestWithUnreadBodyAnnouncesClose() throws Exception {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				exc.getRequest().getBody().readUpTo(3);
+				exc.setResponse(Response.statusCode(403).build());
+				return RETURN;
+			}
+		});
+
+		final var response = sendRaw("POST /foo HTTP/1.1\r\nHost: localhost:2003\r\nContent-Length: 10\r\n\r\n0123456789");
+
+		assertTrue(response.startsWith("HTTP/1.1 403 "), response);
+		assertTrue(response.toLowerCase().contains("\r\nconnection: close\r\n"), response);
+	}
+
+	/**
 	 * Sends the bytes without closing the output, so a server that waits for more input times out the read.
 	 */
 	private static String sendRaw(String request) throws IOException {

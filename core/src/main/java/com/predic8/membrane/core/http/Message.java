@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.http.BodyLengthCheck.TooLong;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -29,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
+import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
@@ -174,6 +176,50 @@ public abstract class Message {
 			return new String(MessageUtil.getContent(this), getCharsetOrDefault());
 		} catch (Exception e) {
 			throw new ReadingBodyException(e);
+		}
+	}
+
+	/**
+	 * Checks that the body is at most {@code maxLength} bytes long, as received and, for a Content-Encoding
+	 * Membrane decodes (gzip, deflate, Brotli), also once decoded. The body is read into memory for the
+	 * check, up to the limit, and stays as received: compressed, with its header fields unchanged.
+	 * <p>
+	 * A body whose {@linkplain AbstractBody#getDeclaredLength() declared length} is within the limit and
+	 * that is not decoded is not read: it is passed on as it arrives. Any other Content-Encoding and an
+	 * XOP/MTOM package are limited by the bytes received. See {@link AbstractBody#readUpTo(long)} for what
+	 * happens to a body that is longer.
+	 *
+	 * @throws ReadingBodyException if reading or decoding the body fails
+	 */
+	public BodyLengthCheck checkBodyLength(long maxLength) {
+		final var declaredLength = body.getDeclaredLength();
+		if (!isContentEncodingDecoded() && declaredLength != -1 && declaredLength <= maxLength)
+			return WITHIN;
+
+		final var check = body.readUpTo(maxLength);
+		// An empty body is not decoded: one labelled gzip, e.g. a HEAD response, would fail to.
+		if (check instanceof TooLong || !isContentEncodingDecoded() || body.getLength() == 0)
+			return check;
+
+		return isDecodedLongerThan(maxLength) ? new TooLong(false) : WITHIN;
+	}
+
+	/**
+	 * Decodes the body, which is in memory by now, only to count its bytes.
+	 */
+	private boolean isDecodedLongerThan(long maxLength) {
+		try (final var decoded = MessageUtil.getContentAsStream(this)) {
+			final var buffer = new byte[8192];
+			long length = 0;
+			int n;
+			while ((n = decoded.read(buffer)) != -1) {
+				length += n;
+				if (length > maxLength)
+					return true;
+			}
+			return false;
+		} catch (IOException e) {
+			throw new ReadingBodyException(e, this);
 		}
 	}
 

@@ -288,11 +288,26 @@ public class StreamInfo {
 
     private class Http2Body extends AbstractBody {
 
+        /** Captured when the body is created: a violation resets the expectation, the body fails then. */
+        private final long declaredLength = expectedContentLength;
         long streamedLength = 0;
         Header trailer;
 
+        /**
+         * @return the request's content-length. DATA beyond it resets the stream (RFC 9113 §8.1.1), so the
+         *         body never yields more.
+         */
         @Override
-        protected void readLocal() throws IOException {
+        public long getDeclaredLength() {
+            return declaredLength;
+        }
+
+        /**
+         * Reads no further than the frame that takes the body beyond {@code maxLength}.
+         */
+        @Override
+        protected boolean readLocal(long maxLength) throws IOException {
+            long length = 0;
             while(true) {
                 DataFrame df = removeDataFrame();
                 if (df == null)
@@ -303,8 +318,11 @@ public class StreamInfo {
                     for (MessageObserver observer : observers)
                         observer.bodyChunk(chunk);
 
+                length += chunk.getLength();
+                if (length > maxLength)
+                    return false;
                 if (df.isEndStream())
-                    break;
+                    return true;
             }
         }
 
@@ -319,9 +337,12 @@ public class StreamInfo {
 
         @Override
         protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
-            if (getLength() > 0) {
-                byte[] content = getContent();
-                out.write(content, 0, content.length);
+            if (getLength() > 0) { // reads the body if it is not read yet
+                requireContentRetained();
+                // chunk by chunk: copying them into one array would hold the body twice, and fails above 2 GiB
+                for (Chunk chunk : chunks)
+                    if (chunk.getLength() > 0)
+                        out.write(chunk);
             }
             out.finish(trailer);
         }
