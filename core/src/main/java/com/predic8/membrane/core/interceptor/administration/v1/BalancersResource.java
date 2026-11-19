@@ -136,13 +136,21 @@ final class BalancersResource {
         return ok(nodeInfo(balancer, cluster, changed));
     }
 
+    /**
+     * Names are matched ignoring case; a name that matches several balancers is rejected instead of acting on one.
+     */
     private Balancer balancer(ApiRequest req) {
         ctx.requireSelf(req.path(0));
-        return BalancerUtil.collectBalancers(ctx.router()).stream()
+        final var matches = BalancerUtil.collectBalancers(ctx.router()).stream()
                 .filter(lbi -> lbi.getName() != null && lbi.getName().equalsIgnoreCase(req.path(1)))
                 .map(LoadBalancingInterceptor::getClusterManager)
-                .findFirst()
-                .orElseThrow(() -> notFound("Unknown balancer."));
+                .distinct()
+                .toList();
+        if (matches.isEmpty())
+            throw notFound("Unknown balancer.");
+        if (matches.size() > 1)
+            throw new ApiException(409, "Conflict.", "%d balancers are named '%s'. Give them different names.".formatted(matches.size(), req.path(1)));
+        return matches.getFirst();
     }
 
     private static String cluster(Balancer balancer, String name) {

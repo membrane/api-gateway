@@ -358,6 +358,25 @@ class FileExchangeStoreTest {
     }
 
     @Test
+    void anExchangeFileWithJsonNullIsSkipped() throws Exception {
+        final var writer = store();
+        snap(writer, "/old", "1", 200);
+        Thread.sleep(5);
+        snap(writer, "/new", "2", 200);
+        try (var files = Files.walk(dir)) {
+            final var newest = files.filter(f -> f.toString().endsWith("-Exchange.json")).max(FileExchangeStore.NEWEST_FIRST.reversed()).orElseThrow();
+            Files.writeString(newest, "null");
+        }
+
+        final var reader = new FileExchangeStore();
+        reader.setDir(dir.toString());
+        reader.setMaxIndexed(1);
+        reader.init(null);
+
+        assertEquals(List.of("/old"), reader.getAllExchangesAsList().stream().map(e -> e.getRequest().getUri()).toList());
+    }
+
+    @Test
     void anUnreadableRequestBodyKeepsTheResponse() throws Exception {
         final var store = store();
         snap(store, "/a", "x", 200);
