@@ -104,6 +104,22 @@ class LimitInterceptorTest {
             assertEquals(413, exc.getResponse().getStatusCode());
         }
 
+        /**
+         * The chunk is also larger than the decoder accepts for a single chunk; it is over the limit all the same.
+         */
+        @Test
+        void chunkLargerThanTheDecoderAcceptsIsAnsweredWith413() throws Exception {
+            final var exc = exchangeOf(parseRequest("""
+                    POST /foo HTTP/1.1\r
+                    Host: example.com\r
+                    Transfer-Encoding: chunked\r
+                    \r
+                    """, "FFFFFFFF\r\n".getBytes(US_ASCII)));
+
+            assertEquals(ABORT, limit.handleRequest(exc));
+            assertEquals(413, exc.getResponse().getStatusCode());
+        }
+
         @Test
         void chunkedGzipBodyBelowTheLimitIsForwardedEncoded() throws Exception {
             final var limit = limit(1000);

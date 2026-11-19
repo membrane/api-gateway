@@ -85,21 +85,19 @@ final class ChunkedDecoder {
      * the decoder allocate the chunk, or wait for its data, just by announcing it.
      *
      * @param maxLength the maximum length of the chunk in bytes
-     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}. The stream is then left
-     *                               inside the chunk and cannot be decoded any further.
+     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}, even if its size is beyond
+     *                               what the decoder accepts as well. The stream is then left inside the chunk
+     *                               and cannot be decoded any further.
      */
     Chunk next(long maxLength) throws IOException {
         if (done) {
             return null;
         }
-        final var chunkSize = readChunkSize(in);
+        final var chunkSize = readChunkSize(in, maxLength);
         if (chunkSize == 0) {
             trailer = readTrailer(in);
             done = true;
             return null;
-        }
-        if (chunkSize > maxLength) {
-            throw new ChunkTooLongException();
         }
         final var chunk = new Chunk(readByteArray(in, chunkSize));
         expect(in, CR);
@@ -175,13 +173,20 @@ final class ChunkedDecoder {
      * <pre><code>chunk-size [ chunk-ext ] CRLF
      * chunk-size = 1*HEXDIG</code></pre>
      * The chunk extensions are skipped.
+     *
+     * @param maxLength the maximum length of the chunk in bytes. It is checked before the decoder's own limits
+     *                  on the chunk size, so that a chunk over it is reported as too long whatever its size.
+     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}
      */
-    static int readChunkSize(InputStream in) throws IOException {
+    static int readChunkSize(InputStream in, long maxLength) throws IOException {
         final var buffer = new StringBuilder();
 
         int c;
         while (isHexDigit(c = read(in))) {
             if (buffer.length() >= MAX_CHUNK_SIZE_HEX_DIGITS) {
+                // the chunk is at least this long, whatever digits follow
+                if (Long.parseLong(buffer.toString() + (char) c, 16) > maxLength)
+                    throw new ChunkTooLongException();
                 log.info("Chunk-size {} exceeds limit: {}",buffer.length(), MAX_CHUNK_SIZE_HEX_DIGITS);
                 throw new IOException("Chunk-size exceeds limit");
             }
@@ -196,7 +201,7 @@ final class ChunkedDecoder {
         }
         expect(in, LF);
 
-        return parseChunkSize(buffer);
+        return parseChunkSize(buffer, maxLength);
     }
 
     /**
@@ -231,21 +236,28 @@ final class ChunkedDecoder {
         return c;
     }
 
-    static int parseChunkSize(StringBuilder buffer) throws IOException {
+    /**
+     * @param maxLength see {@link #readChunkSize(InputStream, long)}
+     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}
+     */
+    static int parseChunkSize(StringBuilder buffer, long maxLength) throws IOException {
         final var hex = buffer.toString();
         if (hex.isEmpty()) {
             throw new IOException("Empty chunk-size field");
         }
         if (!hex.chars().allMatch(HexFormat::isHexDigit)) {
-            // Integer.parseInt would also accept a sign
+            // Long.parseLong would also accept a sign
             throw new IOException("Invalid chunk-size value: %s".formatted(hex));
         }
         try {
-            int size = Integer.parseInt(hex, 16);
+            final var size = Long.parseLong(hex, 16);
+            if (size > maxLength) {
+                throw new ChunkTooLongException();
+            }
             if (size > MAX_CHUNK_BYTES) {
                 throw new IOException("Chunk size %d exceeds limit of %d bytes".formatted(size, MAX_CHUNK_BYTES));
             }
-            return size;
+            return (int) size;
         } catch (NumberFormatException e) {
             throw new IOException("Invalid chunk-size value: %s".formatted(hex), e);
         }
