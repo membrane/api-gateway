@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, type ApiSummary, type Page } from "../api/client";
 import { useLoad } from "../hooks";
 import { ErrorBox, PartialResult } from "../components/ErrorBox";
+import { href } from "../router";
 
 const TYPES = ["api", "serviceProxy", "soapProxy", "proxy", "internal", "stompProxy", "kafkaConsumer", "other"];
 
@@ -42,7 +43,7 @@ export function ApisPage() {
               <tr key={a.instance + "/" + a.apiId} className={a.active ? undefined : "inactive"}>
                 <td>{a.instance}</td>
                 <td>
-                  {a.name}
+                  <a href={href(["apis", a.instance!, a.apiId])}>{a.name}</a>
                   {!a.active && <span className="badge badge-error" title={a.error}>inactive</span>}
                 </td>
                 <td>{a.type}</td>
@@ -56,7 +57,7 @@ export function ApisPage() {
           </tbody>
         </table>
       </div>
-      {apis.data && <p className="muted">{apis.data.total} APIs</p>}
+      {apis.data && <p className="muted">{apis.data.total} APIs. The <a href={href(["transport"])}>transport flow</a> runs before the flow of every API.</p>}
     </section>
   );
 }

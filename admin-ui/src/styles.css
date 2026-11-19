@@ -146,3 +146,12 @@ h3 { font-size: 14px; margin: 16px 0 8px; }
 button.link { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
 button.link:hover { text-decoration: underline; }
 tr.sub td { color: var(--muted); }
+
+ol.flow { list-style: none; margin: 0; padding: 0 0 0 16px; border-left: 2px solid var(--border); }
+.card > ol.flow, section > ol.flow { padding-left: 0; border-left: 0; }
+.flow-node { padding: 4px 0 4px 8px; }
+.flow-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.flow-name { font-family: var(--mono); font-weight: 600; }
+.flow-branch > .flow-head .flow-name { font-weight: 500; color: var(--muted); }
+.flow-condition { overflow-wrap: anywhere; }
+.flow-desc { font-size: 12px; }

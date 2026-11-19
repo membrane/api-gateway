@@ -3,6 +3,7 @@ import { api, type Instance } from "./api/client";
 import { useLoad } from "./hooks";
 import { href, useRoute } from "./router";
 import { ApisPage } from "./pages/ApisPage";
+import { ApiPage, TransportFlowPage } from "./pages/ApiPage";
 import { CallsPage } from "./pages/CallsPage";
 import { CallDetailPage } from "./pages/CallDetailPage";
 import { SystemPage } from "./pages/SystemPage";
@@ -23,7 +24,8 @@ const TABS = [
 export function App() {
   const route = useRoute();
   const instances = useLoad((signal) => api.get<{ self: string; instances: Instance[] }>("/instances", undefined, signal), []);
-  const tab = route.segments[0] ?? "calls";
+  // The transport flow belongs to the APIs section.
+  const tab = route.segments[0] === "transport" ? "apis" : (route.segments[0] ?? "calls");
 
   // Peers go down and come back: refresh their state, starting the next request only after the previous one ended.
   const reloadInstances = instances.reload;
@@ -71,7 +73,12 @@ function page(segments: string[]) {
         ? <CallDetailPage key={segments[1] + "/" + segments[2]} instance={segments[1]} id={segments[2]} />
         : <CallsPage />;
     case "apis":
-      return <ApisPage />;
+      // #/apis/{instance}/{apiId}
+      return segments.length >= 3
+        ? <ApiPage key={segments[1] + "/" + segments[2]} instance={segments[1]} apiId={segments[2]} />
+        : <ApisPage />;
+    case "transport":
+      return <TransportFlowPage />;
     case "statistics":
       return <StatisticsPage view={segments[1]} />;
     case "balancers":
