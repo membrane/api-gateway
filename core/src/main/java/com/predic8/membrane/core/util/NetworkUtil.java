@@ -28,6 +28,10 @@ import static java.net.InetAddress.getByAddress;
 public class NetworkUtil {
 
     private static final Pattern BRACKETED_HOST_PORT_SUFFIX = Pattern.compile(":\\d*");
+    // InetAddress ignores any number of leading zeros in each part, e.g. "0127.0.0.0001".
+    private static final Pattern IPV4_LITERAL = Pattern.compile("0*\\d{1,3}(\\.0*\\d{1,3}){3}");
+    // InetAddress also parses "a.b.c" (16-bit last part), "a.b" (24-bit last part) and "a" (32-bit) as IPv4.
+    private static final Pattern IPV4_SHORT_LITERAL = Pattern.compile("0*\\d{1,3}(\\.0*\\d{1,3})?\\.0*\\d{1,8}|0*\\d{1,10}");
 
     public static Pair<byte[], Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
         int available = sourceSocket.getInputStream().available();
@@ -81,6 +85,21 @@ public class NetworkUtil {
         if (!suffix.isEmpty() && !BRACKETED_HOST_PORT_SUFFIX.matcher(suffix).matches())
             return null;
         return hostHeader.substring(0, closingBracket + 1);
+    }
+
+    /**
+     * Tells a dotted-quad IPv4 literal from a host name by its shape only, so octets above 255 still count.
+     */
+    public static boolean isIpv4Literal(String host) {
+        return IPV4_LITERAL.matcher(host).matches();
+    }
+
+    /**
+     * Tells an IP literal from a host name without a DNS lookup. Any value containing a colon counts as an IPv6
+     * literal, since host names cannot contain one. IPv4 includes the one-, two- and three-part forms Java accepts, like "10" or "10.1".
+     */
+    public static boolean isIpLiteral(String host) {
+        return host.contains(":") || isIpv4Literal(host) || IPV4_SHORT_LITERAL.matcher(host).matches();
     }
 
 

@@ -71,6 +71,16 @@ public class InternalProxy extends AbstractServiceProxy implements NotPortOpenin
             schedule.start(router, this);
     }
 
+    /**
+     * Stops the schedule. Without one, the API has no inbound of its own: it only runs when another API calls it, and
+     * stays available for exchanges in progress.
+     */
+    @Override
+    public void stopInbound() {
+        if (schedule != null)
+            schedule.stop();
+    }
+
     @PreDestroy
     public void destroy() {
         if (schedule != null)

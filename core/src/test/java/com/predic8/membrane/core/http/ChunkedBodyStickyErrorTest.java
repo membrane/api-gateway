@@ -50,11 +50,9 @@ class ChunkedBodyStickyErrorTest {
         assertThrows(IOException.class, in::read);
 
         // markAsRead() must not be able to complete a failed body: AbstractBody refuses the
-        // transition and therefore never runs onMarkedAsRead(), so bodyComplete stays false.
-        // Were it set, readNextChunk()'s leading bodyComplete check would swallow the failure.
+        // transition. Were it read, readNextChunk()'s leading isRead() check would swallow the failure.
         body.markAsRead();
 
-        assertFalse(body.bodyComplete);
         assertFalse(body.isRead());
         assertTrue(body.hasFailed());
     }
@@ -65,8 +63,6 @@ class ChunkedBodyStickyErrorTest {
 
         healthy.read();
 
-        // the hook ran, so the subclass flag and the base state agree
-        assertTrue(healthy.bodyComplete);
         assertTrue(healthy.isRead());
         assertFalse(healthy.hasFailed());
     }
@@ -129,10 +125,10 @@ class ChunkedBodyStickyErrorTest {
     }
 
     /**
-     * The onMarkedAsRead() hook runs before the observers are notified, so a re-entering observer sees a
-     * consistent body: isRead() and bodyComplete already agree. Notably MessageSnapshot's observer reads
-     * the body again from inside bodyComplete(); the leading bodyComplete check in readNextChunk() then
-     * gives it a clean EOF instead of re-reading the exhausted wire stream.
+     * The body is read before the observers are notified, so a re-entering observer sees a completed
+     * body. Notably MessageSnapshot's observer reads the body again from inside bodyComplete(); the
+     * leading isRead() check in readNextChunk() then gives it a clean EOF instead of re-reading the
+     * exhausted wire stream.
      */
     @Test
     void observerSeesACompletedBodyWhileBeingNotified() throws IOException {
@@ -141,7 +137,7 @@ class ChunkedBodyStickyErrorTest {
         healthy.addObserver(new AbstractMessageObserver() {
             @Override
             public void bodyComplete(AbstractBody body) {
-                observed.add("isRead=" + body.isRead() + " bodyComplete=" + healthy.bodyComplete);
+                observed.add("isRead=" + body.isRead());
                 try {
                     // re-entrant read, as MessageSnapshot does: must terminate rather than touch the wire
                     observed.add(new String(healthy.getContentAsStream().readAllBytes()));
@@ -153,7 +149,7 @@ class ChunkedBodyStickyErrorTest {
 
         healthy.read();
 
-        assertEquals(List.of("isRead=true bodyComplete=true", "partial"), observed);
+        assertEquals(List.of("isRead=true", "partial"), observed);
     }
 
     /**

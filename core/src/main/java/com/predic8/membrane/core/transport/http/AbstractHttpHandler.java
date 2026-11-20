@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.ExceptionUtil.isPeerDisconnect;
+import static com.predic8.membrane.core.util.StompUtil.isTunneledWithoutResponse;
 
 public abstract class AbstractHttpHandler  {
 
@@ -56,7 +57,7 @@ public abstract class AbstractHttpHandler  {
 	protected void invokeHandlers() throws AbortException, NoMoreRequestsException, EOFWhileReadingFirstLineException {
 		try {
 			getTransport().getRouter().getFlowController().invokeRequestHandlers(exchange, transport.getFlow());
-			if (exchange.getResponse() == null) {
+			if (exchange.getResponse() == null && !isTunneledWithoutResponse(exchange)) {
 				log.error("Interceptor chain returned no response (path={}, flow={})", exchange.getRequest().getUri(), transport.getFlow());
 				internal(transport.getRouter().getConfiguration().isProduction(),"http-handler")
 						.addSubSee("no-response-produced")

@@ -22,6 +22,8 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.apache.commons.io.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.io.*;
 import java.net.*;
@@ -162,25 +164,55 @@ public class HttpKeepAliveTest {
 			}
 		});
 
-		try (final var socket = new Socket("localhost", 2003)) {
-			socket.setSoTimeout(5000);
-			final var out = socket.getOutputStream();
-			out.write("""
-					POST /foo HTTP/1.1\r
-					Host: localhost:2003\r
-					Transfer-Encoding: chunked\r
-					\r
-					zz\r
-					POST /smuggled HTTP/1.1\r
-					Host: localhost:2003\r
-					Content-Length: 0\r
-					Connection: close\r
-					\r
-					""".getBytes(US_ASCII));
-			out.flush();
+		final var responses = sendRaw("""
+				POST /foo HTTP/1.1\r
+				Host: localhost:2003\r
+				Transfer-Encoding: chunked\r
+				\r
+				zz\r
+				POST /smuggled HTTP/1.1\r
+				Host: localhost:2003\r
+				Content-Length: 0\r
+				Connection: close\r
+				\r
+				""");
+		assertEquals(1, countMatches(responses, "HTTP/1.1 200 "), responses);
+	}
 
-			final var responses = new String(socket.getInputStream().readAllBytes(), US_ASCII);
-			assertEquals(1, countMatches(responses, "HTTP/1.1 "), responses);
+	/**
+	 * RFC 9112 2.2: a bare LF ends a line. The request is answered without the client sending another byte after
+	 * the empty line that ends the header section (#3378).
+	 */
+	@Test
+	void bareLfRequestIsAnswered() throws Exception {
+		final var response = sendRaw("POST /foo HTTP/1.1\nHost: localhost:2003\nContent-Length: 0\nConnection: close\n\n");
+		assertTrue(response.startsWith("HTTP/1.1 200 "), response);
+	}
+
+	/**
+	 * RFC 9112 2.2: a bare CR is rejected instead of being read as a line terminator (#3378). Before, the CR ended
+	 * the line and the byte after it was dropped, so each of these requests was answered with 200.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+			"POST /foo HTTP/1.1\r_Host: localhost:2003\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+			"POST /foo HTTP/1.1\r\nHost: localhost:2003\r\nX-A: 1\r X-B: 2\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+			"POST /foo HTTP/1.1\n\rHost: localhost:2003\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+	})
+	void bareCrIsRejected(String request) throws Exception {
+		final var response = sendRaw(request);
+		assertTrue(response.startsWith("HTTP/1.1 400 "), response);
+	}
+
+	/**
+	 * Sends the bytes without closing the output, so a server that waits for more input times out the read.
+	 */
+	private static String sendRaw(String request) throws IOException {
+		try (final var socket = new Socket("localhost", 2003)) {
+			socket.setSoTimeout(3000);
+			socket.getOutputStream().write(request.getBytes(US_ASCII));
+			socket.getOutputStream().flush();
+			return new String(socket.getInputStream().readAllBytes(), US_ASCII);
 		}
 	}
 
