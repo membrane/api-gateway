@@ -323,8 +323,9 @@ public abstract class AbstractBody {
 	}
 
 	private void notifyBodyFailed(ReadingBodyException e) {
-		// Copy and clear first: observers may access the list (e.g. ShadowingInterceptor) and this is the
-		// last event fired on them, just as in markAsRead().
+		// bodyFailed is the last event: drop the observers (e.g. Connection, which holds the exchange) so a
+		// failed body does not keep them reachable, as markAsRead() does. Iterate over a copy because
+		// getObservers() exposes the list to code that could change it during the loop.
 		List<MessageObserver> os = new ArrayList<>(observers);
 		observers.clear();
 		for (MessageObserver observer : os) {
