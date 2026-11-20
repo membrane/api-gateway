@@ -26,6 +26,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
+import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.proxies.STOMPProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
@@ -746,7 +747,25 @@ class RuleMatchingInterceptorTest {
             assertEquals("HTTP/1.1 200", statusOf(request(SERVER_KEY, "secure2.example")));
         }
 
-        private void startRouter(ServiceProxy... apis) throws Exception {
+        @Test
+        @DisplayName("A target that cannot be parsed does not reach a forward proxy without its client authentication")
+        void malformedTargetToForwardProxyThatNeedsCertificate() throws Exception {
+            // The request does not match the host of "public", so it falls through to the forward proxy
+            startRouter(api("public.example", null, null), forwardProxy("need", SERVER_KEY_TRUST));
+
+            assertEquals("HTTP/1.1 421", statusOf(request(null, "http://example.com/bad%zz", "example.com")));
+        }
+
+        @Test
+        @DisplayName("A target that cannot be parsed reaches a forward proxy whose client authentication the handshake did")
+        void malformedTargetToForwardProxyWithItsCertificate() throws Exception {
+            // The forward proxy comes first, so it does the handshake and asks for the certificate
+            startRouter(forwardProxy("need", SERVER_KEY_TRUST), api("public.example", null, null));
+
+            assertEquals("HTTP/1.1 200", statusOf(request(SERVER_KEY, "http://example.com/bad%zz", "example.com")));
+        }
+
+        private void startRouter(SSLableProxy... apis) throws Exception {
             tlsRouter = new DefaultRouter();
             tlsRouter.getConfiguration().setHotDeploy(false);
             for (final var api : apis)
@@ -757,6 +776,16 @@ class RuleMatchingInterceptorTest {
         private static ServiceProxy api(String host, String clientAuth, String trustStore) {
             final var api = new ServiceProxy(new ServiceProxyKey(host, "*", ".*", PORT), null, 0);
             api.setName(host);
+            return withTlsAndAnswer(api, host, clientAuth, trustStore);
+        }
+
+        private static ProxyRule forwardProxy(String clientAuth, String trustStore) {
+            final var proxy = new ProxyRule(new ProxyRuleKey(PORT));
+            proxy.setName("forward-proxy");
+            return withTlsAndAnswer(proxy, "forward-proxy", clientAuth, trustStore);
+        }
+
+        private static <P extends SSLableProxy> P withTlsAndAnswer(P proxy, String answer, String clientAuth, String trustStore) {
             final var ssl = new SSLParser();
             ssl.setKeyStore(keyStore(SERVER_KEY));
             ssl.setEndpointIdentificationAlgorithm(""); // The client certificates were not issued for a host name
@@ -764,21 +793,25 @@ class RuleMatchingInterceptorTest {
                 ssl.setClientAuth(clientAuth);
                 ssl.setTrustStore(trustStore(trustStore));
             }
-            api.setSslInboundParser(ssl);
-            api.getFlow().add(new AbstractInterceptor() {
+            proxy.setSslInboundParser(ssl);
+            proxy.getFlow().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
-                    exc.setResponse(Response.ok(host).build());
+                    exc.setResponse(Response.ok(answer).build());
                     return RETURN;
                 }
             });
-            return api;
+            return proxy;
+        }
+
+        private static String request(String clientKey, String host) throws Exception {
+            return request(clientKey, "/", host);
         }
 
         /**
          * Sends a request without SNI, so that the first API on the port does the handshake.
          */
-        private static String request(String clientKey, String host) throws Exception {
+        private static String request(String clientKey, String target, String host) throws Exception {
             final var ssl = new SSLParser();
             ssl.setTrustStore(trustStore(SERVER_KEY_TRUST));
             ssl.setEndpointIdentificationAlgorithm(""); // The certificate was not issued for 'localhost'
@@ -786,7 +819,7 @@ class RuleMatchingInterceptorTest {
                 ssl.setKeyStore(keyStore(clientKey));
             final var client = new StaticSSLContext(ssl, new ResolverMap(), null);
             try (final var socket = client.createSocket("localhost", PORT, 30000, "", null)) {
-                socket.getOutputStream().write("GET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n".formatted(host).getBytes(US_ASCII));
+                socket.getOutputStream().write("GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n".formatted(target, host).getBytes(US_ASCII));
                 socket.getOutputStream().flush();
                 return new String(socket.getInputStream().readAllBytes(), US_ASCII);
             }

@@ -79,7 +79,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			// A forward proxy passes the absolute URI on unchanged and does not route by its path, so it need not parse
 			if (absoluteForm && getRule(exc) instanceof ProxyRule forwardProxy) {
 				assignRule(exc, forwardProxy);
-				return CONTINUE;
+				return checkClientAuthentication(exc, forwardProxy);
 			}
 			log.info("Rejected request with malformed request target.");
 			log.debug("Malformed request target: {} ({})", received, e.getMessage());
@@ -111,15 +111,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		}
 		assignRule(exc, proxy);
 
-		if (lacksClientAuthenticationOf(exc, proxy)) {
-			log.info("Rejected request to API '{}', whose client authentication the TLS handshake of the connection did not perform.", proxy.getName());
-			user(router.getConfiguration().isProduction(), "misdirected-request")
-					.status(421)
-					.title("Misdirected request")
-					.detail("The TLS connection was set up for another host. Connect again, sending this host name as SNI.")
-					.buildAndSetResponse(exc);
+		if (checkClientAuthentication(exc, proxy) == ABORT)
 			return ABORT;
-		}
 
 		if (request.isCONNECTRequest() && !acceptsConnect(proxy)) {
 			log.info("Rejected CONNECT request that is not routed to a forward proxy.");
@@ -235,6 +228,22 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			   || request.isCONNECTRequest()
 			   || isSTOMPConnectFrame(request)
 			   || (request.isOPTIONSRequest() && "*".equals(uri));
+	}
+
+	/**
+	 * Answers 421 if the TLS handshake of the connection did not perform the client authentication of the proxy, see
+	 * {@link #lacksClientAuthenticationOf}. Every path that assigns a proxy must call it.
+	 */
+	private Outcome checkClientAuthentication(Exchange exc, Proxy proxy) {
+		if (!lacksClientAuthenticationOf(exc, proxy))
+			return CONTINUE;
+		log.info("Rejected request to API '{}', whose client authentication the TLS handshake of the connection did not perform.", proxy.getName());
+		user(router.getConfiguration().isProduction(), "misdirected-request")
+				.status(421)
+				.title("Misdirected request")
+				.detail("The TLS connection was set up for another host. Connect again, sending this host name as SNI.")
+				.buildAndSetResponse(exc);
+		return ABORT;
 	}
 
 	/**
