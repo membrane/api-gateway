@@ -111,9 +111,13 @@ public abstract class AbstractBody {
 	 * not asked to send it. A body that is already in memory is only measured.
 	 *
 	 * @param maxLength the largest length in bytes the body may have
-	 * @throws ReadingBodyException if reading from the stream fails
+	 * @throws ReadingBodyException if reading from the stream fails, or failed earlier
+	 * @throws IllegalStateException if the body was discarded: it holds nothing, whatever its length was
 	 */
 	public BodyLengthCheck readUpTo(long maxLength) {
+		throwIfFailed();
+		if (retention == Retention.DISCARDED)
+			throw new IllegalStateException("Cannot measure body after it was discarded.");
 		if (isRead())
 			return getLength() <= maxLength ? WITHIN : new TooLong(false);
 
@@ -514,6 +518,13 @@ public abstract class AbstractBody {
 
 	public boolean isRead() {
 		return state instanceof Read;
+	}
+
+	/**
+	 * @return whether the body has neither been read completely nor failed
+	 */
+	boolean isUnread() {
+		return state instanceof Unread;
 	}
 
 	/**

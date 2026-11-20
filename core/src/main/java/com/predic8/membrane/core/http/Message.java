@@ -189,11 +189,13 @@ public abstract class Message {
 	 * XOP/MTOM package are limited by the bytes received. See {@link AbstractBody#readUpTo(long)} for what
 	 * happens to a body that is longer.
 	 *
-	 * @throws ReadingBodyException if reading or decoding the body fails
+	 * @throws ReadingBodyException if reading or decoding the body fails, or reading it failed earlier
+	 * @throws IllegalStateException if the body was discarded
 	 */
 	public BodyLengthCheck checkBodyLength(long maxLength) {
 		final var declaredLength = body.getDeclaredLength();
-		if (!isContentEncodingDecoded() && declaredLength != -1 && declaredLength <= maxLength)
+		// Only an unread body is vouched for by its declared length: a failed or discarded one is not usable.
+		if (body.isUnread() && !isContentEncodingDecoded() && declaredLength != -1 && declaredLength <= maxLength)
 			return WITHIN;
 
 		final var check = body.readUpTo(maxLength);

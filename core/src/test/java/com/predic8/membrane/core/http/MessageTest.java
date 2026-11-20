@@ -86,6 +86,38 @@ class MessageTest {
 
             assertEquals(WITHIN, request.checkBodyLength(0));
         }
+
+        /**
+         * The declared length is within the limit, but the body ended early: the failure is reported, not
+         * passed off as within the limit.
+         */
+        @Test
+        void failedBodyIsNotWithin() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10));
+            final var failure = assertThrows(ReadingBodyException.class, () -> request.getBody().read());
+
+            assertSame(failure, assertThrows(ReadingBodyException.class, () -> request.checkBodyLength(100)));
+        }
+
+        @Test
+        void discardedBodyIsNotWithin() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length()));
+            request.getBody().discard();
+
+            assertThrows(IllegalStateException.class, () -> request.checkBodyLength(100));
+        }
+
+        @Test
+        void bodyInMemoryWithinItsDeclaredLengthIsWithin() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("small".getBytes(UTF_8)), 5));
+            request.getBody().read();
+
+            assertEquals(WITHIN, request.checkBodyLength(5));
+            assertEquals(new TooLong(false), request.checkBodyLength(4));
+        }
     }
 
     private static Message requestWithContentEncoding(String coding) throws URISyntaxException {

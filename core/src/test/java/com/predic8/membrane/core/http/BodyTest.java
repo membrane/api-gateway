@@ -549,6 +549,25 @@ public class BodyTest {
 		assertEquals(WITHIN, new EmptyBody().readUpTo(0));
 	}
 
+	/**
+	 * A discarded body is read but holds nothing, so measuring it would pass any body off as within the limit.
+	 */
+	@Test
+	void readUpToRejectsADiscardedBody() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.discard();
+
+		assertThrows(IllegalStateException.class, () -> body.readUpTo(0));
+	}
+
+	@Test
+	void readUpToRethrowsTheFailureOfABody() {
+		final var body = new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10);
+		final var failure = assertThrows(ReadingBodyException.class, body::read);
+
+		assertSame(failure, assertThrows(ReadingBodyException.class, () -> body.readUpTo(100)));
+	}
+
 	private static class RecordingObserver extends AbstractMessageObserver {
 		final ByteArrayOutputStream observed = new ByteArrayOutputStream();
 		boolean completed;
