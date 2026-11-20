@@ -20,8 +20,8 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
-import com.predic8.membrane.core.http.BodyLengthCheck.TooLong;
 
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
 import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -397,7 +397,7 @@ public class BodyTest {
 	void readUpToFailsABodyOfKnownLengthAboveTheLimitWithoutReadingIt() {
 		final var in = new ByteArrayInputStream("small".getBytes(UTF_8));
 		final var body = new Body(in, 5);
-		assertEquals(new TooLong(true), body.readUpTo(4));
+		assertEquals(TOO_LONG, body.readUpTo(4));
 		assertTrue(body.hasFailed());
 		assertEquals(4, assertInstanceOf(BodyLengthExceededException.class, body.getObservedException().getCause()).getMaxLength());
 		assertEquals(5, in.available());
@@ -503,7 +503,7 @@ public class BodyTest {
 				requested[0] = true;
 			}
 		});
-		assertEquals(new TooLong(true), body.readUpTo(4));
+		assertEquals(TOO_LONG, body.readUpTo(4));
 		assertFalse(requested[0]);
 		assertTrue(body.hasFailed());
 	}
@@ -514,7 +514,7 @@ public class BodyTest {
 		final var body = new Body(in);
 		final var observer = new RecordingObserver();
 		body.addObserver(observer);
-		assertEquals(new TooLong(true), body.readUpTo(10));
+		assertEquals(TOO_LONG, body.readUpTo(10));
 		assertTrue(body.hasFailed());
 		assertTrue(observer.failed);
 		assertEquals(89, in.available());
@@ -540,7 +540,7 @@ public class BodyTest {
 	void readUpToChecksTheLengthOfABodyInMemoryWithoutFailingIt() {
 		final var body = new Body("small".getBytes(UTF_8));
 		assertEquals(WITHIN, body.readUpTo(5));
-		assertEquals(new TooLong(false), body.readUpTo(4));
+		assertEquals(TOO_LONG, body.readUpTo(4));
 		assertFalse(body.hasFailed());
 	}
 

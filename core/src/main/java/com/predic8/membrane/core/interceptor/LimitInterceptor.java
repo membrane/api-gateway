@@ -16,12 +16,12 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.BodyLengthCheck.TooLong;
 import com.predic8.membrane.core.http.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.exceptions.BodyFailureProblems.bodyTooLong;
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -104,7 +104,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		if (maxBodyLength == -1)
 			return CONTINUE;
 
-		if (!(msg.checkBodyLength(maxBodyLength) instanceof TooLong))
+		if (msg.checkBodyLength(maxBodyLength) != TOO_LONG)
 			return CONTINUE;
 
 		log.info("The {} body is longer than the limit of {} bytes.", flow == REQUEST ? "request" : "response", maxBodyLength);

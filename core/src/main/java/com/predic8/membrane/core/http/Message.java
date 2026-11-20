@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.http.BodyLengthCheck.TooLong;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -30,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
 import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
@@ -200,10 +200,10 @@ public abstract class Message {
 
 		final var check = body.readUpTo(maxLength);
 		// An empty body is not decoded: one labelled gzip, e.g. a HEAD response, would fail to.
-		if (check instanceof TooLong || !isContentEncodingDecoded() || body.getLength() == 0)
+		if (check == TOO_LONG || !isContentEncodingDecoded() || body.getLength() == 0)
 			return check;
 
-		return isDecodedLongerThan(maxLength) ? new TooLong(false) : WITHIN;
+		return isDecodedLongerThan(maxLength) ? TOO_LONG : WITHIN;
 	}
 
 	/**

@@ -17,22 +17,18 @@ package com.predic8.membrane.core.http;
  * Whether a body is within a length limit, see {@link AbstractBody#readUpTo(long)} and
  * {@link Message#checkBodyLength(long)}.
  */
-public sealed interface BodyLengthCheck {
-
-    BodyLengthCheck WITHIN = new Within();
+public enum BodyLengthCheck {
 
     /**
      * The body is at most as long as the limit. It is in memory, or it is passed on as it arrives because
      * its declared length is within the limit.
      */
-    record Within() implements BodyLengthCheck {}
+    WITHIN,
 
     /**
-     * The body is longer than the limit.
-     *
-     * @param abandoned whether the rest of the body was left unread on its connection. The body has then
-     *                  failed with a {@link BodyLengthExceededException}, and its connection is closed
-     *                  instead of reused. Otherwise the body is in memory and can still be read.
+     * The body is longer than the limit. What became of it is the body's state: one that was not read to
+     * its end {@linkplain AbstractBody#hasFailed() has failed} with a {@link BodyLengthExceededException},
+     * so that its connection is not reused; otherwise it is in memory and can still be read.
      */
-    record TooLong(boolean abandoned) implements BodyLengthCheck {}
+    TOO_LONG
 }

@@ -52,8 +52,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.predic8.membrane.core.http.BodyLengthCheck.TooLong;
 
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
 import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.annot.Constants.CRLF;
@@ -429,7 +429,7 @@ public class ChunkedBodyTest {
     void readUpToStopsAtTheSizeOfTheChunkThatExceedsTheLimit() {
         final var in = new ByteArrayInputStream(chunks().add("first").add("second").add("third").build());
         final var body = new ChunkedBody(in);
-        assertEquals(new TooLong(true), body.readUpTo(8));
+        assertEquals(TOO_LONG, body.readUpTo(8));
         assertTrue(body.hasFailed());
         assertEquals(("second" + CRLF + "5" + CRLF + "third" + CRLF + "0" + CRLF + CRLF).length(), in.available());
     }
@@ -441,7 +441,7 @@ public class ChunkedBodyTest {
     void readUpToRejectsAChunkLongerThanTheLimitBeforeReadingIt() {
         final var in = new ByteArrayInputStream(("6400000" + CRLF).getBytes(US_ASCII));
         final var body = new ChunkedBody(in);
-        assertEquals(new TooLong(true), body.readUpTo(1024));
+        assertEquals(TOO_LONG, body.readUpTo(1024));
         assertTrue(body.hasFailed());
     }
 
@@ -450,7 +450,7 @@ public class ChunkedBodyTest {
         final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").build()));
         assertEquals('f', body.getContentAsStream().read());
 
-        assertEquals(new TooLong(true), body.readUpTo(3));
+        assertEquals(TOO_LONG, body.readUpTo(3));
         assertTrue(body.hasFailed());
     }
 
@@ -471,7 +471,7 @@ public class ChunkedBodyTest {
         final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").add("second").build()));
         assertEquals('f', body.getContentAsStream().read());
 
-        assertEquals(new TooLong(true), body.readUpTo(10));
+        assertEquals(TOO_LONG, body.readUpTo(10));
         assertTrue(body.hasFailed());
     }
 

@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.http.BodyLengthCheck.TooLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +22,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
 import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static com.predic8.membrane.core.http.BodyState.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -119,7 +119,7 @@ public abstract class AbstractBody {
 		if (retention == Retention.DISCARDED)
 			throw new IllegalStateException("Cannot measure body after it was discarded.");
 		if (isRead())
-			return getLength() <= maxLength ? WITHIN : new TooLong(false);
+			return getLength() <= maxLength ? WITHIN : TOO_LONG;
 
 		requireReadable();
 
@@ -156,7 +156,7 @@ public abstract class AbstractBody {
 
 	private BodyLengthCheck abandon(long maxLength) {
 		fail(new BodyLengthExceededException(maxLength));
-		return new TooLong(true);
+		return TOO_LONG;
 	}
 
 	/**

@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.http.BodyLengthCheck.TooLong;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +22,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
 import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,7 +55,7 @@ class MessageTest {
             final var request = Request.post("/").build();
             request.setBody(new Body(new ByteArrayInputStream("too long".getBytes(UTF_8))));
 
-            assertEquals(new TooLong(true), request.checkBodyLength(5));
+            assertEquals(TOO_LONG, request.checkBodyLength(5));
             assertTrue(request.getBody().hasFailed());
         }
 
@@ -65,7 +65,7 @@ class MessageTest {
             final var request = Request.post("/").header("Content-Encoding", "gzip").build();
             request.setBody(new Body(new ByteArrayInputStream(gzip)));
 
-            assertEquals(new TooLong(false), request.checkBodyLength(100));
+            assertEquals(TOO_LONG, request.checkBodyLength(100));
             assertArrayEquals(gzip, request.getBody().getContent());
         }
 
@@ -116,7 +116,7 @@ class MessageTest {
             request.getBody().read();
 
             assertEquals(WITHIN, request.checkBodyLength(5));
-            assertEquals(new TooLong(false), request.checkBodyLength(4));
+            assertEquals(TOO_LONG, request.checkBodyLength(4));
         }
     }
 
