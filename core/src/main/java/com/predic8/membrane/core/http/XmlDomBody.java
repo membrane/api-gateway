@@ -276,7 +276,7 @@ public class XmlDomBody extends AbstractBody {
     }
 
     @Override
-    protected boolean readLocal(long maxLength) {
+    protected boolean readChunksWithin(long maxLength) {
         // nothing to read, the content was passed to the constructor
         return true;
     }

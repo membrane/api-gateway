@@ -141,7 +141,7 @@ public abstract class AbstractBody {
 	 */
 	protected final BodyLengthCheck readRest(long maxLength) {
 		try {
-			if (!readLocal(maxLength))
+			if (!readChunksWithin(maxLength))
 				return abandon(maxLength);
 		} catch (IOException e) {
 			throw fail(e);
@@ -171,7 +171,7 @@ public abstract class AbstractBody {
 	 *
 	 * @return <code>false</code> if the body is longer than {@code maxLength} bytes
 	 */
-	protected abstract boolean readLocal(long maxLength) throws IOException;
+	protected abstract boolean readChunksWithin(long maxLength) throws IOException;
 
 	/**
 	 * @return the number of bytes in {@link #chunks}, without reading anything

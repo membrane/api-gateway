@@ -96,7 +96,7 @@ public class ChunkedBody extends AbstractBody {
      * already holds count towards it.
      */
     @Override
-    protected boolean readLocal(long maxLength) throws IOException {
+    protected boolean readChunksWithin(long maxLength) throws IOException {
         // the observers get the chunks only once the whole body has been read
         var length = getLengthOfChunks();
         if (length > maxLength)

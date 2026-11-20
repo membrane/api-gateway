@@ -146,7 +146,7 @@ public class BodyTest {
 	private static AbstractBody bodyReporting(long length) {
 		return new AbstractBody() {
 			@Override public long getLength() { return length; }
-			@Override protected boolean readLocal(long maxLength) { return true; }
+			@Override protected boolean readChunksWithin(long maxLength) { return true; }
 			@Override protected void writeAlreadyRead(AbstractBodyTransferer out) {}
 			@Override protected void writeStreamed(AbstractBodyTransferer out) {}
 			@Override protected byte[] getRawLocal() { return new byte[0]; }

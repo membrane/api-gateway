@@ -132,7 +132,7 @@ public class Body extends AbstractBody {
 	 * @throws EOFException if a body of known length ends early
 	 */
 	@Override
-	protected boolean readLocal(long maxLength) throws IOException {
+	protected boolean readChunksWithin(long maxLength) throws IOException {
 		if (length > maxLength)
 			return false;
 

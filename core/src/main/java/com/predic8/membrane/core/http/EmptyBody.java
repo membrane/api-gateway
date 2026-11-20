@@ -33,7 +33,7 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected boolean readLocal(long maxLength) {
+	protected boolean readChunksWithin(long maxLength) {
 		return true; // there is nothing to read
 	}
 

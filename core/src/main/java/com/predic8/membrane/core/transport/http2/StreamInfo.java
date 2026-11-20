@@ -306,7 +306,7 @@ public class StreamInfo {
          * Reads no further than the frame that takes the body beyond {@code maxLength}.
          */
         @Override
-        protected boolean readLocal(long maxLength) throws IOException {
+        protected boolean readChunksWithin(long maxLength) throws IOException {
             long length = 0;
             while(true) {
                 DataFrame df = removeDataFrame();

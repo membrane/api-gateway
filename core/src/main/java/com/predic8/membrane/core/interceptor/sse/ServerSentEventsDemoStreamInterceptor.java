@@ -85,7 +85,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
          * The events are created while the body is written, so there is nothing to read.
          */
         @Override
-        protected boolean readLocal(long maxLength) throws IOException {
+        protected boolean readChunksWithin(long maxLength) throws IOException {
             throw new IOException(CANNOT_BE_READ);
         }
 
