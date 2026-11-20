@@ -144,7 +144,7 @@ public class JmsConsumerProxy extends AbstractServiceProxy implements NotPortOpe
      * @param destination Name of the queue or topic
      * @return Name of a jmsConsumer that has none configured
      */
-    public static String defaultName(final String destination) {
+    private static String defaultName(final String destination) {
         return "JMSConsumer: " + destination;
     }
 
@@ -334,5 +334,24 @@ public class JmsConsumerProxy extends AbstractServiceProxy implements NotPortOpe
 
     public int getConcurrency() {
         return concurrency;
+    }
+
+    @Override
+    public String getKindLabel() {
+        return "JMSConsumer:";
+    }
+
+    /**
+     * @return The destination, preceded by the name when it differs from the default name
+     */
+    @Override
+    public String getStartupLabel() {
+        final var destinationName = getQueue() != null ? getQueue() : getTopic();
+        final var destination = (getQueue() != null ? "queue:" : "topic:") + destinationName;
+        final var name = getName();
+        if (name == null || name.isEmpty() || name.equals(defaultName(destinationName))) {
+            return destination;
+        }
+        return name + " " + destination;
     }
 }

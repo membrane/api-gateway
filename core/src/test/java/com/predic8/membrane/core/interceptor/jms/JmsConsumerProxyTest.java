@@ -499,4 +499,13 @@ class JmsConsumerProxyTest {
             yamlRouter.stop();
         }
     }
+
+    @Test
+    void startupLabelWithDefaultName() {
+        final var consumer = new JmsConsumerProxy();
+        consumer.setQueue("orders");
+        consumer.setName("JMSConsumer: orders");
+
+        assertEquals("queue:orders", consumer.getStartupLabel());
+    }
 }
