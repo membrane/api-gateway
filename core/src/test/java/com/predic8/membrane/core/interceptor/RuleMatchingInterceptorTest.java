@@ -716,7 +716,10 @@ class RuleMatchingInterceptorTest {
             // "public" comes first, so it does the handshake of a client sending no SNI and asks for no certificate
             startRouter(api("public.example", null, null), api("secure.example", "need", SERVER_KEY_TRUST));
 
-            assertEquals("HTTP/1.1 421", statusOf(request(null, "secure.example")));
+            final var rejected = request(null, "secure.example");
+            assertEquals("HTTP/1.1 421", statusOf(rejected));
+            // A retry with this host name as SNI can select the same context again, e.g. for APIs that only differ by path
+            assertFalse(rejected.contains("SNI"), rejected);
             assertEquals("HTTP/1.1 200", statusOf(request(null, "public.example")));
         }
 
@@ -744,7 +747,9 @@ class RuleMatchingInterceptorTest {
         void sameConfigurationOnBothApis() throws Exception {
             startRouter(api("secure.example", "need", SERVER_KEY_TRUST), api("secure2.example", "need", SERVER_KEY_TRUST));
 
-            assertEquals("HTTP/1.1 200", statusOf(request(SERVER_KEY, "secure2.example")));
+            final var response = request(SERVER_KEY, "secure2.example");
+            assertEquals("HTTP/1.1 200", statusOf(response));
+            assertTrue(response.endsWith("secure2.example"), response);
         }
 
         @Test

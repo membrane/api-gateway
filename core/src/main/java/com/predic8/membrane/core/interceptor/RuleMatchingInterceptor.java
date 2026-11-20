@@ -241,7 +241,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		user(router.getConfiguration().isProduction(), "misdirected-request")
 				.status(421)
 				.title("Misdirected request")
-				.detail("The TLS connection was set up for another host. Connect again, sending this host name as SNI.")
+				.detail("The TLS connection does not meet the client authentication this API requires.")
 				.buildAndSetResponse(exc);
 		return ABORT;
 	}
