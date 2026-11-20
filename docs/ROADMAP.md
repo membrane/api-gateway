@@ -24,6 +24,9 @@
     - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
     - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
     - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
+- Add a streaming tutorial
+  - Set retries: 0
+  - Show that request.body is not available in the response
 
 ## Priority 2
 - Add performance tutorial or tuning guide
