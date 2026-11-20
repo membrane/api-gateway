@@ -48,4 +48,20 @@ class LoginInterceptorTest {
                         .filter(field -> !field.startsWith("Host"))
                         .toList());
     }
+
+    @Test
+    void identityHeadersThatDifferOnlyByUnderscoreAreBothKept() throws Exception {
+        final var session = new Session();
+        session.preAuthorize("alice", Map.of("headerX-User", "alice", "headerX_User", "bob"));
+        final var exc = new Request.Builder().get("/foo").buildExchange();
+
+        LoginInterceptor.applyBackendAuthorization(exc, session);
+
+        assertEquals(List.of("X-User: alice", "X_User: bob"),
+                exc.getRequest().getHeader().getFields().stream()
+                        .map(field -> field.getHeaderName() + ": " + field.getValue())
+                        .filter(field -> !field.startsWith("Host"))
+                        .sorted()
+                        .toList());
+    }
 }

@@ -172,12 +172,14 @@ public class LoginInterceptor extends AbstractInterceptor {
 	static void applyBackendAuthorization(Exchange exc, Session s) {
         exc.setProperty("session", s);
         Header h = exc.getRequest().getHeader();
-		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
-			if (e.getKey().startsWith("header")) {
-				String headerName = e.getKey().substring(6);
-				h.removeFieldsAndUnderscoreAliases(headerName);
-				h.add(headerName, e.getValue());
-			}
+		final var headers = s.getUserAttributes().entrySet().stream()
+				.filter(e -> e.getKey().startsWith("header"))
+				.toList();
+		// Remove all spellings first, so that one header does not remove another that only differs by "_" or "-"
+		for (final var e : headers)
+			h.removeFieldsAndUnderscoreAliases(e.getKey().substring(6));
+		for (final var e : headers)
+			h.add(e.getKey().substring(6), e.getValue());
 	}
 
 	@Override

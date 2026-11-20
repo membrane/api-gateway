@@ -198,6 +198,24 @@ class OAuth2Resource2InterceptorTest {
                         .toList());
     }
 
+    @Test
+    void identityHeadersThatDifferOnlyByUnderscoreAreBothKept() throws Exception {
+        oauth2.setCustomHeaderUserPropertyPrefix("header");
+        final var session = validSession();
+        session.put("headerX-User", "alice");
+        session.put("headerX_User", "bob");
+        final var exc = new Request.Builder().get("/foo").buildExchange();
+
+        oauth2.applyBackendAuthorization(exc, session);
+
+        assertEquals(List.of("X-User: alice", "X_User: bob"),
+                exc.getRequest().getHeader().getFields().stream()
+                        .map(field -> field.getHeaderName() + ": " + field.getValue())
+                        .filter(field -> field.startsWith("X"))
+                        .sorted()
+                        .toList());
+    }
+
     private static Exchange requestWith(Session session) throws Exception {
         Exchange exc = new Request.Builder().get("/foo").buildExchange();
         exc.setOriginalRequestUri("/foo");
