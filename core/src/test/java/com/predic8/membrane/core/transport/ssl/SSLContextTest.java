@@ -270,18 +270,31 @@ public class SSLContextTest {
 	 * handshake skips the validation. The others must not validate the client certificate again on every request.
 	 */
 	@Test
-	void admissionOfAnotherContextsSessionIsValidatedOncePerContext() throws Exception {
+	void admissionOfAnotherContextsSessionIsValidatedOnce() throws Exception {
 		final var session = sessionOfAnotherContextWithClientCertificate("classpath:/ssl-rsa.keystore");
 		final var trusting = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
 		final var notTrusting = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub2.keystore").needClientAuth().build();
 
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 3; i++)
 			assertTrue(trusting.admitsSessionOf(session));
-			assertFalse(notTrusting.admitsSessionOf(session));
-		}
+		verify(session, times(1)).getPeerCertificates();
 
-		// Once for each context, not once per call
-		verify(session, times(2)).getPeerCertificates();
+		// The admission kept by one context does not admit the session for another
+		assertFalse(notTrusting.admitsSessionOf(session));
+	}
+
+	/**
+	 * A rejection can be caused by a revocation status that could not be fetched. Kept in the session, it would last
+	 * after the outage as long as the session is resumed.
+	 */
+	@Test
+	void rejectionOfAnotherContextsSessionIsNotKept() throws Exception {
+		final var session = sessionOfAnotherContextWithClientCertificate("classpath:/ssl-rsa.keystore");
+		final var notTrusting = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub2.keystore").needClientAuth().build();
+
+		for (int i = 0; i < 3; i++)
+			assertFalse(notTrusting.admitsSessionOf(session));
+		verify(session, times(3)).getPeerCertificates();
 	}
 
 	/**
