@@ -91,6 +91,64 @@ class ChunkedDecoderTest {
     }
 
     @Test
+    void chunkUpToTheMaximumLengthIsRead() throws IOException {
+        final var decoder = new ChunkedDecoder(stream("3\r\nabc\r\n0\r\n\r\n"));
+
+        assertEquals("abc", text(decoder.next(3)));
+        assertNull(decoder.next(0));
+    }
+
+    /**
+     * The chunk size alone tells that the chunk is too long, so no array is allocated for it and no data
+     * is waited for.
+     */
+    @Test
+    void chunkLongerThanTheMaximumLengthIsRejectedBeforeItsDataIsRead() {
+        final var in = stream("6400000\r\nabc");
+        final var decoder = new ChunkedDecoder(in);
+
+        assertThrows(ChunkTooLongException.class, () -> decoder.next(1024));
+        assertEquals("abc", new String(in.readAllBytes(), US_ASCII), "the data of the chunk must not be read");
+    }
+
+    /**
+     * Beyond the cap on a single chunk, beyond an int or with more hex digits than the decoder reads: a chunk
+     * over the maximum length is still reported as too long, so it is answered like any other body over the limit.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"6400001", "7FFFFFFF", "80000000", "FFFFFFFF", "100000000"})
+    void chunkOverTheMaximumLengthIsTooLongWhateverTheDecoderAccepts(String chunkSize) {
+        final var decoder = new ChunkedDecoder(stream(chunkSize + "\r\n"));
+
+        assertThrows(ChunkTooLongException.class, () -> decoder.next(1024));
+    }
+
+    /**
+     * Leading zeros count towards the 8 hex digits the decoder reads. At the 9th digit nothing is known about the
+     * size yet ({@code 0000000000000001} would be a single byte), so the chunk size is refused as malformed, not
+     * reported as too long.
+     */
+    @Test
+    void chunkSizePaddedBeyondTheDigitsTheDecoderReadsIsMalformedNotTooLong() {
+        final var decoder = new ChunkedDecoder(stream("0000000006400001\r\n"));
+
+        final var e = assertThrows(IOException.class, () -> decoder.next(1024));
+        assertFalse(e instanceof ChunkTooLongException, e.toString());
+    }
+
+    /**
+     * Without a maximum length, the decoder's own limits on the chunk size still apply.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"6400001", "80000000", "100000000"})
+    void chunkBeyondTheDecodersLimitsIsRejectedWithoutAMaximumLength(String chunkSize) {
+        final var decoder = new ChunkedDecoder(stream(chunkSize + "\r\n"));
+
+        final var e = assertThrows(IOException.class, decoder::next);
+        assertFalse(e instanceof ChunkTooLongException, e.toString());
+    }
+
+    @Test
     void oversizedTrailerLineIsRejected() {
         final var decoder = new ChunkedDecoder(stream("0\r\nX: " + "a".repeat(MAX_LINE_LENGTH) + "\r\n\r\n"));
 
@@ -124,26 +182,26 @@ class ChunkedDecoderTest {
 
     @Test
     void testReadChunkSize() throws Exception {
-        assertEquals(15663, readChunkSize(new ByteArrayInputStream(("3d2F" + CRLF).getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(("3d2F" + CRLF).getBytes()), Long.MAX_VALUE));
     }
 
     @Test
     void testReadChunkSizeWithExtension() throws Exception {
         String s = "3d2F" + CRLF + ";gfgfgfg" + CRLF;
-        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes()), Long.MAX_VALUE));
     }
 
     @Test
     void testReadChunkSizeWithExtensionValue() throws Exception {
         String s = "3d2F" + CRLF + ";gfgf=gfg" + CRLF;
-        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes()), Long.MAX_VALUE));
     }
 
     @Test
     void readTrailerTest() throws IOException {
         byte[] trailer = ("3D" + CRLF + CRLF).getBytes();
         ByteArrayInputStream is = new ByteArrayInputStream(trailer);
-        assertEquals(61, readChunkSize(is)); // 3D = 61
+        assertEquals(61, readChunkSize(is, Long.MAX_VALUE)); // 3D = 61
         readTrailer(is);
         assertEquals(0, is.available()); // Check that everything is read
     }
@@ -233,7 +291,7 @@ class ChunkedDecoderTest {
         @ParameterizedTest
         @MethodSource("validChunkSizes")
         void validInputsParseCorrectly(String input, int expected) throws IOException {
-            assertEquals(expected, parseChunkSize(buf(input)));
+            assertEquals(expected, parseChunkSize(buf(input), Long.MAX_VALUE));
         }
 
         static Stream<Arguments> validChunkSizes() {
@@ -253,43 +311,43 @@ class ChunkedDecoderTest {
         @Test
         void oneByteOverLimitIsRejected() {
             assertThrows(IOException.class,
-                    () -> parseChunkSize(buf(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT + 1))));
+                    () -> parseChunkSize(buf(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT + 1)), Long.MAX_VALUE));
         }
 
         @Test
         void integerMaxValueIsRejected() {
             // 7FFFFFFF = Integer.MAX_VALUE = 2 GiB — parses without NumberFormatException but exceeds cap
-            assertThrows(IOException.class, () -> parseChunkSize(buf("7fffffff")));
+            assertThrows(IOException.class, () -> parseChunkSize(buf("7fffffff"), Long.MAX_VALUE));
         }
 
         @Test
-        void overflowsIntegerParseIsRejectedAsInvalidValue() {
-            // 80000000 exceeds Integer.MAX_VALUE → Integer.parseInt throws NumberFormatException
-            assertThrows(IOException.class, () -> parseChunkSize(buf("80000000")));
+        void beyondIntegerMaxValueIsRejected() {
+            // 80000000 exceeds Integer.MAX_VALUE, and the cap
+            assertThrows(IOException.class, () -> parseChunkSize(buf("80000000"), Long.MAX_VALUE));
         }
 
         @Test
-        void maxUnsignedHexIsRejectedAsInvalidValue() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("ffffffff")));
+        void maxUnsignedHexIsRejected() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("ffffffff"), Long.MAX_VALUE));
         }
 
-        // -- negative (sign prefix accepted by Integer.parseInt) --------------
+        // -- negative (sign prefix accepted by Long.parseLong) ----------------
 
         @Test
         void negativeValueIsRejected() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("-1")));
+            assertThrows(IOException.class, () -> parseChunkSize(buf("-1"), Long.MAX_VALUE));
         }
 
         // -- empty / blank ----------------------------------------------------
 
         @Test
         void emptyBufferIsRejected() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("")));
+            assertThrows(IOException.class, () -> parseChunkSize(buf(""), Long.MAX_VALUE));
         }
 
         @Test
         void blankBufferIsRejected() {
-            assertThrows(IOException.class, () -> parseChunkSize(buf("   ")));
+            assertThrows(IOException.class, () -> parseChunkSize(buf("   "), Long.MAX_VALUE));
         }
 
         // -- non-hex characters -----------------------------------------------
@@ -297,7 +355,7 @@ class ChunkedDecoderTest {
         @ParameterizedTest
         @ValueSource(strings = {"xyz", "1g", "0x1a", "12 34", "1.0", "  a  ", "+1", "-0"})
         void nonHexInputIsRejected(String input) {
-            assertThrows(IOException.class, () -> parseChunkSize(buf(input)));
+            assertThrows(IOException.class, () -> parseChunkSize(buf(input), Long.MAX_VALUE));
         }
 
         // -- helper -----------------------------------------------------------

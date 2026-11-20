@@ -13,10 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
+import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageTest {
@@ -30,7 +38,97 @@ class MessageTest {
         assertFalse(Request.post("/").body("plain").build().isContentEncodingDecoded());
     }
 
+    @Nested
+    class CheckBodyLength {
+
+        @Test
+        void bodyWithinItsDeclaredLengthIsNotRead() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("small".getBytes(UTF_8)), 5));
+
+            assertEquals(WITHIN, request.checkBodyLength(5));
+            assertFalse(request.getBody().isRead());
+        }
+
+        @Test
+        void bodyOnTheWireIsAbandoned() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("too long".getBytes(UTF_8))));
+
+            assertEquals(TOO_LONG, request.checkBodyLength(5));
+            assertTrue(request.getBody().hasFailed());
+        }
+
+        @Test
+        void decodedBodyTooLongStaysReadable() throws Exception {
+            final var gzip = gzip("a".repeat(1000));
+            final var request = Request.post("/").header("Content-Encoding", "gzip").build();
+            request.setBody(new Body(new ByteArrayInputStream(gzip)));
+
+            assertEquals(TOO_LONG, request.checkBodyLength(100));
+            assertArrayEquals(gzip, request.getBody().getContent());
+        }
+
+        @Test
+        void compressedBodyIsKeptEncoded() throws Exception {
+            final var gzip = gzip("small");
+            final var request = Request.post("/").header("Content-Encoding", "gzip").build();
+            request.setBody(new Body(new ByteArrayInputStream(gzip)));
+
+            assertEquals(WITHIN, request.checkBodyLength(100));
+            assertEquals("gzip", request.getHeader().getContentEncoding());
+            assertArrayEquals(gzip, request.getBody().getContent());
+        }
+
+        @Test
+        void emptyBodyLabelledGzipIsWithin() throws Exception {
+            final var request = Request.post("/").header("Content-Encoding", "gzip").build();
+
+            assertEquals(WITHIN, request.checkBodyLength(0));
+        }
+
+        /**
+         * The declared length is within the limit, but the body ended early: the failure is reported, not
+         * passed off as within the limit.
+         */
+        @Test
+        void failedBodyIsNotWithin() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10));
+            final var failure = assertThrows(ReadingBodyException.class, () -> request.getBody().read());
+
+            assertSame(failure, assertThrows(ReadingBodyException.class, () -> request.checkBodyLength(100)));
+        }
+
+        @Test
+        void discardedBodyIsNotWithin() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length()));
+            request.getBody().discard();
+
+            assertThrows(IllegalStateException.class, () -> request.checkBodyLength(100));
+        }
+
+        @Test
+        void bodyInMemoryWithinItsDeclaredLengthIsWithin() throws Exception {
+            final var request = Request.post("/").build();
+            request.setBody(new Body(new ByteArrayInputStream("small".getBytes(UTF_8)), 5));
+            request.getBody().read();
+
+            assertEquals(WITHIN, request.checkBodyLength(5));
+            assertEquals(TOO_LONG, request.checkBodyLength(4));
+        }
+    }
+
     private static Message requestWithContentEncoding(String coding) throws URISyntaxException {
         return Request.post("/").body(new byte[]{1}).header("Content-Encoding", coding).build();
+    }
+
+    private static byte[] gzip(String content) throws IOException {
+        final var out = new ByteArrayOutputStream();
+        try (final var gzip = new GZIPOutputStream(out)) {
+            gzip.write(content.getBytes(UTF_8));
+        }
+        return out.toByteArray();
     }
 }

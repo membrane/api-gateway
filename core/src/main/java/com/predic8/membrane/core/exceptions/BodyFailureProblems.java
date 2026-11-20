@@ -15,14 +15,18 @@
 package com.predic8.membrane.core.exceptions;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.BodyLengthExceededException;
 import com.predic8.membrane.core.http.DecodingException;
 import com.predic8.membrane.core.http.InvalidContentTypeException;
 import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.multipart.XopReassemblyException;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
@@ -56,6 +60,8 @@ public final class BodyFailureProblems {
      * </ul>
      * <p>Any other request body failure gets the plain user type, explained by the message of its
      * root cause.</p>
+     * <p>A body abandoned for being longer than a limit ({@link BodyLengthExceededException}) is answered
+     * as {@link #bodyTooLong} answers it, whichever end it belongs to.</p>
      *
      * @param exchange the exchange the failure happened on, to tell whose body it was
      * @implNote sets the {@code see} suffix itself. {@link ProblemDetails#addSubSee} concatenates without a
@@ -64,6 +70,11 @@ public final class BodyFailureProblems {
      */
     public static ProblemDetails bodyFailure(boolean production, String component, Exchange exchange,
                                              ReadingBodyException failure) {
+        final var tooLong = throwableOfType(failure, BodyLengthExceededException.class);
+        if (tooLong != null)
+            return bodyTooLong(production, component,
+                    failure.isRequestBodyFailure(exchange) ? REQUEST : RESPONSE, tooLong.getMaxLength());
+
         if (!failure.isRequestBodyFailure(exchange))
             return internal(production, component)
                     .addSubSee("reading-body")
@@ -102,5 +113,20 @@ public final class BodyFailureProblems {
                     .internal("reason", escapeControlCharsForLog(contentType.getCause().getMessage()));
 
         return problem.detail(getRootCause(failure).getMessage());
+    }
+
+    /**
+     * A body is longer than a limit: 413 for a request, 502 for a backend response.
+     *
+     * @param flow the flow of the message whose body is too long
+     * @param maxLength the limit in bytes, shown outside production only
+     */
+    public static ProblemDetails bodyTooLong(boolean production, String component, Flow flow, long maxLength) {
+        return security(production, component)
+                .flow(flow)
+                .status(flow == REQUEST ? 413 : 502)
+                .title("Message is too large.")
+                .detail("Message bodies must not exceed the limit.")
+                .internal("maxBodyLength", maxLength);
     }
 }

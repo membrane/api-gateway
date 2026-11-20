@@ -55,6 +55,8 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(ServerSentEventsDemoStreamInterceptor.class);
 
+    private static final String CANNOT_BE_READ = "The body of 'sseDemoStream' cannot be read. Probably there is an interceptor that reads the body, e.g. 'limit'. Take it out or do not use 'sseDemoStream'.";
+
     private int intervalSeconds = 1;
     private int totalEvents = 3600; // 1 hour
 
@@ -79,8 +81,12 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
      */
     private class StreamingBody extends AbstractBody {
 
+        /**
+         * The events are created while the body is written, so there is nothing to read.
+         */
         @Override
-        protected void readLocal() {
+        protected boolean readChunksWithin(long maxLength) throws IOException {
+            throw new IOException(CANNOT_BE_READ);
         }
 
         @Override
@@ -131,7 +137,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
 
         @Override
         public InputStream getContentAsStream() throws ReadingBodyException {
-            throw new ReadingBodyException("Streaming body does not support getContentAsStream(). Probably there is an interceptor that reads the body. Take it out or do not use 'sseDemoStream'.");
+            throw new ReadingBodyException(CANNOT_BE_READ);
         }
 
         @Override
