@@ -185,6 +185,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             // RFC 9112 §6.1: a transfer coding the server does not understand SHOULD be answered with 501.
             log.debug("Rejecting request with unsupported transfer coding: {}", e.getMessage());
             respondWithNotImplementedAndClose(e.getMessage());
+        } catch (UnsupportedHttpVersionException e) {
+            // RFC 9110 §15.6.6
+            log.debug("Rejecting request with unsupported HTTP version.");
+            respondWithVersionNotSupportedAndClose(e.getMessage());
         } catch (MalformedHeaderException e) {
             // Invalid message framing (e.g. conflicting Content-Length), RFC 9112 §6.3:
             // respond 400 and close the connection to avoid request smuggling.
@@ -276,7 +280,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
         readAndParseRequest();
 
-        if (!getTransport().getMethodValidator().isValid(srcReq.getMethod()))
+        // A STOMP command is not an HTTP method, see Request.parseStartLine()
+        if (!isSTOMPConnectFrame(srcReq) && !getTransport().getMethodValidator().isValid(srcReq.getMethod()))
             return rejectInvalidMethod();
 
         process();
@@ -447,6 +452,22 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             srcOut.flush();
         } catch (Exception e) {
             log.debug("Could not send 501 response for request with unsupported transfer coding.", e);
+        }
+    }
+
+    private void respondWithVersionNotSupportedAndClose(String message) {
+        try {
+            final var response = user(getTransport().getRouter().getConfiguration().isProduction(), "http-server-handler")
+                    .status(505)
+                    .title("HTTP Version Not Supported")
+                    .addSubSee("unsupported-http-version")
+                    .detail(message)
+                    .build();
+            response.getHeader().setConnection(Header.CLOSE);
+            response.write(srcOut, false);
+            srcOut.flush();
+        } catch (Exception e) {
+            log.debug("Could not send 505 response for request with unsupported HTTP version.", e);
         }
     }
 

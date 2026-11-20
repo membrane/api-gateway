@@ -17,6 +17,8 @@ package com.predic8.membrane.core.proxies;
 import com.predic8.membrane.core.interceptor.stomp.STOMPClient;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.transport.http.method.KnownMethodValidator;
+import com.predic8.membrane.core.transport.http.method.MethodValidator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,6 +50,10 @@ class STOMPProxyTest {
     @BeforeEach
     void setUp() throws Exception {
         broker = new ServerSocket(0);
+        startRouter(null);
+    }
+
+    private void startRouter(final MethodValidator methodValidator) throws Exception {
         port = freePort();
 
         final var client = new STOMPClient();
@@ -62,6 +68,8 @@ class STOMPProxyTest {
         transport.setSocketTimeout(5000);
         router = new DefaultRouter();
         router.setTransport(transport);
+        if (methodValidator != null)
+            router.getRegistry().register("methodValidator", methodValidator);
         router.add(proxy);
         router.start();
     }
@@ -79,6 +87,22 @@ class STOMPProxyTest {
     @ParameterizedTest
     @ValueSource(strings = {"CONNECT", "STOMP"})
     void connectFrameIsForwardedToTheBrokerAndTheSessionIsTunneled(String command) throws Exception {
+        assertSessionIsTunneled(command);
+    }
+
+    /**
+     * The method validator checks HTTP methods. STOMP commands are not HTTP methods, so even a validator that
+     * accepts only known HTTP methods must not reject the frame that opens a STOMP session.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"CONNECT", "STOMP"})
+    void connectFrameIsNotCheckedByTheMethodValidator(String command) throws Exception {
+        router.stop();
+        startRouter(new KnownMethodValidator());
+        assertSessionIsTunneled(command);
+    }
+
+    private void assertSessionIsTunneled(String command) throws Exception {
         broker.setSoTimeout(5000);
         final var brokerSide = CompletableFuture.supplyAsync(() -> {
             try (var s = broker.accept()) {
