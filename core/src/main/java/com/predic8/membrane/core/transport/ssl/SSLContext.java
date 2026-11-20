@@ -49,6 +49,7 @@ import java.security.spec.ECFieldFp;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class SSLContext implements SSLProvider {
     private static final Logger log = LoggerFactory.getLogger(SSLContext.class.getName());
@@ -67,6 +68,13 @@ public abstract class SSLContext implements SSLProvider {
      */
     private volatile SSLSessionContext serverSessionContext;
     private volatile X509TrustManager defaultTrustManager;
+
+    private static final AtomicLong nextAdmissionKey = new AtomicLong();
+    /**
+     * The name under which {@link #admitsSessionOf} keeps its result in a session, one per context, since
+     * contexts that trust different CAs can see the same session.
+     */
+    private final String admissionKey = SSLContext.class.getName() + ".admits." + nextAdmissionKey.incrementAndGet();
 
     public void init(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
         serverSessionContext = sslc.getServerSessionContext();
@@ -258,7 +266,9 @@ public abstract class SSLContext implements SSLProvider {
      * <p>
      * A session negotiated by this context passes. Of another context's session, a client certificate is validated
      * with the trust manager of this context, and without one the session only passes if this context does not
-     * need a certificate. Another context with the same configuration therefore passes as well.
+     * need a certificate. Another context with the same configuration therefore passes as well. The result is kept
+     * in the session, whose client certificate does not change, so that it is validated once per session and not
+     * on every request.
      */
     public boolean admitsSessionOf(SSLSession session) {
         if (!needClientAuth && !wantClientAuth)
@@ -266,6 +276,14 @@ public abstract class SSLContext implements SSLProvider {
         final var ownSessions = serverSessionContext;
         if (ownSessions != null && session.getSessionContext() == ownSessions)
             return true;
+        if (session.getValue(admissionKey) instanceof Boolean admitted)
+            return admitted;
+        final var admitted = admitsClientOf(session);
+        session.putValue(admissionKey, admitted);
+        return admitted;
+    }
+
+    private boolean admitsClientOf(SSLSession session) {
         final Certificate[] peerCertificates;
         try {
             peerCertificates = session.getPeerCertificates();
