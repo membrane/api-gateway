@@ -354,6 +354,7 @@ public class RetryHandler {
      *      src: |
      *        request.bodyAsStringDecoded
      *        CONTINUE</code></pre>
+     *              This keeps the whole body in memory, as with retries greater than 0.
      * @default 2
      * @example 5
      */
