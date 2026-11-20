@@ -25,6 +25,7 @@ import java.util.HexFormat;
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static com.predic8.membrane.core.util.HttpUtil.MAX_LINE_LENGTH;
+import static com.predic8.membrane.core.util.SystemPropertyUtil.getPositiveIntProperty;
 import static java.util.HexFormat.isHexDigit;
 
 /**
@@ -55,8 +56,7 @@ final class ChunkedDecoder {
     private static int MAX_CHUNK_BYTES;
 
     static {
-        var v = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
-        MAX_CHUNK_BYTES = v == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(v);
+        MAX_CHUNK_BYTES = getPositiveIntProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH, MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT);
     }
 
     private final InputStream in;

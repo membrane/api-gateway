@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.util.SystemPropertyUtil.getPositiveIntProperty;
 
 /**
  * A message body that is not chunked: framed either by a declared length ({@code Content-Length}) or,
@@ -63,10 +64,9 @@ public class Body extends AbstractBody {
 	private static final int ARRAY_HEADER_ROOM = 64;
 
 	static {
-		var bufferSize = System.getProperty(MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE);
-		BUFFER_SIZE = bufferSize == null ? MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE_DEFAULT : Integer.parseInt(bufferSize);
-		var maxChunkLength = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
-		MAX_CHUNK_LENGTH = maxChunkLength == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(maxChunkLength);
+		// Positive: a size of zero would make the read loops spin without progress.
+		BUFFER_SIZE = getPositiveIntProperty(MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE, MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE_DEFAULT);
+		MAX_CHUNK_LENGTH = getPositiveIntProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH, MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT);
 	}
 
 	private final InputStream inputStream;
