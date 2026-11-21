@@ -98,4 +98,17 @@ public class InternalProxy extends AbstractServiceProxy implements NotPortOpenin
     public void setSchedule(Schedule schedule) {
         this.schedule = schedule;
     }
+
+    @Override
+    public String getKindLabel() {
+        return "Internal:";
+    }
+
+    /**
+     * @return The name only: the API opens no port
+     */
+    @Override
+    public String getStartupLabel() {
+        return getName();
+    }
 }

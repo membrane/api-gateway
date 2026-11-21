@@ -13,24 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.interceptor.jms.JmsConsumerProxy;
-import com.predic8.membrane.core.interceptor.kafka.KafkaConsumerProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
-import static com.predic8.membrane.core.util.NetworkUtil.addBracketsIfIPv6;
 import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_GREEN;
 import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
-import static java.util.stream.Collectors.joining;
 
 public class ApiInfo {
 
     private static final Logger log = LoggerFactory.getLogger(ApiInfo.class.getName());
-    private static final int INDENT = 55;
 
     public static void logInfosAboutStartedProxies(RuleManager manager) {
         if (manager.getRules().isEmpty()) {
@@ -39,108 +30,7 @@ public class ApiInfo {
         }
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info(" {}{} {}{}{}", BRIGHT_GREEN(), proxyKind(proxy), proxyLabel(proxy), RESET(), additionalProxyInfo(proxy))
+                log.info(" {}{} {}{}{}", BRIGHT_GREEN(), proxy.getKindLabel(), proxy.getStartupLabel(), RESET(), proxy.getStartupDetails())
         );
-    }
-
-    static String proxyLabel(Proxy proxy) {
-        if (proxy instanceof JmsConsumerProxy jms) {
-            return jmsConsumerLabel(jms);
-        }
-        if (proxy instanceof KafkaConsumerProxy kafka) {
-            return kafkaConsumerLabel(kafka);
-        }
-        if (proxy instanceof AbstractServiceProxy asp && !(proxy instanceof NotPortOpeningProxy)) {
-            return proxy.getName() + "  " + buildUrl(asp);
-        }
-        return proxy.getName();
-    }
-
-    /**
-     * The destination, preceded by the name when it differs from the default name.
-     */
-    static String jmsConsumerLabel(JmsConsumerProxy consumer) {
-        final var destinationName = consumer.getQueue() != null ? consumer.getQueue() : consumer.getTopic();
-        final var destination = (consumer.getQueue() != null ? "queue:" : "topic:") + destinationName;
-        final var name = consumer.getName();
-        if (name == null || name.isEmpty() || name.equals(JmsConsumerProxy.defaultName(destinationName))) {
-            return destination;
-        }
-        return name + " " + destination;
-    }
-
-    /**
-     * Topic and consumer group, preceded by the name when it differs from the default name topic-group.
-     */
-    static String kafkaConsumerLabel(KafkaConsumerProxy consumer) {
-        final var label = "topic:%s group:%s".formatted(consumer.getTopic(), consumer.getGroupId());
-        final var name = consumer.getName();
-        if (name == null || name.isEmpty() || name.equals(consumer.getTopic() + "-" + consumer.getGroupId())) {
-            return label;
-        }
-        return name + " " + label;
-    }
-
-    static String buildUrl(AbstractServiceProxy proxy) {
-        RuleKey key = proxy.getKey();
-        String origin = "%s://%s:%d".formatted(proxy.getProtocol(), displayHost(key), key.getPort());
-        if (proxy instanceof APIProxy api && api.getBasePaths() != null && !api.getBasePaths().isEmpty()) {
-            return api.getBasePaths().keySet().stream()
-                    .map(path -> origin + path)
-                    .collect(joining(", "));
-        }
-        String path = key.getPath();
-        return origin + (path != null ? path : "");
-    }
-
-    static String displayHost(RuleKey key) {
-        if (key.getIp() != null) {
-            return addBracketsIfIPv6(key.getIp());
-        }
-        String host = key.getHost();
-        return addBracketsIfIPv6((host == null || host.equals("*")) ? "127.0.0.1" : host);
-    }
-
-    private static String additionalProxyInfo(Proxy proxy) {
-        if (proxy instanceof APIProxy a) {
-            Map<String,OpenAPIRecord> recs = a.getApiRecords();
-            if (!recs.isEmpty()) {
-                return "\n" + formatLocationInfo(recs);
-            }
-        } else if (proxy instanceof SOAPProxy s) {
-            return "\n    using WSDL @ %s".formatted(s.getWsdl());
-        }
-        return "";
-    }
-
-    private static String formatLocationInfo(Map<String, OpenAPIRecord> specs) {
-        return specs.entrySet().stream()
-                .map(e -> " ".repeat(INDENT) + "- \"%s\" @ %s".formatted(
-                        e.getKey(),
-                        e.getValue().getSpec().getLocation()
-                ))
-                .collect(joining("\n"));
-    }
-
-    static String proxyKind(Proxy proxy) {
-        if (proxy instanceof APIProxy) {
-            return "";
-        }
-        if (proxy instanceof ServiceProxy) {
-            return "Service:";
-        }
-        if (proxy instanceof SOAPProxy) {
-            return "SOAP:";
-        }
-        if (proxy instanceof InternalProxy) {
-            return "Internal:";
-        }
-        if (proxy instanceof JmsConsumerProxy) {
-            return "JMSConsumer:";
-        }
-        if (proxy instanceof KafkaConsumerProxy) {
-            return "KafkaConsumer:";
-        }
-        return "Proxy:";
     }
 }
