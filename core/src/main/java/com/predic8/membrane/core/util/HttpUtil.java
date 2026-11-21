@@ -56,6 +56,7 @@ public class HttpUtil {
 
 	private static final int CR = '\r';
 	private static final int LF = '\n';
+	private static final char NEXT_LINE = '\u0085';
 
 	private static final DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
 	public final static int MAX_LINE_LENGTH;
@@ -154,6 +155,21 @@ public class HttpUtil {
 	 */
 	public static boolean isOptionalWhitespace(char c) {
 		return c == ' ' || c == '\t';
+	}
+
+	/**
+	 * Whether the string contains whitespace ({@link Character#isWhitespace(char)}) or NEL (U+0085).
+	 * {@link #readLine(InputStream)} maps each byte to one char, so byte 0x85 arrives as NEL. Java's
+	 * isWhitespace() is false for it, but other components treat it as a line terminator, so it counts as
+	 * whitespace here.
+	 */
+	public static boolean containsWhitespace(String s) {
+		for (var i = 0; i < s.length(); i++) {
+			final var c = s.charAt(i);
+			if (Character.isWhitespace(c) || c == NEXT_LINE)
+				return true;
+		}
+		return false;
 	}
 
     public static Response setHTMLErrorResponse(ResponseBuilder responseBuilder, String message, String comment) {

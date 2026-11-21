@@ -327,6 +327,18 @@ public class HttpUtilTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"a b", "a\tb", "a\u000Bb", "a\fb", "a\u001Cb", "a\u0085b", " ", "ab\t"})
+    void whitespaceOrNelIsFound(String s) {
+        assertTrue(containsWhitespace(s));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "/foo?a=1", "GET", " ", "/Ã¤"})
+    void stringWithoutWhitespaceOrNel(String s) {
+        assertFalse(containsWhitespace(s));
+    }
+
+    @ParameterizedTest
     @CsvSource({
             "same-origin, false",
             "none, false",

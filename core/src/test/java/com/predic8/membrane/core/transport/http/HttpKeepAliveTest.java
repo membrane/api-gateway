@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.lang.Thread.sleep;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.apache.commons.lang3.StringUtils.countMatches;
 import static org.junit.jupiter.api.Assertions.*;
@@ -337,12 +338,39 @@ public class HttpKeepAliveTest {
 	}
 
 	/**
+	 * RFC 9112 3: a request line that is not "method SP request-target SP HTTP-version" is answered with 400
+	 * (#3378). Before, these lines were routed, answered with 501, or the connection was closed without a response.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+			"POST /a b HTTP/1.1",
+			"POST /foo HTTP/abc",
+			"POST /foo HTTP/1.1 ",
+			"POST /foo",
+			"POST\t/foo HTTP/1.1",
+			"POST /a\u0085b HTTP/1.1"
+	})
+	void invalidRequestLineIsRejected(String requestLine) throws Exception {
+		final var response = sendRaw(requestLine + "\r\nHost: localhost:2003\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+		assertTrue(response.startsWith("HTTP/1.1 400 "), response);
+	}
+
+	/**
+	 * RFC 9110 15.6.6: a major version other than 1 is answered with 505 (#3378).
+	 */
+	@Test
+	void unsupportedHttpVersionIsRejected() throws Exception {
+		final var response = sendRaw("POST /foo HTTP/2.0\r\nHost: localhost:2003\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+		assertTrue(response.startsWith("HTTP/1.1 505 "), response);
+	}
+
+	/**
 	 * Sends the bytes without closing the output, so a server that waits for more input times out the read.
 	 */
 	private static String sendRaw(String request) throws IOException {
 		try (final var socket = new Socket("localhost", 2003)) {
 			socket.setSoTimeout(3000);
-			socket.getOutputStream().write(request.getBytes(US_ASCII));
+			socket.getOutputStream().write(request.getBytes(ISO_8859_1));
 			socket.getOutputStream().flush();
 			return new String(socket.getInputStream().readAllBytes(), US_ASCII);
 		}
