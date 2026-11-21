@@ -39,13 +39,14 @@ class ExtensionLoaderTest {
     }
 
     /**
-     * The class file is present but invalid, so this is no missing extension and the cause must be kept.
+     * The class file is present but cannot be loaded, because BrokenExtension.class extends the final class
+     * FinalSuperclass. This is no missing extension and the cause must be kept.
      */
     @Test
     void reportsClassThatCannotBeLoaded() {
         final var e = assertThrows(ConfigurationException.class, () -> ExtensionLoader.load(ExtensionLoaderTest.class.getPackageName() + ".BrokenExtension", Extension.class, "missing"));
         assertNotEquals("missing", e.getMessage());
-        assertInstanceOf(LinkageError.class, e.getCause());
+        assertInstanceOf(IncompatibleClassChangeError.class, e.getCause());
     }
 
     /**

@@ -116,6 +116,11 @@
 
 ## Membrane 8.0.0 (Java 25)
 
+- Make ForgetFulExchangeStore the default 
+  - LimitedMemoryExchangeStore is the default.
+  - It stores every message in memory. And evicts older ones.
+  - It is only used for the calls of the admin console
+  - Maybe we could make so that it is only used when the admin console is configured. By program or by documentation.
 - Remove Interceptors:
   - StatisticsCSVInterceptor, StatisticsJDBCInterceptor: They are obsolete; use Prometheus metrics or the access log instead.
 - change all maven packages to membrane-api.io
@@ -128,6 +133,7 @@
     - globalInbound
     - globalOutbound
 - Remove deprecated finalize blocks
+  - Remove `Header.getContentEncoding()` (deprecated in #3819): it reads only the first `Content-Encoding` field line. Callers, including scripts, use `getContentCodings()`.
 - Remove XML configuration
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor (?):

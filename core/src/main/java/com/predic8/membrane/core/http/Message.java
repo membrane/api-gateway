@@ -524,23 +524,35 @@ public abstract class Message {
 	 * encoded rather than silently treated as plain.
 	 */
 	public boolean isEncoded() {
-		return header.getContentEncoding() != null || header.isMultipart();
+		return !header.getContentCodings().isEmpty() || header.isMultipart();
 	}
 
 	/**
 	 * True for "gzip" and, as RFC 9110 8.4.1.3 asks of recipients, its legacy alias "x-gzip".
 	 */
 	public boolean isGzip() {
-		final var contentEncoding = header.getContentEncoding();
-		return "gzip".equalsIgnoreCase(contentEncoding) || "x-gzip".equalsIgnoreCase(contentEncoding);
+		final var coding = getSoleContentCoding();
+		return "gzip".equalsIgnoreCase(coding) || "x-gzip".equalsIgnoreCase(coding);
 	}
 
 	public boolean isDeflate() {
-		return "deflate".equalsIgnoreCase(header.getContentEncoding());
+		return "deflate".equalsIgnoreCase(getSoleContentCoding());
 	}
 
 	public boolean isBrotli() {
-		return "br".equalsIgnoreCase(header.getContentEncoding());
+		return "br".equalsIgnoreCase(getSoleContentCoding());
+	}
+
+	/**
+	 * Membrane decodes a body only if exactly one content coding was applied to it. Several codings,
+	 * e.g. <tt>gzip, br</tt> or <tt>Content-Encoding: gzip</tt> plus <tt>Content-Encoding: br</tt>,
+	 * are treated like a coding Membrane does not decode.
+	 *
+	 * @return the only content coding, or null if there is none or more than one
+	 */
+	private String getSoleContentCoding() {
+		final var codings = header.getContentCodings();
+		return codings.size() == 1 ? codings.getFirst() : null;
 	}
 
 	public boolean isZstd() {
