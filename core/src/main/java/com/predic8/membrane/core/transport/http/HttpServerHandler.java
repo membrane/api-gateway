@@ -324,6 +324,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         exchange.setTargetConnection(null);
         if (!canKeepConnectionAlive(exchange.getResponse()))
             return terminateWithConnection(con);
+        // Release the request before the connection waits for the next one, so an idle connection does not keep it.
+        srcReq = null;
+        clientBody = null;
         exchange.detach();
         exchange = new Exchange(this);
 
