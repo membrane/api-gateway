@@ -43,6 +43,10 @@ class MessageTest {
         assertTrue(requestWithContentEncoding(", gzip,").isGzip());
         assertTrue(requestWithContentEncoding("", "br").isBrotli());
         assertTrue(requestWithContentEncoding("", "deflate", ",").isDeflate());
+        assertTrue(requestWithContentEncoding(", zstd,").isZstd());
+        assertFalse(requestWithContentEncoding("gzip, zstd").isZstd());
+        assertFalse(requestWithContentEncoding("gzip", "zstd").isZstd());
+        assertFalse(requestWithContentEncoding("zstd", "gzip").isContentEncodingDecoded());
     }
 
     @Test

@@ -556,7 +556,7 @@ public abstract class Message {
 	}
 
 	public boolean isZstd() {
-		return "zstd".equalsIgnoreCase(header.getContentEncoding());
+		return "zstd".equalsIgnoreCase(getSoleContentCoding());
 	}
 
 	/**

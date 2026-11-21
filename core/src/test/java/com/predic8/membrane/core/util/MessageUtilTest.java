@@ -134,10 +134,26 @@ class MessageUtilTest {
     @Test
     void zstdBodyIsDecoded() throws Exception {
         final var compressed = ZstdDecodingInputStreamTest.zstd("payload");
-        for (final var encoding : new String[]{"zstd", "ZSTD"}) {
+        for (final var encoding : new String[]{"zstd", "ZSTD", ", zstd,"}) {
             assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
             try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
                 assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
+            }
+        }
+    }
+
+    /**
+     * Membrane decodes only a single coding, so zstd together with another coding is returned as it
+     * is, whether both are on one field line or on two.
+     */
+    @Test
+    void zstdWithAnotherCodingIsNotDecoded() throws Exception {
+        final var encoded = ZstdDecodingInputStreamTest.zstd("payload");
+        for (String[] fieldLines : new String[][]{{"gzip, zstd"}, {"gzip", "zstd"}, {"zstd", "gzip"}}) {
+            final var description = String.join(" | ", fieldLines);
+            assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, fieldLines)), description);
+            try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, fieldLines))) {
+                assertArrayEquals(encoded, content.readAllBytes(), description);
             }
         }
     }
