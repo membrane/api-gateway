@@ -225,6 +225,44 @@ distribution/src/main/java/com/predic8/membrane/build/.
 
 -------------------------------------------------------------------------------
 
+This product bundles the Brotli decoder (org.brotli.dec) for decoding the br
+Content-Encoding. Its source is included under:
+
+    core/src/main/java/org/brotli/dec/
+
+    Copyright 2015 Google Inc. All Rights Reserved.
+    Source: https://github.com/google/brotli
+
+    Distributed under the MIT license:
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+-------------------------------------------------------------------------------
+
+This product bundles aircompressor (io.airlift:aircompressor) for decoding the
+zstd Content-Encoding.
+
+    Licensed under the Apache License, Version 2.0.
+    Source: https://github.com/airlift/aircompressor
+
+-------------------------------------------------------------------------------
+
 This product bundles RE2/J (com.google.re2j:re2j) for regular expressions
 Source: https://github.com/google/re2j
 

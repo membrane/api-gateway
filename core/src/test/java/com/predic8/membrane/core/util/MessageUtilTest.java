@@ -131,6 +131,33 @@ class MessageUtilTest {
         }
     }
 
+    @Test
+    void zstdBodyIsDecoded() throws Exception {
+        final var compressed = ZstdDecodingInputStreamTest.zstd("payload");
+        for (final var encoding : new String[]{"zstd", "ZSTD", ", zstd,"}) {
+            assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
+            try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
+                assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
+            }
+        }
+    }
+
+    /**
+     * Membrane decodes only a single coding, so zstd together with another coding is returned as it
+     * is, whether both are on one field line or on two.
+     */
+    @Test
+    void zstdWithAnotherCodingIsNotDecoded() throws Exception {
+        final var encoded = ZstdDecodingInputStreamTest.zstd("payload");
+        for (String[] fieldLines : new String[][]{{"gzip, zstd"}, {"gzip", "zstd"}, {"zstd", "gzip"}}) {
+            final var description = String.join(" | ", fieldLines);
+            assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, fieldLines)), description);
+            try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, fieldLines))) {
+                assertArrayEquals(encoded, content.readAllBytes(), description);
+            }
+        }
+    }
+
     /**
      * #3819: "Content-Encoding: gzip" plus "Content-Encoding: br" means "gzip, br" (RFC 9110 5.3).
      * Membrane does not decode several codings, so the body is returned as it is. Only reading the
@@ -158,6 +185,22 @@ class MessageUtilTest {
             try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, fieldLines))) {
                 assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), description);
             }
+        }
+    }
+
+    /**
+     * The decoder throws unchecked exceptions for malformed input; they must be reported as a
+     * decoding failure like those of the other codings, so a request gets a 400.
+     */
+    @Test
+    void corruptZstdBodyIsADecodingFailure() throws Exception {
+        final var corrupt = ZstdDecodingInputStreamTest.zstd("payload");
+        corrupt[corrupt.length - 1] ^= 0x01; // content checksum
+        for (Executable decode : new Executable[]{
+                () -> MessageUtil.getContent(encodedRequest(corrupt, "zstd")),
+                () -> MessageUtil.getContentAsStream(encodedRequest(corrupt, "zstd")).readAllBytes()}) {
+            final var e = assertThrows(ReadingBodyException.class, decode);
+            assertEquals("zstd", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
         }
     }
 
