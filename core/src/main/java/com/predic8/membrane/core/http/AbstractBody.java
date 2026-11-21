@@ -47,6 +47,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * threads is illegal. Using a Body Stream after the Body as been accessed by
  * someone else (using streams or not) is illegal.
  * <p>
+ * A body's content is not changed in place. To change a message's body, set a new one with
+ * {@link Message#setBody(AbstractBody)}.
+ * <p>
  * Failing to read a body is terminal: the {@link ReadingBodyException} is recorded (see
  * {@link #fail(IOException)}), the observers are notified via
  * {@link MessageObserver#bodyFailed(ReadingBodyException)} and every later access re-throws that same
@@ -217,7 +220,8 @@ public abstract class AbstractBody {
 	protected void requireContentRetained() {
 		switch (retention) {
 			case RETAINED -> {}
-			case STREAMED -> throw new IllegalStateException("Cannot read body after it was streamed.");
+			// Mostly a request body read in the response flow: it is sent without a copy with retries: 0.
+			case STREAMED -> throw new IllegalStateException("Cannot read body after it was streamed without keeping a copy. With retries: 0 the request body is streamed to the backend; to use it in the response flow, read it in the request flow first.");
 			case DISCARDED -> throw new IllegalStateException("Cannot read body after it was discarded.");
 		}
 	}

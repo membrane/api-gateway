@@ -116,7 +116,7 @@ class LimitInterceptorTest {
         limit.setMaxBodyLength(1000);
         final var exc = Request.post("/foo").body(gzip(SMALL)).header("Content-Encoding", "gzip").buildExchange();
         limit.handleRequest(exc);
-        assertNull(exc.getRequest().getHeader().getContentEncoding());
+        assertEquals(List.of(), exc.getRequest().getHeader().getContentCodings());
         assertEquals(SMALL, new String(exc.getRequest().getBody().getContent(), UTF_8));
     }
 
@@ -125,7 +125,22 @@ class LimitInterceptorTest {
         final var encoded = new byte[]{1, 2, 3, 4, 5};
         final var exc = Request.post("/foo").body(encoded).header("Content-Encoding", "unknown").buildExchange();
         li.handleRequest(exc);
-        assertEquals("unknown", exc.getRequest().getHeader().getContentEncoding());
+        assertEquals(List.of("unknown"), exc.getRequest().getHeader().getContentCodings());
+        assertArrayEquals(encoded, exc.getRequest().getBody().getContent());
+    }
+
+    /**
+     * #3819: "Content-Encoding: gzip" plus "Content-Encoding: br" is not a single coding Membrane
+     * decodes, so the body and both field lines are forwarded unchanged.
+     */
+    @Test
+    void bodyWithCodingsOnSeveralFieldLinesIsForwardedEncoded() throws Exception {
+        final var encoded = new byte[]{1, 2, 3, 4, 5};
+        final var exc = Request.post("/foo").body(encoded)
+                .header("Content-Encoding", "gzip")
+                .header("Content-Encoding", "br").buildExchange();
+        li.handleRequest(exc);
+        assertEquals("gzip, br", exc.getRequest().getHeader().getValuesAsString("Content-Encoding"));
         assertArrayEquals(encoded, exc.getRequest().getBody().getContent());
     }
 

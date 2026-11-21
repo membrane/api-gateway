@@ -72,7 +72,8 @@ class XmlSchemaMappingTest {
     @ParameterizedTest
     @ValueSource(strings = {"{\"price\": {\"$value\": 9.99}} {\"price\": {\"$value\": 12}}", "{\"price\": {\"$value\": 9.99}}]]] garbage"})
     void jsonWithInputAfterItsValueIsRejected(String json) {
-        assertThrows(JsonProcessingException.class, () -> library.toXml(json));
+        final var e = assertThrows(JsonProcessingException.class, () -> library.toXml(json));
+        assertTrue(e.getMessage().startsWith("Invalid JSON: input after the JSON value at line 1, column "), e.getMessage());
     }
 
     @Test

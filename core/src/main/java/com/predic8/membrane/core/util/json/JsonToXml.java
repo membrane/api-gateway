@@ -14,9 +14,11 @@
 
 package com.predic8.membrane.core.util.json;
 
+import com.fasterxml.jackson.databind.*;
 import org.jetbrains.annotations.*;
 import org.json.*;
 
+import static com.predic8.membrane.core.util.json.JsonUtil.readSingleValue;
 import static java.lang.Boolean.*;
 import static org.json.JSONObject.*;
 
@@ -122,6 +124,7 @@ public class JsonToXml {
 
 
     private Object parse(String jsonText) {
+        requireStrictJson(jsonText);
         String t = jsonText.trim();
 
         if (t.startsWith("{")) return new JSONObject(t);
@@ -133,6 +136,21 @@ public class JsonToXml {
             default -> parseLiteral(t);
 
         };
+    }
+
+    /**
+     * org.json ignores everything after the first value and accepts trailing commas, unquoted keys and single quotes.
+     * Checking with Jackson first makes the converter accept exactly one standard JSON value.
+     */
+    private static void requireStrictJson(String json) {
+        final JsonNode node;
+        try {
+            node = readSingleValue(json);
+        } catch (InvalidJsonException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
+        if (node.isMissingNode())
+            throw new IllegalArgumentException("The body contains no JSON value.");
     }
 
     private void build(Object value, StringBuilder sb) {

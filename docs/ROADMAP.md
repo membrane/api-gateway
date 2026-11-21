@@ -133,6 +133,7 @@
     - globalInbound
     - globalOutbound
 - Remove deprecated finalize blocks
+  - Remove `Header.getContentEncoding()` (deprecated in #3819): it reads only the first `Content-Encoding` field line. Callers, including scripts, use `getContentCodings()`.
 - Remove XML configuration
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor (?):
@@ -313,7 +314,7 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   | client sends last body byte | 1,831 | 1,834 |
   | backend receives last body byte | 1,831 | 1,837 |
 
-- Dropping the copy is not an option. #3705 stopped keeping it for POST and PATCH, which was safe for retries: `RetryHandler` repeats a non-idempotent method only after a failure before anything was written (RFC 9110 §9.2.2). But then the request body could no longer be read in the response flow (scripts, templates, expressions): 500 `Cannot read body after it was streamed.` instead of 200. People writing an `apis.yaml` can't be expected to know about streaming, so the request body stays readable by default (#3750, decision 1). The code stays on branch `perf/stream-non-idempotent-request-bodies` (806dddb5c).
+- Dropping the copy is not an option. #3705 stopped keeping it for POST and PATCH, which was safe for retries: `RetryHandler` repeats a non-idempotent method only after a failure before anything was written (RFC 9110 §9.2.2). But then the request body could no longer be read in the response flow (scripts, templates, expressions): 500 `Cannot read body after it was streamed.` instead of 200. People writing an `apis.yaml` can't be expected to know about streaming, so the request body stays readable by default (#3750, decision 1). With `retries: 0` it is still streamed without a copy; the `retries` reference and the error message say to read it in the request flow to use it in the response flow (#3750, decisions 2 and 3). The code stays on branch `perf/stream-non-idempotent-request-bodies` (806dddb5c).
 - Idea: keep the chunks while writing ("tee"). Each chunk read from the incoming stream is stored first and then written. The backend gets the first byte right away. Once the transfer is complete, the body is fully in memory, as it is today, so memory use does not change. Bodies written without a copy (responses to the client) stay unbuffered.
   - `enum BodyRetention { NONE, READABLE, REPLAYABLE }` and `AbstractBody.write(out, BodyRetention)`. The `boolean` overloads become `final` and delegate.
   - A hook `writeKeepingCopy()`. The default reads first, as today. `Body` and `ChunkedBody` tee.
@@ -330,7 +331,6 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - A chunked body keeps its trailer when it is sent again.
   - HTTP/2 (`StreamInfo`, `writeMessageBody`) uses the same mechanism.
 - To decide:
-  - Whether `retries: 0` keeps meaning "no copy" or also keeps one, with streaming without a copy as an explicit opt-out (#3750, decisions 2 and 3).
   - #3706 wants to read a retained request body completely before the header fields are sent, so that a request over the limit never reaches the backend. Tee sends the header fields first. Choose between "nothing over the limit reaches the backend" and "first byte early" (#3750, decision 4).
 - Tests:
   - Plain and chunked bodies: a successful write followed by a read; a write that fails partway, followed by a second write, by a read and by a discard; a read failure during the write (stays sticky, like `Failed`); observer events fire exactly once.
