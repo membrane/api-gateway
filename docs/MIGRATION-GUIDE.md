@@ -75,7 +75,8 @@ under other names.
 
 Reading a message body that was discarded, e.g. a request body the gateway did not need to answer
 the request, fails like reading a body that was streamed. Before, it returned an empty body or the
-part read before the discard. Scripts and plugins that read such a body get an exception. With
+part read before the discard. Scripts and plugins that read its content, e.g. with
+`getBodyAsStringDecoded()` or `getContent()`, get an exception. With
 `memoryExchangeStore`, the admin console shows an error for such a body instead of an empty one.
 
 ## Exchange stores and HTTP/2
