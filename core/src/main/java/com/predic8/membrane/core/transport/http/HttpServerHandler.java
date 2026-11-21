@@ -65,6 +65,12 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     private InputStream srcIn;
     private OutputStream srcOut;
 
+    /**
+     * The body of the current request as read from the client connection. The flow may replace the request or its
+     * body, but only this body tells whether the connection is at the start of the next request.
+     */
+    private AbstractBody clientBody;
+
     private boolean showSSLExceptions = false;
     private Http2ServerHandler http2ServerHandler;
 
@@ -296,6 +302,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private void readAndParseRequest() throws IOException, EndOfStreamException {
         srcReq.read(srcIn, true);
+        clientBody = srcReq.getBody();
         exchange.received();
 
         log.debug("Requested URI: {}", srcReq.getUri());
@@ -315,13 +322,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
         Connection con = exchange.getTargetConnection();
         exchange.setTargetConnection(null);
-        // srcReq, not only the exchange's request: the flow may have replaced it, but srcReq was read from this
-        // connection. If its body failed, discardBody() marked it Connection: close, as the rest is still unread.
-        if (!exchange.canKeepConnectionAlive() || !srcReq.isKeepAlive())
+        if (!canKeepConnectionAlive(exchange.getResponse()))
             return terminateWithConnection(con);
-        if (exchange.getResponse().isRedirect()) {
-            return terminateWithConnection(con);
-        }
         exchange.detach();
         exchange = new Exchange(this);
 
@@ -452,8 +454,28 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
+    /**
+     * Whether the client connection can carry another request after this response. Checked both before the response
+     * is written, to announce the close, and afterwards, to act on it.
+     */
+    private boolean canKeepConnectionAlive(Response res) {
+        return exchange.canKeepConnectionAlive() && isClientBodyConsumed() && !res.isRedirect();
+    }
+
+    /**
+     * Whether the request body was read from the client connection to its end. A body that failed or was streamed
+     * only in part leaves its rest on the connection, where it would be parsed as the next request. A body that is
+     * still unread and was never streamed was skipped for <code>Expect: 100-continue</code>: the client has not sent
+     * it, see {@link #removeBodyFromBuffer()}.
+     */
+    private boolean isClientBodyConsumed() {
+        if (clientBody.hasFailed())
+            return false;
+        return clientBody.isRead() || !clientBody.wasStreamed();
+    }
+
     protected void writeResponse(Response res) throws IOException {
-        if (res.isRedirect())
+        if (!canKeepConnectionAlive(res))
             res.getHeader().setConnection(Header.CLOSE);
         res.write(srcOut, false);
         srcOut.flush();

@@ -47,6 +47,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * threads is illegal. Using a Body Stream after the Body as been accessed by
  * someone else (using streams or not) is illegal.
  * <p>
+ * A body's content is not changed in place. To change a message's body, set a new one with
+ * {@link Message#setBody(AbstractBody)}.
+ * <p>
  * Failing to read a body is terminal: the {@link ReadingBodyException} is recorded (see
  * {@link #fail(IOException)}), the observers are notified via
  * {@link MessageObserver#bodyFailed(ReadingBodyException)} and every later access re-throws that same

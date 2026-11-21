@@ -176,7 +176,104 @@ public class HttpKeepAliveTest {
 				Connection: close\r
 				\r
 				""");
-		assertEquals(1, countMatches(responses, "HTTP/1.1 200 "), responses);
+		assertTrue(responses.startsWith("HTTP/1.1 200 "), responses);
+		assertEquals(1, countMatches(responses, "HTTP/1.1 "), responses); // nothing parsed from the rest of the body
+		assertTrue(responses.contains("Connection: close"), responses);
+	}
+
+	/**
+	 * As above, but the failed body is replaced in place and a later step, e.g. <code>call</code> copying the
+	 * callout's headers or <code>setHeader</code>, writes <code>Connection: keep-alive</code> on the request.
+	 */
+	@Test
+	void connectionClosedWhenFailedBodyWasReplacedAndConnectionHeaderOverwritten() throws Exception {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				if (!exc.getRequest().getUri().equals("/foo"))
+					return CONTINUE;
+				exc.getRequest().setBodyContent("replaced".getBytes(US_ASCII));
+				exc.getRequest().getHeader().setConnection("keep-alive");
+				return CONTINUE;
+			}
+		});
+
+		final var responses = sendRaw("""
+				POST /foo HTTP/1.1\r
+				Host: localhost:2003\r
+				Transfer-Encoding: chunked\r
+				\r
+				zz\r
+				POST /smuggled HTTP/1.1\r
+				Host: localhost:2003\r
+				Content-Length: 0\r
+				Connection: close\r
+				\r
+				""");
+		assertTrue(responses.startsWith("HTTP/1.1 200 "), responses);
+		assertEquals(1, countMatches(responses, "HTTP/1.1 "), responses); // nothing parsed from the rest of the body
+		assertTrue(responses.contains("Connection: close"), responses);
+	}
+
+	/**
+	 * <code>limit</code> wraps the body in one of unknown length, which fails when it is discarded unread. The body
+	 * read from the connection is complete, though, so replacing the wrapper must not close the connection.
+	 */
+	@Test
+	void connectionKeptAliveWhenUnreadLimitedBodyIsReplaced() throws Exception {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				exc.getRequest().setBodyContent("replaced".getBytes(US_ASCII));
+				return CONTINUE;
+			}
+		});
+		final var limit = new LimitInterceptor();
+		limit.setMaxBodyLength(1000);
+		sp1.getFlow().addFirst(limit);
+
+		final var responses = sendRaw("""
+				POST /foo HTTP/1.1\r
+				Host: localhost:2003\r
+				Content-Length: 0\r
+				\r
+				POST /foo HTTP/1.1\r
+				Host: localhost:2003\r
+				Content-Length: 0\r
+				Connection: close\r
+				\r
+				""");
+		assertEquals(2, countMatches(responses, "HTTP/1.1 200 "), responses);
+	}
+
+	/**
+	 * A response body that failed belongs to the backend connection. Replacing it in the response flow must not
+	 * close the client connection, which is in step.
+	 */
+	@Test
+	void connectionKeptAliveWhenFailedResponseBodyIsReplaced() throws Exception {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
+			@Override
+			public Outcome handleResponse(Exchange exc) {
+				final var response = exc.getResponse();
+				response.setBody(new Body(ThrowingInputStream.closedChannel("partial"), 100));
+				response.setBodyContent("replaced".getBytes(US_ASCII));
+				return CONTINUE;
+			}
+		});
+
+		final var responses = sendRaw("""
+				POST /foo HTTP/1.1\r
+				Host: localhost:2003\r
+				Content-Length: 0\r
+				\r
+				POST /foo HTTP/1.1\r
+				Host: localhost:2003\r
+				Content-Length: 0\r
+				Connection: close\r
+				\r
+				""");
+		assertEquals(2, countMatches(responses, "HTTP/1.1 200 "), responses);
 	}
 
 	/**

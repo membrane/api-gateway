@@ -105,24 +105,20 @@ class BodyStickyErrorTest {
     }
 
     /**
-     * The rest of a body that failed is still on the connection, so it must not carry another message.
-     * Once the body is replaced, e.g. by an error response, the failure no longer shows on the message.
+     * Whether a failed body leaves its connection out of step is decided by the handler that owns the connection,
+     * not by the message's headers: those are forwarded, and the message may never have been on a connection.
      */
     @Test
-    void messageDiscardBodyClosesConnectionWhenTheBodyFails() {
+    void messageDiscardBodyLeavesConnectionHeaderAlone() {
         final var request = new Request();
         request.setVersion("1.1");
         request.setBody(body);
-        assertTrue(request.isKeepAlive());
 
         request.discardBody();
 
-        assertFalse(request.isKeepAlive());
-
-        request.setBodyContent("replacement".getBytes());
-
-        assertFalse(request.getBody().hasFailed());
-        assertFalse(request.isKeepAlive());
+        assertTrue(request.getBody().hasFailed());
+        assertTrue(request.isKeepAlive());
+        assertNull(request.getHeader().getFirstValue(Header.CONNECTION));
     }
 
     @Test
