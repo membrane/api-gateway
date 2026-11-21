@@ -397,8 +397,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
      * <p>
      * If the body has not already been read, the header includes
      * "Expect: 100-continue" and the body has not already been sent by the
-     * client, nothing will be done. (Allowing the HTTP connection state to skip
-     * over the body transmission.)
+     * client, nothing will be done. The body stays unread, so the connection is
+     * closed after the response, see {@link #isClientBodyConsumed()}.
      */
     private void removeBodyFromBuffer() throws ReadingBodyException {
         try {
@@ -466,15 +466,14 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     }
 
     /**
-     * Whether the request body was read from the client connection to its end. A body that failed or was streamed
-     * only in part leaves its rest on the connection, where it would be parsed as the next request. A body that is
-     * still unread and was never streamed was skipped for <code>Expect: 100-continue</code>: the client has not sent
-     * it, see {@link #removeBodyFromBuffer()}.
+     * Whether the request body was read from the client connection to its end. A streamed or discarded body is read
+     * once it was consumed completely; a failed body never is. A body that failed or was streamed only in part leaves
+     * its rest on the connection, where it would be parsed as the next request. So may a body that was skipped for
+     * <code>Expect: 100-continue</code> (see {@link #removeBodyFromBuffer()}): the client may send it without waiting
+     * for <code>100 Continue</code> (RFC 9110 10.1.1).
      */
     private boolean isClientBodyConsumed() {
-        if (clientBody.hasFailed())
-            return false;
-        return clientBody.isRead() || !clientBody.wasStreamed();
+        return clientBody.isRead();
     }
 
     protected void writeResponse(Response res) throws IOException {

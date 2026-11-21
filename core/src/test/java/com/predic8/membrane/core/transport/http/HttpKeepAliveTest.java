@@ -277,6 +277,41 @@ public class HttpKeepAliveTest {
 	}
 
 	/**
+	 * RFC 9110 10.1.1: a client that sent <code>Expect: 100-continue</code> may send the body without waiting for
+	 * <code>100 Continue</code>. When the flow answers without requesting the body, the body is not read, so the
+	 * connection must be closed, or a body arriving after the response is parsed as the next request.
+	 */
+	@Test
+	void connectionClosedWhenExpectedBodyWasNotRequested() throws Exception {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				exc.setResponse(ok("OK.").build()); // without requesting the body
+				return RETURN;
+			}
+		});
+
+		try (final var socket = new Socket("localhost", 2003)) {
+			socket.setSoTimeout(3000);
+			final var out = socket.getOutputStream();
+			out.write("""
+					POST /foo HTTP/1.1\r
+					Host: localhost:2003\r
+					Expect: 100-continue\r
+					Content-Length: 10\r
+					\r
+					""".getBytes(US_ASCII));
+			out.flush();
+
+			final var in = socket.getInputStream();
+			final var header = readHeaderSection(in);
+			assertTrue(header.startsWith("HTTP/1.1 200 "), header); // no 100 Continue: the body was not requested
+			assertTrue(header.contains("Connection: close"), header);
+			in.readAllBytes(); // the response body, then the end of the stream; times out if the connection stays open
+		}
+	}
+
+	/**
 	 * RFC 9112 2.2: a bare LF ends a line. The request is answered without the client sending another byte after
 	 * the empty line that ends the header section (#3378).
 	 */
@@ -311,6 +346,21 @@ public class HttpKeepAliveTest {
 			socket.getOutputStream().flush();
 			return new String(socket.getInputStream().readAllBytes(), US_ASCII);
 		}
+	}
+
+	/**
+	 * Reads up to and including the empty line that ends the header section, without waiting for the server to close
+	 * the connection.
+	 */
+	private static String readHeaderSection(InputStream in) throws IOException {
+		final var header = new ByteArrayOutputStream();
+		while (!header.toString(US_ASCII).endsWith("\r\n\r\n")) {
+			final var b = in.read();
+			if (b == -1)
+				break;
+			header.write(b);
+		}
+		return header.toString(US_ASCII);
 	}
 
 	@Test
