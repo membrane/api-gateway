@@ -15,9 +15,11 @@
 package com.predic8.membrane.core.util.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.predic8.membrane.core.util.json.JsonUtil.scalarAsJson;
 import static org.junit.jupiter.api.Assertions.*;
@@ -101,5 +103,55 @@ class JsonUtilTest {
             "''|''"})
     void escapeJsonPointerSegment(String segment, String escaped) {
         assertEquals(escaped, JsonUtil.escapeJsonPointerSegment(segment));
+    }
+
+    @Nested
+    class ReadSingleValue {
+
+        @Test
+        void aValueIsRead() throws Exception {
+            assertEquals(9.99, JsonUtil.readSingleValue(" {\"price\": 9.99} \n").get("price").asDouble());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"", " \n "})
+        void noValueIsAMissingNode(String json) throws Exception {
+            assertTrue(JsonUtil.readSingleValue(json).isMissingNode());
+        }
+
+        @Test
+        void aSecondValueIsInputAfterTheValue() {
+            final var e = assertThrows(InvalidJsonException.class,
+                    () -> JsonUtil.readSingleValue("{\"price\":9.99} {\"price\":12}"));
+            assertEquals("Invalid JSON: input after the JSON value at line 1, column 16", e.getMessage());
+        }
+
+        @Test
+        void garbageIsInputAfterTheValue() {
+            final var e = assertThrows(InvalidJsonException.class,
+                    () -> JsonUtil.readSingleValue("{\"price\":9.99}]]] garbage"));
+            assertTrue(e.getMessage().startsWith("Invalid JSON: input after the JSON value at line 1, column "), e.getMessage());
+        }
+
+        @Test
+        void theLineIsCounted() {
+            final var e = assertThrows(InvalidJsonException.class,
+                    () -> JsonUtil.readSingleValue("{\n  \"a\": 1\n} 2"));
+            assertEquals("Invalid JSON: input after the JSON value at line 3, column 3", e.getMessage());
+        }
+
+        @Test
+        void aSyntaxErrorKeepsJacksonsExplanationAndAddsThePosition() {
+            final var e = assertThrows(InvalidJsonException.class, () -> JsonUtil.readSingleValue("{a:1}"));
+            assertTrue(e.getMessage().matches("Invalid JSON: Unexpected character \\('a'.* at line 1, column \\d+"), e.getMessage());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"{\"price\":9.99} {\"price\":12}", "{a:1}", "{\"a\":1,}", "{"})
+        void theMessageNamesNoJacksonInternals(String json) {
+            final var message = assertThrows(InvalidJsonException.class, () -> JsonUtil.readSingleValue(json)).getMessage();
+            assertFalse(message.contains("Jackson") || message.contains("JsonNode") || message.contains("Source")
+                        || message.contains("FAIL_ON_TRAILING_TOKENS"), message);
+        }
     }
 }

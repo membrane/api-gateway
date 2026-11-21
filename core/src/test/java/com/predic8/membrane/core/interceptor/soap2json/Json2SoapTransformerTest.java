@@ -134,7 +134,8 @@ class Json2SoapTransformerTest {
     @ParameterizedTest
     @ValueSource(strings = {"{\"name\": \"Berlin\"} {\"name\": \"Bonn\"}", "{\"name\": \"Berlin\"}]]] garbage"})
     void jsonWithInputAfterItsValueIsRejected(String json) {
-        assertThrows(JsonProcessingException.class, () -> transformer(citiesDefinitions, "getCity").transform(json));
+        final var e = assertThrows(JsonProcessingException.class, () -> transformer(citiesDefinitions, "getCity").transform(json));
+        assertTrue(e.getMessage().startsWith("Invalid JSON: input after the JSON value at line 1, column "), e.getMessage());
     }
 
     @ParameterizedTest
