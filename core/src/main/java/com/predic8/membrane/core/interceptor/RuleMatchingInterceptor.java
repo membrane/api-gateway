@@ -237,7 +237,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private Outcome checkClientAuthentication(Exchange exc, Proxy proxy) {
 		if (!lacksClientAuthenticationOf(exc, proxy))
 			return CONTINUE;
-		log.info("Rejected request to API '{}', whose client authentication the TLS handshake of the connection did not perform.", proxy.getName());
+		log.info("Rejected request to API '{}', whose client authentication the TLS handshake of the connection did not perform. The handshake was done by the TLS configuration of another API on the same port, the first whose certificate covers the host name the client sent, or the default one without SNI.", proxy.getName());
 		user(router.getConfiguration().isProduction(), "misdirected-request")
 				.status(421)
 				.title("Misdirected request")

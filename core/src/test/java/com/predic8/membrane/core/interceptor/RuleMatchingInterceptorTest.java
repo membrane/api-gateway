@@ -753,6 +753,15 @@ class RuleMatchingInterceptorTest {
         }
 
         @Test
+        @DisplayName("An earlier API whose certificate covers the host name does the handshake, even for SNI and a valid certificate: 421")
+        void earlierCertificateCoveringTheHostNameShadowsClientAuthentication() throws Exception {
+            // The test certificates have no DNS names, so "public" matches every SNI and does every handshake
+            startRouter(api("public.example", null, null), api("secure.example", "need", SERVER_KEY_TRUST));
+
+            assertEquals("HTTP/1.1 421", statusOf(request(SERVER_KEY, "secure.example", "/", "secure.example")));
+        }
+
+        @Test
         @DisplayName("A target that cannot be parsed does not reach a forward proxy without its client authentication")
         void malformedTargetToForwardProxyThatNeedsCertificate() throws Exception {
             // The request does not match the host of "public", so it falls through to the forward proxy
@@ -817,13 +826,20 @@ class RuleMatchingInterceptorTest {
          * Sends a request without SNI, so that the first API on the port does the handshake.
          */
         private static String request(String clientKey, String target, String host) throws Exception {
+            return request(clientKey, "", target, host);
+        }
+
+        /**
+         * @param sni the SNI host name to send, or the empty string for none
+         */
+        private static String request(String clientKey, String sni, String target, String host) throws Exception {
             final var ssl = new SSLParser();
             ssl.setTrustStore(trustStore(SERVER_KEY_TRUST));
             ssl.setEndpointIdentificationAlgorithm(""); // The certificate was not issued for 'localhost'
             if (clientKey != null)
                 ssl.setKeyStore(keyStore(clientKey));
             final var client = new StaticSSLContext(ssl, new ResolverMap(), null);
-            try (final var socket = client.createSocket("localhost", PORT, 30000, "", null)) {
+            try (final var socket = client.createSocket("localhost", PORT, 30000, sni, null)) {
                 socket.getOutputStream().write("GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n".formatted(target, host).getBytes(US_ASCII));
                 socket.getOutputStream().flush();
                 return new String(socket.getInputStream().readAllBytes(), US_ASCII);

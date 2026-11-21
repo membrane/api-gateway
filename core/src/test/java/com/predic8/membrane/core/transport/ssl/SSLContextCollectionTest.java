@@ -23,8 +23,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -45,6 +47,55 @@ class SSLContextCollectionTest {
     void sniHostNameSelectsMatchingContext() throws Exception {
         provider.wrapAcceptedSocket(socketReceiving(clientHelloWithSni("example.com")));
         verify(context).wrap(any(), any(), anyInt());
+    }
+
+    /**
+     * The first context whose certificate covers a host name does its handshakes. If it asks for no client
+     * certificate, an API with {@code clientAuth: need} for that name answers every request with 421.
+     */
+    @Test
+    void earlierContextWithoutClientAuthShadowsHostNameOfContextThatNeedsIt() {
+        // Wildcard first, own certificate second
+        assertShadowed("*.example.com", false, "secure.example.com", true, "secure.example.com");
+        // Same certificate for both
+        assertShadowed("secure.example.com", false, "secure.example.com", true, "secure.example.com");
+        // A certificate without DNS names matches every host name
+        assertShadowed("*", false, "secure.example.com", true, "secure.example.com");
+        assertShadowed("public.example.com", false, "*", true, "public.example.com");
+    }
+
+    @Test
+    void noShadowingReported() {
+        // The context that needs client authentication comes first
+        assertNotShadowed("secure.example.com", true, "*.example.com", false);
+        // Different host names
+        assertNotShadowed("public.example.com", false, "secure.example.com", true);
+        // The later context does not need client authentication
+        assertNotShadowed("*.example.com", false, "public.example.com", false);
+        // Both need client authentication
+        assertNotShadowed("*.example.com", true, "secure.example.com", true);
+    }
+
+    private static void assertShadowed(String earlierNames, boolean earlierNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth, String hostName) {
+        final var earlier = contextFor(earlierNames, earlierNeedsClientAuth);
+        final var later = contextFor(laterNames, laterNeedsClientAuth);
+
+        assertEquals(List.of(new SSLContextCollection.Builder.ShadowedClientAuthentication(later, earlier, hostName)),
+                new SSLContextCollection.Builder().add(earlier).add(later).getShadowedClientAuthentications());
+    }
+
+    private static void assertNotShadowed(String earlierNames, boolean earlierNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth) {
+        assertEquals(List.of(), new SSLContextCollection.Builder()
+                .add(contextFor(earlierNames, earlierNeedsClientAuth))
+                .add(contextFor(laterNames, laterNeedsClientAuth))
+                .getShadowedClientAuthentications());
+    }
+
+    private static SSLContext contextFor(String dnsNames, boolean needClientAuth) {
+        final var context = mock(SSLContext.class);
+        when(context.constructHostNamePattern()).thenReturn(dnsNames);
+        when(context.isNeedClientAuth()).thenReturn(needClientAuth);
+        return context;
     }
 
     /**
