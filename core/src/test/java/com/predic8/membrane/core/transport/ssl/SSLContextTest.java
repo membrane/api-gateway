@@ -26,6 +26,8 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.platform.commons.util.UnrecoverableExceptions;
 
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSessionContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,11 +35,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class SSLContextTest {
 
@@ -255,6 +263,58 @@ public class SSLContextTest {
 	@Test
 	public void readPEMFiles() throws Exception {
         testCombination(createPEMServerSSLContext(), createPEMClientSSLContext());
+	}
+
+	/**
+	 * Several APIs with the same TLS configuration on one host share a connection, but only the context that did the
+	 * handshake skips the validation. The others must not validate the client certificate again on every request.
+	 */
+	@Test
+	void admissionOfAnotherContextsSessionIsValidatedOnce() throws Exception {
+		final var session = sessionOfAnotherContextWithClientCertificate("classpath:/ssl-rsa.keystore");
+		final var trusting = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
+		final var notTrusting = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub2.keystore").needClientAuth().build();
+
+		for (int i = 0; i < 3; i++)
+			assertTrue(trusting.admitsSessionOf(session));
+		verify(session, times(1)).getPeerCertificates();
+
+		// The admission kept by one context does not admit the session for another
+		assertFalse(notTrusting.admitsSessionOf(session));
+	}
+
+	/**
+	 * A rejection can be caused by a revocation status that could not be fetched. Kept in the session, it would last
+	 * after the outage as long as the session is resumed.
+	 */
+	@Test
+	void rejectionOfAnotherContextsSessionIsNotKept() throws Exception {
+		final var session = sessionOfAnotherContextWithClientCertificate("classpath:/ssl-rsa.keystore");
+		final var notTrusting = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub2.keystore").needClientAuth().build();
+
+		for (int i = 0; i < 3; i++)
+			assertFalse(notTrusting.admitsSessionOf(session));
+		verify(session, times(3)).getPeerCertificates();
+	}
+
+	/**
+	 * A session negotiated by another context, whose client presented the first certificate chain of the key store.
+	 * Values put into it can be read back, as with a real session.
+	 */
+	private static SSLSession sessionOfAnotherContextWithClientCertificate(String keyStoreLocation) throws Exception {
+		final var keyStore = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
+		try (final var in = router.getResolverMap().resolve(keyStoreLocation)) {
+			keyStore.load(in, "secret".toCharArray());
+		}
+		final var chain = keyStore.getCertificateChain(keyStore.aliases().nextElement());
+
+		final var values = new ConcurrentHashMap<String, Object>();
+		final var session = mock(SSLSession.class);
+		when(session.getSessionContext()).thenReturn(mock(SSLSessionContext.class));
+		when(session.getPeerCertificates()).thenReturn(chain);
+		doAnswer(call -> values.put(call.getArgument(0), call.getArgument(1))).when(session).putValue(anyString(), any());
+		when(session.getValue(anyString())).thenAnswer(call -> values.get(call.<String>getArgument(0)));
+		return session;
 	}
 
 	private static @NotNull StaticSSLContext createPEMServerSSLContext() throws IOException {

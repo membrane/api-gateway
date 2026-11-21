@@ -60,9 +60,57 @@ public class SSLContextCollection implements SSLProvider {
 
 		public SSLProvider build() {
 			if (sslContexts.size() > 1 || useCollection) {
+				for (final var s : getShadowedClientAuthentications())
+					log.warn("TLS configuration {} needs a client certificate, but {}, which does not, comes first and also covers the host name '{}'. It does the handshake for that name, so requests to the API with clientAuth are answered with 421. List the API with clientAuth first or use a separate port.",
+							s.shadowed().getLocation(), s.shadowing().getLocation(), s.hostName());
 				return new SSLContextCollection(sslContexts, dnsNames);
 			} else
 				return sslContexts.getFirst();
+		}
+
+		/**
+		 * A context that needs client authentication, and an earlier one that does not but also covers one of its
+		 * host names.
+		 */
+		record ShadowedClientAuthentication(SSLContext shadowed, SSLContext shadowing, String hostName) {}
+
+		/**
+		 * The handshake for a host name is done by the first context whose certificate covers it, not by the API
+		 * whose host matches. An API that needs a client certificate answers every request with 421 when an earlier
+		 * context that does not ask for one covers its host name, see {@link SSLContext#admitsSessionOf}.
+		 */
+		List<ShadowedClientAuthentication> getShadowedClientAuthentications() {
+			final var result = new ArrayList<ShadowedClientAuthentication>();
+			for (int later = 1; later < sslContexts.size(); later++) {
+				final var shadowed = sslContexts.get(later);
+				if (!shadowed.isNeedClientAuth())
+					continue;
+				for (int earlier = 0; earlier < later; earlier++) {
+					final var shadowing = sslContexts.get(earlier);
+					if (shadowing.isNeedClientAuth())
+						continue;
+					final var name = getSharedHostName(dnsNames.get(earlier), dnsNames.get(later));
+					if (name != null)
+						result.add(new ShadowedClientAuthentication(shadowed, shadowing, name));
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * @return a host name of one pattern that the other one also matches, in either direction since both may
+		 *         contain wildcards, or null if they share none
+		 */
+		private static @Nullable String getSharedHostName(String earlierNames, String laterNames) {
+			final var earlier = new HostPattern(earlierNames);
+			final var later = new HostPattern(laterNames);
+			for (final var name : laterNames.split(" +"))
+				if (earlier.matches(name))
+					return name;
+			for (final var name : earlierNames.split(" +"))
+				if (later.matches(name))
+					return name;
+			return null;
 		}
 
 		public Builder add(SSLContext sslContext) {
