@@ -338,8 +338,9 @@ public class HttpKeepAliveTest {
 	}
 
 	/**
-	 * RFC 9112 3: a request line that is not "method SP request-target SP HTTP-version" is answered with 400
-	 * (#3378). Before, these lines were routed, answered with 501, or the connection was closed without a response.
+	 * RFC 9112 3: a request line that is not "method SP request-target SP HTTP-version", or whose method is not a
+	 * token, is answered with 400 (#3378). Before, these lines were routed, answered with 501, or the connection was
+	 * closed without a response.
 	 */
 	@ParameterizedTest
 	@ValueSource(strings = {
@@ -348,7 +349,8 @@ public class HttpKeepAliveTest {
 			"POST /foo HTTP/1.1 ",
 			"POST /foo",
 			"POST\t/foo HTTP/1.1",
-			"POST /a\u0085b HTTP/1.1"
+			"POST /a\u0085b HTTP/1.1",
+			"P@ST /foo HTTP/1.1"
 	})
 	void invalidRequestLineIsRejected(String requestLine) throws Exception {
 		final var response = sendRaw(requestLine + "\r\nHost: localhost:2003\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");

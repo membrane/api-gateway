@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.util.HttpUtil.containsWhitespace;
+import static com.predic8.membrane.core.util.HttpUtil.isToken;
 import static com.predic8.membrane.core.util.StompUtil.COMMAND_STOMP;
 import static com.predic8.membrane.core.util.StompUtil.STOMP_VERSION;
 import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
@@ -129,9 +130,10 @@ public class Request extends Message {
     }
 
     /**
-     * Parses {@code method SP request-target SP HTTP-version} (RFC 9112 3). Method and request-target must not be
-     * empty or contain whitespace, and the version must be {@code HTTP/DIGIT.DIGIT} (RFC 9112 2.3). Whether the
-     * method is acceptable is decided later by the transport's MethodValidator.
+     * Parses {@code method SP request-target SP HTTP-version} (RFC 9112 3). The method must be a token (RFC 9110
+     * 9.1), the request-target must not be empty or contain whitespace, and the version must be
+     * {@code HTTP/DIGIT.DIGIT} (RFC 9112 2.3). Whether the method is supported is decided later by the transport's
+     * MethodValidator (501).
      *
      * @throws MalformedHeaderException        if the line does not have this form (400)
      * @throws UnsupportedHttpVersionException if the major version is not 1 (505)
@@ -143,7 +145,7 @@ public class Request extends Message {
             throw invalidRequestLine();
         final var requestMethod = line.substring(0, methodEnd);
         final var target = line.substring(methodEnd + 1, targetEnd);
-        if (containsWhitespace(requestMethod) || containsWhitespace(target))
+        if (!isToken(requestMethod) || containsWhitespace(target))
             throw invalidRequestLine();
         method = requestMethod;
         uri = target;

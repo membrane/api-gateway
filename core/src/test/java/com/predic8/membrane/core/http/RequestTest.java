@@ -841,6 +841,27 @@ public class RequestTest {
         }
 
         /**
+         * RFC 9110 9.1: method = token. A method that is not a token makes the request line invalid (400); whether a
+         * valid token is a supported method is decided later by the MethodValidator (501).
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "G@T /foo HTTP/1.1",
+                "G(T) /foo HTTP/1.1",
+                "\"GET\" /foo HTTP/1.1",
+                "GÄT /foo HTTP/1.1",
+                "G\u0001T /foo HTTP/1.1",
+        })
+        void methodThatIsNotATokenIsRejected(String line) {
+            assertRejected(line);
+        }
+
+        @Test
+        void extensionMethodTokenIsAccepted() throws IOException {
+            assertStartLine("M-SEARCH.v1!~ /foo HTTP/1.1", "M-SEARCH.v1!~", "/foo", "1.1");
+        }
+
+        /**
          * RFC 9110 15.6.6: 505 for a major version the server does not support. HTTP/2 is negotiated with TLS
          * (ALPN) and never reaches parseStartLine; "PRI * HTTP/2.0" is the cleartext HTTP/2 connection preface.
          */

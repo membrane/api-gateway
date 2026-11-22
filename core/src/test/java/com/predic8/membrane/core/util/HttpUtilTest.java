@@ -339,6 +339,18 @@ public class HttpUtilTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"GET", "M-SEARCH", "!#$%&'*+-.^_`|~", "a1"})
+    void token(String s) {
+        assertTrue(isToken(s));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "G@T", "G T", "\"GET\"", "G(T)", "a\u0085", "\u00c4", "a\u0001"})
+    void notAToken(String s) {
+        assertFalse(isToken(s));
+    }
+
+    @ParameterizedTest
     @CsvSource({
             "same-origin, false",
             "none, false",

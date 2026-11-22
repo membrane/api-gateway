@@ -151,6 +151,19 @@ public class HttpUtil {
 	}
 
 	/**
+	 * Whether the string is an RFC 9110 &sect;5.6.2 token: one or more {@link #isTchar(int) tchars}.
+	 */
+	public static boolean isToken(String s) {
+		if (s.isEmpty())
+			return false;
+		for (var i = 0; i < s.length(); i++) {
+			if (!isTchar(s.charAt(i)))
+				return false;
+		}
+		return true;
+	}
+
+	/**
 	 * Whether the character is RFC 9110 &sect;5.6.3 optional whitespace: SP or HTAB.
 	 */
 	public static boolean isOptionalWhitespace(char c) {
