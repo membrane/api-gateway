@@ -350,6 +350,13 @@ public class HttpUtilTest {
         assertFalse(isToken(s));
     }
 
+    @Test
+    void tokenPrefix() {
+        assertTrue(isToken("Host: example.com", 4));
+        assertFalse(isToken("Ho st: example.com", 5));
+        assertFalse(isToken("Host", 0));
+    }
+
     @ParameterizedTest
     @CsvSource({
             "same-origin, false",
