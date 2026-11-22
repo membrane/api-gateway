@@ -23,6 +23,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -49,8 +50,8 @@ import java.util.function.Function;
  * The decoder throws unchecked exceptions for malformed input. They are rethrown as
  * {@link IOException}, so they are handled like a failure of the other content codings.
  * <p>
- * The decoder needs sun.misc.Unsafe memory access, which a JVM may deny. Use this class only if
- * {@link #isDecoderAvailable()}.
+ * The decoder accesses memory through sun.misc.Unsafe, which a JVM may deny. Decoding is therefore
+ * off by default. Use this class only if {@link #isDecodingEnabled()}.
  */
 public final class ZstdDecodingInputStream extends InputStream {
 
@@ -60,7 +61,16 @@ public final class ZstdDecodingInputStream extends InputStream {
      */
     static final long MAX_WINDOW_SIZE = 1L << 23;
 
+    /**
+     * System property that switches zstd decoding on: <code>-Dmembrane.core.http.zstd.decode=true</code>.
+     * It is off by default because the decoder accesses memory through sun.misc.Unsafe, without the
+     * bounds checks of the JVM.
+     */
+    public static final String DECODING_PROPERTY = "membrane.core.http.zstd.decode";
+
     private static final Logger log = LoggerFactory.getLogger(ZstdDecodingInputStream.class);
+
+    private static final AtomicBoolean decodingOffLogged = new AtomicBoolean();
 
     /**
      * Made with the reference implementation (zstd 1.5.7) from "zstd zstd zstd zstd": a
@@ -85,14 +95,23 @@ public final class ZstdDecodingInputStream extends InputStream {
     }
 
     /**
-     * Whether the decoder can run on this JVM. It uses sun.misc.Unsafe, and on a JVM that denies its
-     * memory access methods (<code>--sun-misc-unsafe-memory-access=deny</code>, according to JEP 471
-     * the default of a later JDK), its class initialization fails. This is checked once, on the first
-     * call, so a JVM that never decodes zstd does not print the warning about sun.misc.Unsafe: call it
-     * only for a message that is zstd. If the decoder is not available, zstd is handled like a coding that
-     * Membrane does not decode.
+     * Whether zstd bodies are decoded. Otherwise zstd is handled like a coding that Membrane does not
+     * decode. Call it only for a message that is zstd: the first call logs why zstd is not decoded,
+     * or checks the decoder.
+     * <p>
+     * Decoding has to be switched on with {@link #DECODING_PROPERTY}, and the decoder has to run on
+     * this JVM. It uses sun.misc.Unsafe, and on a JVM that denies its memory access methods
+     * (<code>--sun-misc-unsafe-memory-access=deny</code>, according to JEP 471 the default of a later
+     * JDK), its class initialization fails. The decoder is checked once, when decoding is switched on
+     * and the first zstd body arrives, so a JVM that never decodes zstd does not print the warning
+     * about sun.misc.Unsafe.
      */
-    public static boolean isDecoderAvailable() {
+    public static boolean isDecodingEnabled() {
+        if (!Boolean.getBoolean(DECODING_PROPERTY)) {
+            if (decodingOffLogged.compareAndSet(false, true))
+                log.warn("A body with Content-Encoding zstd is not decoded, so plugins that read it get the compressed bytes. Remove zstd from Accept-Encoding, or switch decoding on with -D{}=true; the decoder uses sun.misc.Unsafe.", DECODING_PROPERTY);
+            return false;
+        }
         return DecoderCheck.AVAILABLE;
     }
 

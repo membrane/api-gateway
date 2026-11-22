@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Random;
 
+import static com.predic8.membrane.core.util.ZstdTestUtil.withZstdDecoding;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -257,9 +258,15 @@ class ZstdDecodingInputStreamTest {
     }
 
     @Test
-    void decoderIsAvailable() {
+    void decoderWorksOnThisJvm() {
         assertTrue(ZstdDecodingInputStream.decoderWorks(ZstdInputStream::new));
-        assertTrue(ZstdDecodingInputStream.isDecoderAvailable());
+    }
+
+    @Test
+    void decodingIsEnabledOnlyWhenSwitchedOn() throws Throwable {
+        assertFalse(ZstdDecodingInputStream.isDecodingEnabled());
+        withZstdDecoding(() -> assertTrue(ZstdDecodingInputStream.isDecodingEnabled()));
+        assertFalse(ZstdDecodingInputStream.isDecodingEnabled());
     }
 
     private static InputStream failingStream(Error error) {

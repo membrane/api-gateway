@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.zip.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.util.ZstdTestUtil.withZstdDecoding;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -163,18 +164,36 @@ class LimitInterceptorTest {
     }
 
     @Test
-    void zstdBodyIsLimitedByItsDecodedLength() throws Exception {
+    void zstdBodyIsLimitedByItsDecodedLengthWhenDecodingIsSwitchedOn() throws Throwable {
         final var limit = new LimitInterceptor();
         limit.setMaxBodyLength(1000);
-        final var small = Request.post("/foo").body(zstd("a".repeat(1000))).header("Content-Encoding", "zstd").build();
-        limit.handleRequest(exchangeOf(small));
-        assertNull(small.getHeader().getContentEncoding());
-        assertEquals("a".repeat(1000), new String(small.getBody().getContent(), UTF_8));
+        withZstdDecoding(() -> {
+            final var small = Request.post("/foo").body(zstd("a".repeat(1000))).header("Content-Encoding", "zstd").build();
+            limit.handleRequest(exchangeOf(small));
+            assertNull(small.getHeader().getContentEncoding());
+            assertEquals("a".repeat(1000), new String(small.getBody().getContent(), UTF_8));
 
-        final var large = Request.post("/foo").body(zstd("a".repeat(1001))).header("Content-Encoding", "zstd").build();
-        limit.handleRequest(exchangeOf(large));
-        final var e = assertThrows(ReadingBodyException.class, large::readBody);
-        assertEquals("Message body too large.", e.getCause().getMessage());
+            final var large = Request.post("/foo").body(zstd("a".repeat(1001))).header("Content-Encoding", "zstd").build();
+            limit.handleRequest(exchangeOf(large));
+            final var e = assertThrows(ReadingBodyException.class, large::readBody);
+            assertEquals("Message body too large.", e.getCause().getMessage());
+        });
+    }
+
+    /**
+     * zstd decoding is off by default: a zstd body is forwarded encoded, and the limit applies to its
+     * encoded bytes, like for any coding that Membrane does not decode.
+     */
+    @Test
+    void zstdBodyIsLimitedByItsEncodedLengthByDefault() throws Exception {
+        final var limit = new LimitInterceptor();
+        limit.setMaxBodyLength(1000);
+        final var encoded = zstd("a".repeat(5000));
+        assertTrue(encoded.length < 1000);
+        final var request = Request.post("/foo").body(encoded).header("Content-Encoding", "zstd").build();
+        limit.handleRequest(exchangeOf(request));
+        assertEquals("zstd", request.getHeader().getFirstValue("Content-Encoding"));
+        assertArrayEquals(encoded, request.getBody().getContent());
     }
 
     private static byte[] zstd(String content) throws IOException {

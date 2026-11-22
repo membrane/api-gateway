@@ -30,7 +30,8 @@ public class MessageUtil {
 	private static final Logger log = LoggerFactory.getLogger(MessageUtil.class);
 
 	/**
-	 * Returns body bytes as a stream with supported Content-Encodings (gzip, deflate, Brotli, zstd) removed.
+	 * Returns body bytes as a stream with supported Content-Encodings (gzip, deflate, Brotli, and zstd if
+	 * {@link ZstdDecodingInputStream#isDecodingEnabled()}) removed.
 	 * Transfer-Encodings have already been removed by the message body layer.
 	 * Does not reassemble XOP/MTOM multipart packages; use {@link Message#getBodyAsStreamDecoded()}
 	 * when reassembled XML is required.
@@ -48,7 +49,7 @@ public class MessageUtil {
 			if (msg.isBrotli()) {
 				return associateDecodingFailures(new BrotliInputStream(msg.getBodyAsStream()), msg);
 			}
-			if (msg.isZstd() && ZstdDecodingInputStream.isDecoderAvailable()) {
+			if (msg.isZstd() && ZstdDecodingInputStream.isDecodingEnabled()) {
 				return associateDecodingFailures(new ZstdDecodingInputStream(msg.getBodyAsStream()), msg);
 			}
 			return msg.getBodyAsStream();
@@ -82,7 +83,7 @@ public class MessageUtil {
 					return decoded.readAllBytes();
 				}
 			}
-			if (msg.isZstd() && ZstdDecodingInputStream.isDecoderAvailable()) {
+			if (msg.isZstd() && ZstdDecodingInputStream.isDecodingEnabled()) {
 				try (var decoded = new ZstdDecodingInputStream(msg.getBodyAsStream())) {
 					return decoded.readAllBytes();
 				}

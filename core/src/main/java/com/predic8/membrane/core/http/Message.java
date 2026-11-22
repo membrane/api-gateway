@@ -133,7 +133,7 @@ public abstract class Message {
 
 	/**
 	 * <p>Returns the logical body content as a stream, with supported Content-Encodings
-	 * (gzip, deflate, Brotli, zstd) removed. Transfer-Encodings (e.g. chunking) have already been removed.</p>
+	 * (gzip, deflate, Brotli, and zstd if switched on) removed. Transfer-Encodings (e.g. chunking) have already been removed.</p>
 	 *
 	 * <p>Reassembles supported XOP/MTOM multipart packages into XML, replacing {@code xop:Include}
 	 * elements with base64-encoded attachment content. Unlike this method,
@@ -156,7 +156,7 @@ public abstract class Message {
 	}
 
 	/**
-	 * <p>Returns the body as a String, with supported Content-Encodings (gzip, deflate, Brotli, zstd)
+	 * <p>Returns the body as a String, with supported Content-Encodings (gzip, deflate, Brotli, and zstd if switched on)
 	 * removed and bytes converted using {@link #getCharsetOrDefault()}.
 	 * Transfer-Encodings (e.g. chunking) have already been removed.</p>
 	 *
@@ -565,7 +565,7 @@ public abstract class Message {
 	 * decode this message's Content-Encoding. For any other coding they return the encoded bytes.
 	 */
 	public boolean isContentEncodingDecoded() {
-		return isGzip() || isDeflate() || isBrotli() || (isZstd() && ZstdDecodingInputStream.isDecoderAvailable());
+		return isGzip() || isDeflate() || isBrotli() || (isZstd() && ZstdDecodingInputStream.isDecodingEnabled());
 	}
 
 	/**

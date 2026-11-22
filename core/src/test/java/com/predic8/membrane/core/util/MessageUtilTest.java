@@ -31,6 +31,7 @@ import java.util.Random;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.core.util.ZstdTestUtil.withZstdDecoding;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -134,13 +135,27 @@ class MessageUtilTest {
     }
 
     @Test
-    void zstdBodyIsDecoded() throws Exception {
+    void zstdBodyIsDecodedWhenSwitchedOn() throws Throwable {
         final var compressed = ZstdDecodingInputStreamTest.zstd("payload");
-        for (final var encoding : new String[]{"zstd", "ZSTD", ", zstd,"}) {
-            assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
-            try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
-                assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
+        withZstdDecoding(() -> {
+            for (final var encoding : new String[]{"zstd", "ZSTD", ", zstd,"}) {
+                assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
+                try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
+                    assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
+                }
             }
+        });
+    }
+
+    /**
+     * zstd decoding is off by default, so zstd is handled like a coding that Membrane does not decode.
+     */
+    @Test
+    void zstdBodyIsNotDecodedByDefault() throws Exception {
+        final var encoded = ZstdDecodingInputStreamTest.zstd("payload");
+        assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, "zstd")));
+        try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, "zstd"))) {
+            assertArrayEquals(encoded, content.readAllBytes());
         }
     }
 
@@ -195,15 +210,17 @@ class MessageUtilTest {
      * decoding failure like those of the other codings, so a request gets a 400.
      */
     @Test
-    void corruptZstdBodyIsADecodingFailure() throws Exception {
+    void corruptZstdBodyIsADecodingFailure() throws Throwable {
         final var corrupt = ZstdDecodingInputStreamTest.zstd("payload");
         corrupt[corrupt.length - 1] ^= 0x01; // content checksum
-        for (Executable decode : new Executable[]{
-                () -> MessageUtil.getContent(encodedRequest(corrupt, "zstd")),
-                () -> MessageUtil.getContentAsStream(encodedRequest(corrupt, "zstd")).readAllBytes()}) {
-            final var e = assertThrows(ReadingBodyException.class, decode);
-            assertEquals("zstd", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
-        }
+        withZstdDecoding(() -> {
+            for (Executable decode : new Executable[]{
+                    () -> MessageUtil.getContent(encodedRequest(corrupt, "zstd")),
+                    () -> MessageUtil.getContentAsStream(encodedRequest(corrupt, "zstd")).readAllBytes()}) {
+                final var e = assertThrows(ReadingBodyException.class, decode);
+                assertEquals("zstd", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
+            }
+        });
     }
 
     /**
@@ -220,8 +237,8 @@ class MessageUtilTest {
 
     /**
      * The zstd decoder needs sun.misc.Unsafe memory access, which later JDKs are to deny by default
-     * (JEP 471). On such a JVM, zstd is handled like a coding that Membrane does not decode. The JVM
-     * option exists from JDK 23 on.
+     * (JEP 471). On such a JVM, zstd is handled like a coding that Membrane does not decode, even if
+     * zstd decoding is switched on. The JVM option exists from JDK 23 on.
      */
     @Test
     void zstdIsNotDecodedOnAJvmThatDeniesUnsafe() throws Exception {
@@ -229,6 +246,7 @@ class MessageUtilTest {
         final var process = new ProcessBuilder(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                 "--sun-misc-unsafe-memory-access=deny",
+                "-D%s=true".formatted(ZstdDecodingInputStream.DECODING_PROPERTY),
                 "-cp", System.getProperty("java.class.path"),
                 ZstdOnAJvmThatDeniesUnsafe.class.getName())
                 .redirectErrorStream(true)
@@ -242,8 +260,8 @@ class MessageUtilTest {
     }
 
     /**
-     * Runs in a JVM started with <code>--sun-misc-unsafe-memory-access=deny</code>. The frame is
-     * fixed because the zstd encoder cannot run there either.
+     * Runs in a JVM started with <code>--sun-misc-unsafe-memory-access=deny</code> and zstd decoding
+     * switched on. The frame is fixed because the zstd encoder cannot run there either.
      */
     static final class ZstdOnAJvmThatDeniesUnsafe {
         public static void main(String[] args) throws Exception {
