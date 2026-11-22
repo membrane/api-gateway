@@ -103,6 +103,13 @@ class ScalarValueConverterTest {
                 () -> coerceOtherAttribute(StringAttributes.class, "{\"nested\":true}"));
     }
 
+    @Test
+    void otherAttributeRejectsNullValue() {
+        var e = assertThrows(ConfigurationParsingException.class,
+                () -> coerceOtherAttribute(StringAttributes.class, "null"));
+        assertEquals("Value of 'timeout' must not be null.", e.getMessage());
+    }
+
     private Object coerce(String json, Class<?> wanted) throws Exception {
         return converter.coerceScalarOrReference(null, null, MAPPER.readTree(json), "value", wanted);
     }
