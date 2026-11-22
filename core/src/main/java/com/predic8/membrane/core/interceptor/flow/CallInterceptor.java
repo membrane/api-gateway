@@ -21,44 +21,61 @@ import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.MessageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.google.api.client.http.HttpMethods.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.TemplateUtil.containsTemplateMarker;
 import static java.util.Collections.singletonList;
+import static java.util.Locale.ROOT;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
- * @description Calls an external HTTP endpoint and merges its response into the current message. The
- * endpoint's response body replaces the message body, and its headers are copied onto the message
- * except <code>Server</code>, <code>Content-Encoding</code> and <code>Transfer-Encoding</code>. Runs
- * in both the request and the response flow. The <code>url</code> may contain <code>${...}</code>
- * expressions that are evaluated against the exchange before each call; a URL without a template
- * marker is used verbatim. On an unknown host or a failed call the exchange is aborted with a Problem
- * Details response. See the tutorials under
- * tutorials/orchestration.
+ * @description Calls an external HTTP endpoint and merges its response into the current message: the
+ * request in the request flow, the response in the response flow. The header fields of the current
+ * message are sent to the endpoint. The endpoint's decoded response body replaces the message body,
+ * and its header fields are copied onto the message; the status code of a response is kept. Fields
+ * that apply to one connection only are neither sent nor copied: <code>Connection</code> and the
+ * fields it names, <code>Keep-Alive</code>, <code>Proxy-Connection</code>, <code>TE</code>,
+ * <code>Trailer</code> and <code>Upgrade</code>. <code>Server</code>, <code>Content-Length</code>,
+ * <code>Content-Encoding</code> and <code>Transfer-Encoding</code> are not copied either; the message
+ * gets a <code>Content-Length</code> for its new body. Placed directly in a flow, it runs in both the
+ * request and the response flow. The <code>url</code> may contain <code>${...}</code> expressions that
+ * are evaluated against the current message before each call; a URL without a template marker is used
+ * verbatim. On an unknown host or a failed call the exchange is aborted with a Problem Details
+ * response. See the tutorials under tutorials/orchestration.
  * @topic 1. Proxies and Flow
  * @yaml <pre><code>
  * api:
  *   port: 2000
  *   flow:
- *     - call:
- *         url: https://api.predic8.de/shop/v2/products
+ *     - request:
+ *         - call:
+ *             url: https://api.predic8.de/shop/v2/products
+ *     - return:
+ *         status: 200
  * </code></pre>
  */
 @MCElement(name = "call")
@@ -76,7 +93,17 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
      * and are not added to the current message.
      */
     private static final List<String> REMOVE_HEADERS = List.of(
-            SERVER, CONTENT_ENCODING, TRANSFER_ENCODING
+            SERVER, CONTENT_LENGTH, CONTENT_ENCODING, TRANSFER_ENCODING
+    );
+
+    /**
+     * Fields that apply to one connection only, and are neither sent to the called resource nor copied from its
+     * response: the hop-by-hop fields of RFC 9110, section 7.6.1, together with the fields a message's
+     * <code>Connection</code> header names, and <code>Trailer</code>, which announces the trailer fields of a
+     * chunked body. Bodies are sent and set with a framing of their own.
+     */
+    private static final List<String> HOP_BY_HOP_HEADERS = List.of(
+            CONNECTION, KEEP_ALIVE, PROXY_CONNECTION, "TE", "Trailer", UPGRADE
     );
 
     private String method = GET;
@@ -115,19 +142,20 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        return handleInternal(exc);
+        return handleInternal(exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        return handleInternal(exc);
+        return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exc) {
-        var dest = computeDestinationUrl(exc);
+    private Outcome handleInternal(Exchange exc, Flow flow) {
+        final var message = exc.getMessage(flow);
+        var dest = computeDestinationUrl(exc, flow);
         log.debug("Calling {}", dest);
 
-        final Exchange newExc = createNewExchange(dest, getNewRequest(exc));
+        final Exchange newExc = createNewExchange(dest, getNewRequest(message));
 
         try {
             httpClient.call(newExc);
@@ -149,9 +177,9 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
              * and content-encoding are removed by the setBodyContent method.
              */
             try (final var body = newExc.getResponse().getBodyAsStreamDecoded()) {
-                exc.getRequest().setBodyContent(body.readAllBytes());
+                message.setBodyContent(body.readAllBytes());
             }
-            copyHeadersFromResponseToRequest(newExc, exc);
+            copyHeaders(newExc.getResponse(), message);
             return CONTINUE;
         } catch (Exception e) {
             log.error("Error processing response from {}: {}", dest, e.getMessage(), e);
@@ -164,9 +192,9 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    private String computeDestinationUrl(Exchange exc) {
+    private String computeDestinationUrl(Exchange exc, Flow flow) {
         if (urlIsTemplate) {
-            return exchangeExpression.evaluate(exc, REQUEST, String.class);
+            return exchangeExpression.evaluate(exc, flow, String.class);
         }
         return exchangeExpression.getExpression();
     }
@@ -178,11 +206,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                 .internal("destination", dest);
     }
 
-    private Request getNewRequest(Exchange exchange) {
+    private Request getNewRequest(Message message) {
         Request.Builder builder = new Request.Builder()
                 .method(method)
-                .header(getFilteredRequestHeader(exchange));
-        setRequestBody(builder, exchange);
+                .header(getFilteredRequestHeader(message));
+        setRequestBody(builder, message);
         return builder.build();
     }
 
@@ -193,11 +221,14 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         return exc;
     }
 
-    private void setRequestBody(Request.Builder builder, Exchange exchange) {
+    /**
+     * Sends the body decoded: <code>Request.Builder.body()</code> removes <code>Content-Encoding</code>.
+     */
+    private void setRequestBody(Request.Builder builder, Message message) {
         if (!methodShouldHaveBody(method)) {
             return;
         }
-        builder.body(exchange.getRequest().getBody().getContent());
+        builder.body(MessageUtil.getContent(message));
     }
 
     private static boolean methodShouldHaveBody(String method) {
@@ -207,9 +238,12 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * Filters and returns the request headers relevant for the outgoing request.
      */
-    Header getFilteredRequestHeader(Exchange exc) {
+    Header getFilteredRequestHeader(Message message) {
+        final var hopByHopHeaders = getHopByHopHeaders(message.getHeader());
         Header requestHeader = new Header();
-        for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
+        for (HeaderField field : message.getHeader().getAllHeaderFields()) {
+            if (isHopByHop(field, hopByHopHeaders))
+                continue;
             // Not using a reference on purpose
             requestHeader.add(field.getHeaderName().getName(), field.getValue());
         }
@@ -223,15 +257,34 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         return requestHeader;
     }
 
-    static void copyHeadersFromResponseToRequest(Exchange responseExc, Exchange originalExc) {
-        Arrays.stream(responseExc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
+    /**
+     * Copies the header fields of the called resource's response onto the current message.
+     */
+    static void copyHeaders(final Response source, final Message target) {
+        final var hopByHopHeaders = getHopByHopHeaders(source.getHeader());
+        Arrays.stream(source.getHeader().getAllHeaderFields()).forEach(headerField -> {
             // Filter out, what is definitely not needed like Server:
             for (String rmHeader : REMOVE_HEADERS) {
                 if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
                     return;
             }
-            originalExc.getRequest().getHeader().setValue(headerField.getHeaderName().getName(), headerField.getValue());
+            if (isHopByHop(headerField, hopByHopHeaders))
+                return;
+            target.getHeader().setValue(headerField.getHeaderName().getName(), headerField.getValue());
         });
+    }
+
+    /**
+     * Lower-case names of the fixed hop-by-hop fields and of the fields the <code>Connection</code> header names.
+     */
+    private static Set<String> getHopByHopHeaders(final Header header) {
+        return Stream.concat(HOP_BY_HOP_HEADERS.stream(), header.getSingleValues(CONNECTION))
+                .map(name -> name.toLowerCase(ROOT))
+                .collect(toUnmodifiableSet());
+    }
+
+    private static boolean isHopByHop(final HeaderField field, final Set<String> hopByHopHeaders) {
+        return hopByHopHeaders.contains(field.getHeaderName().getName().toLowerCase(ROOT));
     }
 
     /**
@@ -254,7 +307,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     /**
      * @description HTTP method used for the call. With <code>POST</code>, <code>PUT</code> or
-     * <code>PATCH</code> the current message body is forwarded; other methods are sent without a body.
+     * <code>PATCH</code> the current message body is sent, decoded; other methods are sent without a body.
      * @default GET
      * @example POST
      */
