@@ -120,8 +120,32 @@ class MessageTest {
         }
     }
 
-    private static Message requestWithContentEncoding(String coding) throws URISyntaxException {
-        return Request.post("/").body(new byte[]{1}).header("Content-Encoding", coding).build();
+    /**
+     * RFC 9110 5.3: "Content-Encoding: gzip" plus "Content-Encoding: br" means "gzip, br", which
+     * Membrane does not decode. Empty list elements do not count (RFC 9110 5.6.1).
+     */
+    @Test
+    void codingsAreReadFromAllFieldLines() throws Exception {
+        assertFalse(requestWithContentEncoding("gzip", "br").isGzip());
+        assertFalse(requestWithContentEncoding("gzip", "br").isContentEncodingDecoded());
+        assertFalse(requestWithContentEncoding("br", "gzip").isContentEncodingDecoded());
+        assertFalse(requestWithContentEncoding("deflate", "deflate").isDeflate());
+        assertTrue(requestWithContentEncoding(", gzip,").isGzip());
+        assertTrue(requestWithContentEncoding("", "br").isBrotli());
+        assertTrue(requestWithContentEncoding("", "deflate", ",").isDeflate());
+    }
+
+    @Test
+    void isEncodedOnlyWithACoding() throws Exception {
+        assertTrue(requestWithContentEncoding("", "unknown").isEncoded());
+        assertFalse(requestWithContentEncoding(",", "").isEncoded());
+    }
+
+    private static Message requestWithContentEncoding(String... fieldLines) throws URISyntaxException {
+        final var builder = Request.post("/").body(new byte[]{1});
+        for (final var fieldLine : fieldLines)
+            builder.header("Content-Encoding", fieldLine);
+        return builder.build();
     }
 
     private static byte[] gzip(String content) throws IOException {

@@ -49,6 +49,11 @@ public class AcmeSSLContext extends SSLContext {
     private Router router;
 
     public AcmeSSLContext(SSLParser parser, String[] hosts) {
+        // Until a certificate is issued, the client authentication is not set up, so SSLContext.admitsSessionOf
+        // would admit every session on a shared port. After that, client certificates would be validated with the
+        // JDK's trust store instead of the configured one.
+        if (parser.getClientAuth() != null)
+            throw new ConfigurationException("clientAuth='%s' cannot be used together with acme. Remove clientAuth, or configure a keystore or key instead of acme.".formatted(parser.getClientAuth()));
         this.parser = parser;
         this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
         client = new AcmeClient(parser.getAcme());

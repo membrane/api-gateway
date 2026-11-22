@@ -16,6 +16,8 @@ package com.predic8.membrane.core.util.json;
 
 import io.restassured.path.xml.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import static com.predic8.membrane.core.util.json.JsonToXml.XML_PROLOG;
 import static com.predic8.membrane.core.util.json.JsonToXml.parseLiteral;
@@ -189,6 +191,47 @@ class JsonToXmlTest {
             XmlPath xp = new XmlPath(conv.toXml("null"));
             String v = xp.getString("root");
             assertTrue(v == null || v.isBlank());
+        }
+    }
+
+    @Nested
+    class InvalidJson {
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "{\"price\":9.99} {\"price\":12}",
+                "{\"price\":9.99}]]] garbage",
+                "[1,2] [3]",
+                "12 13",
+                "true false",
+        })
+        void inputAfterTheValueIsRejected(String json) {
+            final var e = assertThrows(IllegalArgumentException.class, () -> conv.toXml(json));
+            assertTrue(e.getMessage().startsWith("Invalid JSON: input after the JSON value at line 1, column "), e.getMessage());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "{\"a\":1,}",
+                "[1,2,]",
+                "{a:1}",
+                "{'a':'b'}",
+                "hello",
+                "'hello'",
+        })
+        void nonStandardJsonIsRejected(String json) {
+            assertThrows(IllegalArgumentException.class, () -> conv.toXml(json));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"", " \n "})
+        void emptyInputIsRejected(String json) {
+            assertThrows(IllegalArgumentException.class, () -> conv.toXml(json));
+        }
+
+        @Test
+        void incompleteJsonIsRejected() {
+            assertThrows(IllegalArgumentException.class, () -> conv.toXml("{"));
         }
     }
 

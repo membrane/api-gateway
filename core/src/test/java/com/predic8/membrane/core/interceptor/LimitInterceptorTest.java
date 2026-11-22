@@ -133,7 +133,7 @@ class LimitInterceptorTest {
                     """, chunked(gzip)));
 
             assertEquals(CONTINUE, limit.handleRequest(exc));
-            assertEquals("gzip", exc.getRequest().getHeader().getContentEncoding());
+            assertEquals(List.of("gzip"), exc.getRequest().getHeader().getContentCodings());
             assertTrue(exc.getRequest().getHeader().isChunked());
             assertArrayEquals(gzip, exc.getRequest().getBody().getContent());
         }
@@ -182,7 +182,7 @@ class LimitInterceptorTest {
             final var exc = Request.post("/foo").body(gzip).header("Content-Encoding", "gzip").buildExchange();
 
             assertEquals(CONTINUE, limit.handleRequest(exc));
-            assertEquals("gzip", exc.getRequest().getHeader().getContentEncoding());
+            assertEquals(List.of("gzip"), exc.getRequest().getHeader().getContentCodings());
             assertArrayEquals(gzip, exc.getRequest().getBody().getContent());
         }
 
@@ -242,7 +242,22 @@ class LimitInterceptorTest {
             final var encoded = new byte[]{1, 2, 3, 4, 5};
             final var exc = Request.post("/foo").body(encoded).header("Content-Encoding", "unknown").buildExchange();
             assertEquals(CONTINUE, limit.handleRequest(exc));
-            assertEquals("unknown", exc.getRequest().getHeader().getContentEncoding());
+            assertEquals(List.of("unknown"), exc.getRequest().getHeader().getContentCodings());
+            assertArrayEquals(encoded, exc.getRequest().getBody().getContent());
+        }
+
+        /**
+         * #3819: "Content-Encoding: gzip" plus "Content-Encoding: br" is not a single coding Membrane
+         * decodes, so the body and both field lines are forwarded unchanged.
+         */
+        @Test
+        void bodyWithCodingsOnSeveralFieldLinesIsForwardedEncoded() throws Exception {
+            final var encoded = new byte[]{1, 2, 3, 4, 5};
+            final var exc = Request.post("/foo").body(encoded)
+                    .header("Content-Encoding", "gzip")
+                    .header("Content-Encoding", "br").buildExchange();
+            assertEquals(CONTINUE, limit.handleRequest(exc));
+            assertEquals("gzip, br", exc.getRequest().getHeader().getValuesAsString("Content-Encoding"));
             assertArrayEquals(encoded, exc.getRequest().getBody().getContent());
         }
 
@@ -323,7 +338,7 @@ class LimitInterceptorTest {
 
             assertEquals(CONTINUE, limit.handleResponse(exc));
             assertEquals(String.valueOf(gzip.length), response.getHeader().getFirstValue("Content-Length"));
-            assertEquals("gzip", response.getHeader().getContentEncoding());
+            assertEquals(List.of("gzip"), response.getHeader().getContentCodings());
             assertArrayEquals(gzip, response.getBody().getContent());
         }
 

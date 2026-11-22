@@ -215,7 +215,13 @@ public class SSLParser {
 	}
 
 	/**
-	 * @description Either not set (=no), or <tt>want</tt> or <tt>need</tt>.
+	 * @description Either not set (=no), or <tt>want</tt> or <tt>need</tt>. Cannot be combined with
+	 * <tt>keyGenerator</tt> or <tt>acme</tt>. On a port shared by several APIs, the TLS handshake is done by the
+	 * first API whose certificate covers the host name the client sends, not by the API that the request is
+	 * for. Clients that send no host name get the API marked <tt>useAsDefault</tt>, or else the first one. A
+	 * request to an API with <tt>need</tt> over a handshake that did not check the client certificate the same
+	 * way is answered with <tt>421</tt>, by a forward proxy with <tt>403</tt>. APIs with different <tt>clientAuth</tt> or trust stores on one port
+	 * need certificates whose names do not overlap, or separate ports.
 	 * @default <i>not set</i>
 	 * @example <tt>need</tt>
 	 */

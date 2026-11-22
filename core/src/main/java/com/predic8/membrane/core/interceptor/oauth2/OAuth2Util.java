@@ -25,7 +25,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
+import static com.predic8.membrane.core.util.StringList.parseToList;
 
 public class OAuth2Util {
 
@@ -78,12 +78,17 @@ public class OAuth2Util {
             return "http";
         }
         if (xForwardedProto != null) {
-            return "https".equals(xForwardedProto) ? "https" : "http";
+            return "https".equalsIgnoreCase(xForwardedProto) ? "https" : "http";
         }
         return sp.getProtocol() ;
     }
 
+    /**
+     * @return the first entry of X-Forwarded-Proto, or null if there is none. Several field lines are
+     * joined into one comma-separated line by RuleMatchingInterceptor; the first entry is the client-facing one.
+     */
     private static String getxForwardedProto(Exchange exc) {
-        return exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
+        final var forwardedProtos = parseToList(exc.getRequest().getHeader().getXForwardedProto());
+        return forwardedProtos.isEmpty() ? null : forwardedProtos.getFirst();
     }
 }

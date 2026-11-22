@@ -549,4 +549,14 @@ class KafkaConsumerProxyTest {
         final var e = assertThrows(ConfigurationException.class, () -> consumer.init(dummyRouter()));
         assertTrue(e.getMessage().contains("Membrane Kafka Extension"));
     }
+
+    @Test
+    void startupLabelWithDefaultName() {
+        final var consumer = new KafkaConsumerProxy();
+        consumer.setTopic("orders");
+        consumer.setGroupId("membrane");
+        consumer.setName("orders-membrane");
+
+        assertEquals("topic:orders group:membrane", consumer.getStartupLabel());
+    }
 }

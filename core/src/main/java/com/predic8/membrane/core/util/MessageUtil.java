@@ -91,10 +91,10 @@ public class MessageUtil {
 	 * plain wrapping: {@link #getContentAsStream} reads an unencoded body through the same try block.
 	 */
 	private static ReadingBodyException decodingFailure(Message message, IOException e) {
-		final String contentEncoding = message.getHeader().getContentEncoding();
-		if (contentEncoding == null)
+		final var codings = message.getHeader().getContentCodings();
+		if (codings.isEmpty())
 			return new ReadingBodyException(e, message);
-		return new ReadingBodyException(new DecodingException(contentEncoding, e), message);
+		return new ReadingBodyException(new DecodingException(String.join(", ", codings), e), message);
 	}
 
 	/**

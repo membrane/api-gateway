@@ -17,6 +17,7 @@ package com.predic8.membrane.core.proxies;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
+import static com.predic8.membrane.core.util.StompUtil.STOMP_VERSION;
 import static com.predic8.membrane.core.util.StompUtil.isSTOMPConnectFrame;
 
 /**
@@ -30,7 +31,7 @@ public class STOMPProxy extends SSLableProxy {
 		this.key = new ServiceProxyKey(80) {
 			@Override
 			public boolean matchesVersion(String version) {
-				return version.equals("STOMP");
+				return STOMP_VERSION.equals(version);
 			}
 
 			/**

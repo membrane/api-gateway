@@ -82,6 +82,41 @@ public class YAMLParsingTest {
         );
     }
 
+    /**
+     * An empty value ({@code attr:}) is an empty string, not a YAML null, so it is accepted.
+     */
+    @Test
+    void emptyAttributeValueIsEmptyString() {
+        final var sources = splitSources(MC_MAIN_DEMO + """
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                @MCElement(name="demo", topLevel=true, component=false)
+                public class DemoElement {
+                    public String attr;
+
+                    public String getAttr() {
+                        return attr;
+                    }
+
+                    @MCAttribute
+                    public void setAttr(String attr) {
+                        this.attr = attr;
+                    }
+                }
+                """);
+        final var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        assertStructure(
+                parseYAML(result, """
+                        demo:
+                            attr:
+                        """),
+                clazz("DemoElement",
+                        property("attr", value("")))
+        );
+    }
+
     @Test
     public void singleChild() {
         var sources = splitSources(MC_MAIN_DEMO + """

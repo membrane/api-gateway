@@ -65,6 +65,12 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     private InputStream srcIn;
     private OutputStream srcOut;
 
+    /**
+     * The body of the current request as read from the client connection. The flow may replace the request or its
+     * body, but only this body tells whether the connection is at the start of the next request.
+     */
+    private AbstractBody clientBody;
+
     private boolean showSSLExceptions = false;
     private Http2ServerHandler http2ServerHandler;
 
@@ -185,6 +191,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             // RFC 9112 §6.1: a transfer coding the server does not understand SHOULD be answered with 501.
             log.debug("Rejecting request with unsupported transfer coding: {}", e.getMessage());
             respondWithNotImplementedAndClose(e.getMessage());
+        } catch (UnsupportedHttpVersionException e) {
+            // RFC 9110 §15.6.6
+            log.debug("Rejecting request with unsupported HTTP version.");
+            respondWithVersionNotSupportedAndClose(e.getMessage());
         } catch (MalformedHeaderException e) {
             // Invalid message framing (e.g. conflicting Content-Length), RFC 9112 §6.3:
             // respond 400 and close the connection to avoid request smuggling.
@@ -276,7 +286,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
         readAndParseRequest();
 
-        if (!getTransport().getMethodValidator().isValid(srcReq.getMethod()))
+        // A STOMP command is not an HTTP method, see Request.parseStartLine()
+        if (!isSTOMPConnectFrame(srcReq) && !getTransport().getMethodValidator().isValid(srcReq.getMethod()))
             return rejectInvalidMethod();
 
         process();
@@ -296,6 +307,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private void readAndParseRequest() throws IOException, EndOfStreamException {
         srcReq.read(srcIn, true);
+        clientBody = srcReq.getBody();
         exchange.received();
 
         log.debug("Requested URI: {}", srcReq.getUri());
@@ -315,11 +327,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
         Connection con = exchange.getTargetConnection();
         exchange.setTargetConnection(null);
-        if (!exchange.canKeepConnectionAlive())
+        if (!canKeepConnectionAlive(exchange.getResponse()))
             return terminateWithConnection(con);
-        if (exchange.getResponse().isRedirect()) {
-            return terminateWithConnection(con);
-        }
+        // Release the request before the connection waits for the next one, so an idle connection does not keep it.
+        srcReq = null;
+        clientBody = null;
         exchange.detach();
         exchange = new Exchange(this);
 
@@ -390,8 +402,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
      * <p>
      * If the body has not already been read, the header includes
      * "Expect: 100-continue" and the body has not already been sent by the
-     * client, nothing will be done. (Allowing the HTTP connection state to skip
-     * over the body transmission.)
+     * client, nothing will be done. The body stays unread, so the connection is
+     * closed after the response, see {@link #isClientBodyConsumed()}.
      */
     private void removeBodyFromBuffer() throws ReadingBodyException {
         try {
@@ -450,8 +462,43 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
+    private void respondWithVersionNotSupportedAndClose(String message) {
+        try {
+            final var response = user(getTransport().getRouter().getConfiguration().isProduction(), "http-server-handler")
+                    .status(505)
+                    .title("HTTP Version Not Supported")
+                    .addSubSee("unsupported-http-version")
+                    .detail(message)
+                    .build();
+            response.getHeader().setConnection(Header.CLOSE);
+            response.write(srcOut, false);
+            srcOut.flush();
+        } catch (Exception e) {
+            log.debug("Could not send 505 response for request with unsupported HTTP version.", e);
+        }
+    }
+
+    /**
+     * Whether the client connection can carry another request after this response. Checked both before the response
+     * is written, to announce the close, and afterwards, to act on it.
+     */
+    private boolean canKeepConnectionAlive(Response res) {
+        return exchange.canKeepConnectionAlive() && isClientBodyConsumed() && !res.isRedirect();
+    }
+
+    /**
+     * Whether the request body was read from the client connection to its end. A streamed or discarded body is read
+     * once it was consumed completely; a failed body never is. A body that failed or was streamed only in part leaves
+     * its rest on the connection, where it would be parsed as the next request. So may a body that was skipped for
+     * <code>Expect: 100-continue</code> (see {@link #removeBodyFromBuffer()}): the client may send it without waiting
+     * for <code>100 Continue</code> (RFC 9110 10.1.1).
+     */
+    private boolean isClientBodyConsumed() {
+        return clientBody.isRead();
+    }
+
     protected void writeResponse(Response res) throws IOException {
-        if (res.isRedirect())
+        if (!canKeepConnectionAlive(res))
             res.getHeader().setConnection(Header.CLOSE);
         // The rest of the request body is still on the connection, so it is closed after the response
         // (Exchange.canKeepConnectionAlive). Tell the client, whichever plugin left the body unread.

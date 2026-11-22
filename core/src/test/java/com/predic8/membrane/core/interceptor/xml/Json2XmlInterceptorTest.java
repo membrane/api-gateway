@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.path.json.*;
 import io.restassured.path.xml.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.xml.sax.*;
 
 import javax.xml.namespace.NamespaceContext;
@@ -28,7 +30,9 @@ import javax.xml.xpath.*;
 import java.io.*;
 import java.net.*;
 import java.util.Iterator;
+import java.util.List;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -205,6 +209,90 @@ public class Json2XmlInterceptorTest {
         assertEquals(ABORT, interceptor.handleResponse(exc));
         assertEquals(500, exc.getResponse().getStatusCode());
         assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("db-host-3"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"price\":9.99} {\"price\":12}",
+            "{\"price\":9.99}]]] garbage",
+            "{\"a\":1,}",
+            "{a:1}",
+            "hello",
+    })
+    void nonStandardJsonInTheRequestIsA400(String json) throws URISyntaxException {
+        final var exc = put("/invalid").json(json).buildExchange();
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void inputAfterTheJsonFromTheBackendIsA500() throws URISyntaxException {
+        final var exc = get("/invalid").buildExchange();
+        exc.setResponse(Response.ok().json("{\"price\":9.99} {\"price\":12}").build());
+
+        assertEquals(ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Nested
+    class EmptyBody {
+
+        static List<Named<Json2XmlInterceptor>> interceptors() {
+            final var heuristic = new Json2XmlInterceptor();
+            heuristic.init(new DefaultRouter());
+            return List.of(Named.of("without xmlSchema", heuristic),
+                    Named.of("with xmlSchema", withSchema("classpath:/xml-schema/library.xsd")));
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void anEmptyRequestIsA400(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            final var exc = put("/empty").json("").buildExchange();
+
+            assertEquals(ABORT, json2Xml.handleRequest(exc));
+            assertEquals(400, exc.getResponse().getStatusCode());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void anEmptyResponseIsA500(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            final var exc = get("/empty").buildExchange();
+            exc.setResponse(Response.ok().json("").build());
+
+            assertEquals(ABORT, json2Xml.handleResponse(exc));
+            assertEquals(500, exc.getResponse().getStatusCode());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void aNotModifiedResponseIsPassedThrough(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            assertPassedThrough(json2Xml, get("/empty").buildExchange(),
+                    Response.notModified("Thu, 19 Nov 2026 10:00:00 GMT").contentType(APPLICATION_JSON).build());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void aNoContentResponseIsPassedThrough(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            assertPassedThrough(json2Xml, get("/empty").buildExchange(),
+                    Response.noContent().contentType(APPLICATION_JSON).build());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void theResponseToAHeadRequestIsPassedThrough(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            assertPassedThrough(json2Xml, get("/empty").method("HEAD").buildExchange(),
+                    Response.ok().contentType(APPLICATION_JSON).build());
+        }
+
+        private static void assertPassedThrough(Json2XmlInterceptor json2Xml, Exchange exc, Response res) {
+            exc.setResponse(res);
+            final var status = res.getStatusCode();
+
+            assertEquals(CONTINUE, json2Xml.handleResponse(exc));
+            assertEquals(status, exc.getResponse().getStatusCode());
+            assertTrue(exc.getResponse().isJSON(), "Content-Type is left as it is");
+            assertTrue(exc.getResponse().isBodyEmpty());
+        }
     }
 
     private static String xPath(String body, String expression) throws XPathExpressionException {

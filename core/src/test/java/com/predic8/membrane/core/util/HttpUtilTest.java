@@ -327,6 +327,37 @@ public class HttpUtilTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"a b", "a\tb", "a\u000Bb", "a\fb", "a\u001Cb", "a\u0085b", " ", "ab\t"})
+    void whitespaceOrNelIsFound(String s) {
+        assertTrue(containsWhitespace(s));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "/foo?a=1", "GET", " ", "/Ã¤"})
+    void stringWithoutWhitespaceOrNel(String s) {
+        assertFalse(containsWhitespace(s));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "M-SEARCH", "!#$%&'*+-.^_`|~", "a1"})
+    void token(String s) {
+        assertTrue(isToken(s));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "G@T", "G T", "\"GET\"", "G(T)", "a\u0085", "\u00c4", "a\u0001"})
+    void notAToken(String s) {
+        assertFalse(isToken(s));
+    }
+
+    @Test
+    void tokenPrefix() {
+        assertTrue(isToken("Host: example.com", 4));
+        assertFalse(isToken("Ho st: example.com", 5));
+        assertFalse(isToken("Host", 0));
+    }
+
+    @ParameterizedTest
     @CsvSource({
             "same-origin, false",
             "none, false",
