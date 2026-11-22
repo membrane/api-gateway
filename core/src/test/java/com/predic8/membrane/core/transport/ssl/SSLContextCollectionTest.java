@@ -50,45 +50,46 @@ class SSLContextCollectionTest {
     }
 
     /**
-     * The first context whose certificate covers a host name does its handshakes. If it asks for no client
-     * certificate, an API with {@code clientAuth: need} for that name answers every request with 421.
+     * The first context whose certificate covers a host name does its handshakes. If only one of two contexts
+     * covering a name needs a client certificate, the API of the other one cannot be reached under that name.
      */
     @Test
-    void earlierContextWithoutClientAuthShadowsHostNameOfContextThatNeedsIt() {
-        // Wildcard first, own certificate second
-        assertShadowed("*.example.com", false, "secure.example.com", true, "secure.example.com");
-        // Same certificate for both
-        assertShadowed("secure.example.com", false, "secure.example.com", true, "secure.example.com");
+    void contextsThatDifferInClientAuthAndShareAHostNameConflict() {
+        // Wildcard first, own certificate with clientAuth second: the API with clientAuth answers 421
+        assertConflict("*.example.com", false, "secure.example.com", true, "secure.example.com");
+        // clientAuth first, wildcard second: clients of the other API without a certificate fail the handshake
+        assertConflict("secure.example.com", true, "*.example.com", false, "secure.example.com");
+        // Same certificate for both, in either order
+        assertConflict("secure.example.com", false, "secure.example.com", true, "secure.example.com");
+        assertConflict("secure.example.com", true, "secure.example.com", false, "secure.example.com");
         // A certificate without DNS names matches every host name
-        assertShadowed("*", false, "secure.example.com", true, "secure.example.com");
-        assertShadowed("public.example.com", false, "*", true, "public.example.com");
+        assertConflict("*", false, "secure.example.com", true, "secure.example.com");
+        assertConflict("public.example.com", false, "*", true, "public.example.com");
     }
 
     @Test
-    void noShadowingReported() {
-        // The context that needs client authentication comes first
-        assertNotShadowed("secure.example.com", true, "*.example.com", false);
+    void noConflictReported() {
         // Different host names
-        assertNotShadowed("public.example.com", false, "secure.example.com", true);
-        // The later context does not need client authentication
-        assertNotShadowed("*.example.com", false, "public.example.com", false);
+        assertNoConflict("public.example.com", false, "secure.example.com", true);
+        // Neither needs client authentication
+        assertNoConflict("*.example.com", false, "public.example.com", false);
         // Both need client authentication
-        assertNotShadowed("*.example.com", true, "secure.example.com", true);
+        assertNoConflict("*.example.com", true, "secure.example.com", true);
     }
 
-    private static void assertShadowed(String earlierNames, boolean earlierNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth, String hostName) {
-        final var earlier = contextFor(earlierNames, earlierNeedsClientAuth);
+    private static void assertConflict(String firstNames, boolean firstNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth, String hostName) {
+        final var first = contextFor(firstNames, firstNeedsClientAuth);
         final var later = contextFor(laterNames, laterNeedsClientAuth);
 
-        assertEquals(List.of(new SSLContextCollection.Builder.ShadowedClientAuthentication(later, earlier, hostName)),
-                new SSLContextCollection.Builder().add(earlier).add(later).getShadowedClientAuthentications());
+        assertEquals(List.of(new SSLContextCollection.Builder.ClientAuthenticationConflict(first, later, hostName)),
+                new SSLContextCollection.Builder().add(first).add(later).getClientAuthenticationConflicts());
     }
 
-    private static void assertNotShadowed(String earlierNames, boolean earlierNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth) {
+    private static void assertNoConflict(String firstNames, boolean firstNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth) {
         assertEquals(List.of(), new SSLContextCollection.Builder()
-                .add(contextFor(earlierNames, earlierNeedsClientAuth))
+                .add(contextFor(firstNames, firstNeedsClientAuth))
                 .add(contextFor(laterNames, laterNeedsClientAuth))
-                .getShadowedClientAuthentications());
+                .getClientAuthenticationConflicts());
     }
 
     private static SSLContext contextFor(String dnsNames, boolean needClientAuth) {

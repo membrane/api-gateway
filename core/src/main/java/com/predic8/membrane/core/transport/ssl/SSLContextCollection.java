@@ -60,38 +60,38 @@ public class SSLContextCollection implements SSLProvider {
 
 		public SSLProvider build() {
 			if (sslContexts.size() > 1 || useCollection) {
-				for (final var s : getShadowedClientAuthentications())
-					log.warn("TLS configuration {} needs a client certificate, but {}, which does not, comes first and also covers the host name '{}'. It does the handshake for that name, so requests to the API with clientAuth are answered with 421. List the API with clientAuth first or use a separate port.",
-							s.shadowed().getLocation(), s.shadowing().getLocation(), s.hostName());
+				for (final var c : getClientAuthenticationConflicts())
+					log.warn("TLS configurations {} and {} on the same port differ in whether they need a client certificate, but both cover the host name '{}'. Only {} does the handshake for that name, so requests to the other API fail with 421 or a failed handshake. Use certificates whose names do not overlap, or separate ports.",
+							c.first().getLocation(), c.later().getLocation(), c.hostName(), c.first().getLocation());
 				return new SSLContextCollection(sslContexts, dnsNames);
 			} else
 				return sslContexts.getFirst();
 		}
 
 		/**
-		 * A context that needs client authentication, and an earlier one that does not but also covers one of its
-		 * host names.
+		 * Two contexts of a port of which only one needs client authentication, and a host name both cover.
+		 *
+		 * @param first the context that does the handshakes for that host name
+		 * @param later the context that never gets them
 		 */
-		record ShadowedClientAuthentication(SSLContext shadowed, SSLContext shadowing, String hostName) {}
+		record ClientAuthenticationConflict(SSLContext first, SSLContext later, String hostName) {}
 
 		/**
 		 * The handshake for a host name is done by the first context whose certificate covers it, not by the API
-		 * whose host matches. An API that needs a client certificate answers every request with 421 when an earlier
-		 * context that does not ask for one covers its host name, see {@link SSLContext#admitsSessionOf}.
+		 * whose host matches. If only one of two contexts that cover a host name needs a client certificate, the
+		 * API of the later one cannot be reached under that name: an API that needs a client certificate answers
+		 * 421 (see {@link SSLContext#admitsSessionOf}), and clients of an API that does not need one fail the
+		 * handshake when they have none.
 		 */
-		List<ShadowedClientAuthentication> getShadowedClientAuthentications() {
-			final var result = new ArrayList<ShadowedClientAuthentication>();
+		List<ClientAuthenticationConflict> getClientAuthenticationConflicts() {
+			final var result = new ArrayList<ClientAuthenticationConflict>();
 			for (int later = 1; later < sslContexts.size(); later++) {
-				final var shadowed = sslContexts.get(later);
-				if (!shadowed.isNeedClientAuth())
-					continue;
 				for (int earlier = 0; earlier < later; earlier++) {
-					final var shadowing = sslContexts.get(earlier);
-					if (shadowing.isNeedClientAuth())
+					if (sslContexts.get(earlier).isNeedClientAuth() == sslContexts.get(later).isNeedClientAuth())
 						continue;
 					final var name = getSharedHostName(dnsNames.get(earlier), dnsNames.get(later));
 					if (name != null)
-						result.add(new ShadowedClientAuthentication(shadowed, shadowing, name));
+						result.add(new ClientAuthenticationConflict(sslContexts.get(earlier), sslContexts.get(later), name));
 				}
 			}
 			return result;
