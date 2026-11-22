@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 
+import static com.predic8.membrane.core.util.ZstdTestUtil.withZstdDecoding;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageTest {
@@ -25,9 +26,18 @@ class MessageTest {
     void isContentEncodingDecodedOnlyForTheCodingsThatAreDecoded() throws Exception {
         for (final var coding : new String[]{"gzip", "deflate", "br", "GZIP"})
             assertTrue(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
-        for (final var coding : new String[]{"unknown", "identity", "gzip, br"})
+        for (final var coding : new String[]{"unknown", "identity", "gzip, br", "zstd"})
             assertFalse(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
         assertFalse(Request.post("/").body("plain").build().isContentEncodingDecoded());
+    }
+
+    @Test
+    void zstdIsDecodedOnlyWhenSwitchedOn() throws Throwable {
+        assertFalse(requestWithContentEncoding("zstd").isContentEncodingDecoded());
+        withZstdDecoding(() -> {
+            for (final var coding : new String[]{"zstd", "ZSTD"})
+                assertTrue(requestWithContentEncoding(coding).isContentEncodingDecoded(), coding);
+        });
     }
 
     /**
@@ -43,6 +53,10 @@ class MessageTest {
         assertTrue(requestWithContentEncoding(", gzip,").isGzip());
         assertTrue(requestWithContentEncoding("", "br").isBrotli());
         assertTrue(requestWithContentEncoding("", "deflate", ",").isDeflate());
+        assertTrue(requestWithContentEncoding(", zstd,").isZstd());
+        assertFalse(requestWithContentEncoding("gzip, zstd").isZstd());
+        assertFalse(requestWithContentEncoding("gzip", "zstd").isZstd());
+        assertFalse(requestWithContentEncoding("zstd", "gzip").isContentEncodingDecoded());
     }
 
     @Test

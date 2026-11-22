@@ -24,14 +24,17 @@ import org.junit.jupiter.api.function.Executable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.core.util.ZstdTestUtil.withZstdDecoding;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class MessageUtilTest {
 
@@ -131,6 +134,47 @@ class MessageUtilTest {
         }
     }
 
+    @Test
+    void zstdBodyIsDecodedWhenSwitchedOn() throws Throwable {
+        final var compressed = ZstdDecodingInputStreamTest.zstd("payload");
+        withZstdDecoding(() -> {
+            for (final var encoding : new String[]{"zstd", "ZSTD", ", zstd,"}) {
+                assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
+                try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
+                    assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
+                }
+            }
+        });
+    }
+
+    /**
+     * zstd decoding is off by default, so zstd is handled like a coding that Membrane does not decode.
+     */
+    @Test
+    void zstdBodyIsNotDecodedByDefault() throws Exception {
+        final var encoded = ZstdDecodingInputStreamTest.zstd("payload");
+        assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, "zstd")));
+        try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, "zstd"))) {
+            assertArrayEquals(encoded, content.readAllBytes());
+        }
+    }
+
+    /**
+     * Membrane decodes only a single coding, so zstd together with another coding is returned as it
+     * is, whether both are on one field line or on two.
+     */
+    @Test
+    void zstdWithAnotherCodingIsNotDecoded() throws Exception {
+        final var encoded = ZstdDecodingInputStreamTest.zstd("payload");
+        for (String[] fieldLines : new String[][]{{"gzip, zstd"}, {"gzip", "zstd"}, {"zstd", "gzip"}}) {
+            final var description = String.join(" | ", fieldLines);
+            assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, fieldLines)), description);
+            try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, fieldLines))) {
+                assertArrayEquals(encoded, content.readAllBytes(), description);
+            }
+        }
+    }
+
     /**
      * #3819: "Content-Encoding: gzip" plus "Content-Encoding: br" means "gzip, br" (RFC 9110 5.3).
      * Membrane does not decode several codings, so the body is returned as it is. Only reading the
@@ -162,6 +206,24 @@ class MessageUtilTest {
     }
 
     /**
+     * The decoder throws unchecked exceptions for malformed input; they must be reported as a
+     * decoding failure like those of the other codings, so a request gets a 400.
+     */
+    @Test
+    void corruptZstdBodyIsADecodingFailure() throws Throwable {
+        final var corrupt = ZstdDecodingInputStreamTest.zstd("payload");
+        corrupt[corrupt.length - 1] ^= 0x01; // content checksum
+        withZstdDecoding(() -> {
+            for (Executable decode : new Executable[]{
+                    () -> MessageUtil.getContent(encodedRequest(corrupt, "zstd")),
+                    () -> MessageUtil.getContentAsStream(encodedRequest(corrupt, "zstd")).readAllBytes()}) {
+                final var e = assertThrows(ReadingBodyException.class, decode);
+                assertEquals("zstd", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
+            }
+        });
+    }
+
+    /**
      * The failure names the coding that was decoded, not the empty first field line.
      */
     @Test
@@ -171,6 +233,45 @@ class MessageUtilTest {
 
         final var e = assertThrows(ReadingBodyException.class, () -> MessageUtil.getContent(encodedRequest(truncated, "", "gzip")));
         assertEquals("gzip", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
+    }
+
+    /**
+     * The zstd decoder needs sun.misc.Unsafe memory access, which later JDKs are to deny by default
+     * (JEP 471). On such a JVM, zstd is handled like a coding that Membrane does not decode, even if
+     * zstd decoding is switched on. The JVM option exists from JDK 23 on.
+     */
+    @Test
+    void zstdIsNotDecodedOnAJvmThatDeniesUnsafe() throws Exception {
+        assumeTrue(Runtime.version().feature() >= 23, "--sun-misc-unsafe-memory-access needs JDK 23 or later");
+        final var process = new ProcessBuilder(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "--sun-misc-unsafe-memory-access=deny",
+                "-D%s=true".formatted(ZstdDecodingInputStream.DECODING_PROPERTY),
+                "-cp", System.getProperty("java.class.path"),
+                ZstdOnAJvmThatDeniesUnsafe.class.getName())
+                .redirectErrorStream(true)
+                .start();
+        try {
+            final var output = assertTimeoutPreemptively(Duration.ofMinutes(1), () -> new String(process.getInputStream().readAllBytes(), UTF_8));
+            assertEquals(0, process.waitFor(), output);
+        } finally {
+            process.destroyForcibly();
+        }
+    }
+
+    /**
+     * Runs in a JVM started with <code>--sun-misc-unsafe-memory-access=deny</code> and zstd decoding
+     * switched on. The frame is fixed because the zstd encoder cannot run there either.
+     */
+    static final class ZstdOnAJvmThatDeniesUnsafe {
+        public static void main(String[] args) throws Exception {
+            final var encoded = ZstdDecodingInputStreamTest.REFERENCE_FRAME;
+            assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, "zstd")));
+            try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, "zstd"))) {
+                assertArrayEquals(encoded, content.readAllBytes());
+            }
+            assertFalse(encodedRequest(encoded, "zstd").isContentEncodingDecoded());
+        }
     }
 
     private static void assertDecodesTo(String expected, byte[] compressed) throws Exception {

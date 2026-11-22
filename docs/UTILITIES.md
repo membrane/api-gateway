@@ -39,7 +39,8 @@ Keep this file in sync when adding, renaming or removing a util class.
 
 | Class | Purpose |
 |---|---|
-| `util/MessageUtil` | Message body as stream/bytes, decompression |
+| `util/MessageUtil` | Message body as stream/bytes, decompression (gzip, deflate, br, zstd) |
+| `util/ZstdDecodingInputStream` | Decodes the zstd content coding for `MessageUtil`, rejecting frames with a window over 8 MB; `isDecodingEnabled()`: switched on (`-Dmembrane.core.http.zstd.decode=true`, off by default) and the decoder runs on this JVM |
 | `util/SOAPUtil` | SOAP detection/analysis (1.1 and 1.2), build SOAP faults, extract fault details and body |
 | `util/SOAPEnvelopeReader` | Package-private; reads a message event by event for `SOAPUtil.analyseSOAPMessage` and `validateSOAPEnvelope` (envelope structure and well-formedness checks) |
 | `util/soap/SoapVersion`, `util/soap/WSDLUtil` | SOAP version constants; rewrite relative WSDL paths |
@@ -111,6 +112,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/ProblemDetailsTestUtil` | Parse a `Response` into `ProblemDetails` |
 | `util/RecordingServerTestUtil` | Throw-away server that records whether it was called |
 | `util/NetworkTestUtil` | `freePort()`: an OS-assigned free port for tests that cannot bind `new ServerSocket(0)` themselves |
+| `util/ZstdTestUtil` | `withZstdDecoding()`: runs a test with zstd decoding switched on (off by default) |
 | `util/ThreadTestUtil` | `liveTimerThreads()`: the live `Timer-N` threads, for diffing before/after to detect leaked timers |
 | `openapi/util/JsonTestUtil` | Build `JsonNode`/bytes from maps in tests |
 | `openapi/util/OpenAPITestUtils` | Load/parse OpenAPI resources, create proxies from specs |
