@@ -24,10 +24,14 @@ import java.io.ByteArrayInputStream;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AbstractExchangeTest {
+
+    private static final byte[] PAYLOAD = "0123456789abcdefghij".getBytes();
 
     private static Body body(String s) {
         return new Body(new ByteArrayInputStream(s.getBytes()), s.getBytes().length);
@@ -67,6 +71,78 @@ class AbstractExchangeTest {
                 b -> new Request() {{setBody(b);}},
                 Exchange::setRequest
         );
+    }
+
+    @Test
+    void setRequest_keepsBodyWhenSameMessageIsSetAgain() {
+        assertSameMessageKeepsBody(
+                b -> {
+                    Request request = new Request() {{setBody(b);}};
+                    request.getHeader().setContentLength(PAYLOAD.length);
+                    return request;
+                },
+                Exchange::setRequest
+        );
+    }
+
+    @Test
+    void setResponse_keepsBodyWhenSameMessageIsSetAgain() {
+        assertSameMessageKeepsBody(
+                b -> {
+                    Response response = Response.ok().build();
+                    response.setBody(b);
+                    response.getHeader().setContentLength(PAYLOAD.length);
+                    return response;
+                },
+                Exchange::setResponse
+        );
+    }
+
+    @Test
+    void setRequest_discardsBodyWhenCleared() {
+        assertBodyDiscardedWhenCleared(
+                b -> new Request() {{setBody(b);}},
+                Exchange::setRequest
+        );
+    }
+
+    @Test
+    void setResponse_discardsBodyWhenCleared() {
+        assertBodyDiscardedWhenCleared(
+                b -> {
+                    Response response = Response.ok().build();
+                    response.setBody(b);
+                    return response;
+                },
+                Exchange::setResponse
+        );
+    }
+
+    private static <M extends Message> void assertSameMessageKeepsBody(Function<Body, M> msgFactory, BiConsumer<Exchange, M> setter) {
+        Exchange exc = new Exchange(null);
+        Body body = new Body(new ByteArrayInputStream(PAYLOAD), PAYLOAD.length);
+        M message = msgFactory.apply(body);
+        setter.accept(exc, message);
+
+        assertFalse(body.isRead());
+
+        setter.accept(exc, message);
+
+        assertFalse(body.isRead(), "same message must keep its unread body");
+        assertEquals(String.valueOf(PAYLOAD.length), message.getHeader().getFirstValue("Content-Length"));
+        assertArrayEquals(PAYLOAD, body.getContent());
+    }
+
+    private static <M extends Message> void assertBodyDiscardedWhenCleared(Function<Body, M> msgFactory, BiConsumer<Exchange, M> setter) {
+        Exchange exc = new Exchange(null);
+        Body body = body("old");
+        setter.accept(exc, msgFactory.apply(body));
+
+        assertFalse(body.isRead());
+
+        setter.accept(exc, null);
+
+        assertTrue(body.isRead(), "previous body must be discarded when the message is cleared");
     }
 
 
