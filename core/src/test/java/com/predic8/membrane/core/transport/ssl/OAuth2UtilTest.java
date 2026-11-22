@@ -14,11 +14,14 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.proxies.ProxyRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import static com.predic8.membrane.core.http.Header.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OAuth2UtilTest {
@@ -34,6 +37,25 @@ class OAuth2UtilTest {
     @ValueSource(strings = {"", "foo", "foo bar", "mopenid"})
     void isNotOpenIdScope(String scope) {
         assertFalse(OAuth2Util.isOpenIdScope(scope));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "https, https",
+            "HTTPS, https",
+            "http, http",
+            "'https,http', https",
+            "'https, http', https",
+            "'http,https', http",
+            "',', http"
+    })
+    void publicUrlUsesFirstForwardedProto(String forwardedProto, String expectedScheme) throws Exception {
+        final var exc = Request.get("/")
+                .header(HOST, "gateway.example.com")
+                .header(X_FORWARDED_PROTO, forwardedProto)
+                .buildExchange();
+        exc.setProxy(new ProxyRule());
+        assertEquals(expectedScheme + "://gateway.example.com", OAuth2Util.getPublicURL(exc));
     }
 
 }
