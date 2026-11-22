@@ -500,10 +500,6 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     protected void writeResponse(Response res) throws IOException {
         if (!canKeepConnectionAlive(res))
             res.getHeader().setConnection(Header.CLOSE);
-        // The rest of the request body is still on the connection, so it is closed after the response
-        // (Exchange.canKeepConnectionAlive). Tell the client, whichever plugin left the body unread.
-        if (srcReq.getBody().hasFailed())
-            res.getHeader().setConnection(Header.CLOSE);
         res.write(srcOut, false);
         srcOut.flush();
         exchange.setTimeResSent(System.currentTimeMillis());

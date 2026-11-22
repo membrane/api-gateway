@@ -217,21 +217,20 @@ public class HttpKeepAliveTest {
 	}
 
 	/**
-	 * <code>limit</code> wraps the body in one of unknown length, which fails when it is discarded unread. The body
-	 * read from the connection is complete, though, so replacing the wrapper must not close the connection.
+	 * A body of unknown length set by the flow fails when it is discarded unread. The body read from the connection
+	 * is complete, though, so replacing the flow's body must not close the connection.
 	 */
 	@Test
-	void connectionKeptAliveWhenUnreadLimitedBodyIsReplaced() throws Exception {
+	void connectionKeptAliveWhenUnreadFlowBodyIsReplaced() throws Exception {
 		sp1.getFlow().addFirst(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) {
-				exc.getRequest().setBodyContent("replaced".getBytes(US_ASCII));
+				final var request = exc.getRequest();
+				request.setBody(new Body(new ByteArrayInputStream("unread".getBytes(US_ASCII))));
+				request.setBodyContent("replaced".getBytes(US_ASCII));
 				return CONTINUE;
 			}
 		});
-		final var limit = new LimitInterceptor();
-		limit.setMaxBodyLength(1000);
-		sp1.getFlow().addFirst(limit);
 
 		final var responses = sendRaw("""
 				POST /foo HTTP/1.1\r
