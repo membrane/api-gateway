@@ -17,12 +17,12 @@ import io.airlift.compress.zstd.ZstdInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -47,10 +47,12 @@ import java.util.function.Function;
  * window buffer is reused, not allocated again for every frame.
  * <p>
  * The decoder throws unchecked exceptions for malformed input. They are rethrown as
- * {@link IOException}, so they are handled like a failure of the other content codings. So is a
- * decoder that cannot run on this JVM because the JVM denies sun.misc.Unsafe memory access.
+ * {@link IOException}, so they are handled like a failure of the other content codings.
+ * <p>
+ * The decoder needs sun.misc.Unsafe memory access, which a JVM may deny. Use this class only if
+ * {@link #isDecoderAvailable()}.
  */
-final class ZstdDecodingInputStream extends InputStream {
+public final class ZstdDecodingInputStream extends InputStream {
 
     /**
      * RFC 9659 section 3: 8 MB (2^23 bytes) for the zstd content coding, the limit browsers
@@ -60,7 +62,14 @@ final class ZstdDecodingInputStream extends InputStream {
 
     private static final Logger log = LoggerFactory.getLogger(ZstdDecodingInputStream.class);
 
-    private static final AtomicBoolean unavailableLogged = new AtomicBoolean();
+    /**
+     * Made with the reference implementation (zstd 1.5.7) from "zstd zstd zstd zstd": a
+     * single-segment frame with a compressed block.
+     */
+    private static final byte[] CHECK_FRAME = {
+            0x28, (byte) 0xb5, 0x2f, (byte) 0xfd, 0x20, 0x13, 0x5d, 0x00, 0x00, 0x28, 0x7a, 0x73,
+            0x74, 0x64, 0x20, 0x01, 0x00, (byte) 0x90, (byte) 0x8b, 0x16
+    };
 
     private final FrameChecker frames;
     private final InputStream decoded;
@@ -71,15 +80,40 @@ final class ZstdDecodingInputStream extends InputStream {
     private long frameContentRead;
 
     ZstdDecodingInputStream(InputStream compressed) {
-        this(compressed, ZstdInputStream::new);
+        frames = new FrameChecker(compressed);
+        decoded = new ZstdInputStream(frames);
     }
 
     /**
-     * @param decoder makes the decoding stream from the checked compressed bytes; tests replace the decoder with it
+     * Whether the decoder can run on this JVM. It uses sun.misc.Unsafe, and on a JVM that denies its
+     * memory access methods (<code>--sun-misc-unsafe-memory-access=deny</code>, according to JEP 471
+     * the default of a later JDK), its class initialization fails. This is checked once, on the first
+     * call, so a JVM that never decodes zstd does not print the warning about sun.misc.Unsafe: call it
+     * only for a message that is zstd. If the decoder is not available, zstd is handled like a coding that
+     * Membrane does not decode.
      */
-    ZstdDecodingInputStream(InputStream compressed, Function<InputStream, InputStream> decoder) {
-        frames = new FrameChecker(compressed);
-        decoded = decoder.apply(frames);
+    public static boolean isDecoderAvailable() {
+        return DecoderCheck.AVAILABLE;
+    }
+
+    private static final class DecoderCheck {
+        static final boolean AVAILABLE = decoderWorks(ZstdInputStream::new);
+    }
+
+    /**
+     * Decodes a fixed frame. If that fails, the cause is logged as an error, because zstd bodies are then
+     * forwarded without decoding.
+     *
+     * @param decoder makes the decoding stream from compressed bytes; tests replace the decoder with it
+     */
+    static boolean decoderWorks(Function<InputStream, InputStream> decoder) {
+        try (final var in = decoder.apply(new ByteArrayInputStream(CHECK_FRAME))) {
+            in.readAllBytes();
+            return true;
+        } catch (IOException | RuntimeException | LinkageError e) {
+            log.error("The zstd decoder cannot run on this JVM, so zstd bodies are forwarded without decoding. It needs sun.misc.Unsafe memory access (see --sun-misc-unsafe-memory-access).", e);
+            return false;
+        }
     }
 
     @Override
@@ -94,8 +128,6 @@ final class ZstdDecodingInputStream extends InputStream {
             return readFrames(b, off, len);
         } catch (RuntimeException e) {
             throw new IOException(e.getMessage(), e);
-        } catch (LinkageError e) {
-            throw decoderUnavailable(e);
         }
     }
 
@@ -137,18 +169,6 @@ final class ZstdDecodingInputStream extends InputStream {
     private IOException contentSizeMismatch() {
         return new IOException("zstd frame content does not have the Frame_Content_Size of %s bytes in its header."
                 .formatted(Long.toUnsignedString(frames.contentSize)));
-    }
-
-    /**
-     * The decoder uses sun.misc.Unsafe. On a JVM that denies its memory access methods, the decoder's
-     * class initialization fails on the first read (ExceptionInInitializerError) and every later read
-     * fails with NoClassDefFoundError. Every zstd body then fails, so the cause is logged once as an error.
-     */
-    private static IOException decoderUnavailable(LinkageError e) {
-        final var message = "The zstd decoder cannot run on this JVM: it needs sun.misc.Unsafe memory access (see --sun-misc-unsafe-memory-access).";
-        if (unavailableLogged.compareAndSet(false, true))
-            log.error(message, e);
-        return new IOException(message, e);
     }
 
     @Override

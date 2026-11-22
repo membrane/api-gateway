@@ -18,6 +18,7 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.ZstdDecodingInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -564,7 +565,7 @@ public abstract class Message {
 	 * decode this message's Content-Encoding. For any other coding they return the encoded bytes.
 	 */
 	public boolean isContentEncodingDecoded() {
-		return isGzip() || isDeflate() || isBrotli() || isZstd();
+		return isGzip() || isDeflate() || isBrotli() || (isZstd() && ZstdDecodingInputStream.isDecoderAvailable());
 	}
 
 	/**

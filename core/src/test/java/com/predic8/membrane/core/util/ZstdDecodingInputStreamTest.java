@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import io.airlift.compress.zstd.ZstdInputStream;
 import io.airlift.compress.zstd.ZstdOutputStream;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,7 @@ class ZstdDecodingInputStreamTest {
      * Made with the reference implementation (zstd 1.5.7) from {@link #REFERENCE_CONTENT}:
      * <code>zstd --check -19</code>. A single-segment frame with a content checksum.
      */
-    private static final byte[] REFERENCE_FRAME = {
+    static final byte[] REFERENCE_FRAME = {
             0x28, (byte) 0xb5, 0x2f, (byte) 0xfd, 0x24, 0x3a, (byte) 0xa5, 0x01, 0x00, (byte) 0xa4, 0x02, 0x7b,
             0x22, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x3a, 0x22, 0x31,
             0x2c, 0x32, 0x2c, 0x33, 0x20, 0x77, 0x69, 0x74, 0x68, 0x20, 0x7a, 0x73,
@@ -248,26 +249,17 @@ class ZstdDecodingInputStreamTest {
      * ExceptionInInitializerError, every later one NoClassDefFoundError.
      */
     @Test
-    void reportsUnusableDecoderAsIOException() {
+    void decoderThatCannotRunIsNotAvailable() {
         for (final var error : new Error[]{
                 new ExceptionInInitializerError(new UnsupportedOperationException("objectFieldOffset")),
-                new NoClassDefFoundError("Could not initialize class io.airlift.compress.zstd.UnsafeUtil")}) {
-            assertUnusableDecoderReported(error, assertThrows(IOException.class, () -> unusableDecoder(error).read()));
-            assertUnusableDecoderReported(error, assertThrows(IOException.class, () -> unusableDecoder(error).read(new byte[10], 0, 10)));
-        }
+                new NoClassDefFoundError("Could not initialize class io.airlift.compress.zstd.UnsafeUtil")})
+            assertFalse(ZstdDecodingInputStream.decoderWorks(compressed -> failingStream(error)), error.toString());
     }
 
-    /**
-     * The injected decoder never reads the compressed bytes, so the test needs no zstd encoder,
-     * which would fail on such a JVM as well.
-     */
-    private static ZstdDecodingInputStream unusableDecoder(Error error) {
-        return new ZstdDecodingInputStream(new ByteArrayInputStream(REFERENCE_FRAME), compressed -> failingStream(error));
-    }
-
-    private static void assertUnusableDecoderReported(Error cause, IOException e) {
-        assertSame(cause, e.getCause());
-        assertTrue(e.getMessage().contains("--sun-misc-unsafe-memory-access"), e.getMessage());
+    @Test
+    void decoderIsAvailable() {
+        assertTrue(ZstdDecodingInputStream.decoderWorks(ZstdInputStream::new));
+        assertTrue(ZstdDecodingInputStream.isDecoderAvailable());
     }
 
     private static InputStream failingStream(Error error) {

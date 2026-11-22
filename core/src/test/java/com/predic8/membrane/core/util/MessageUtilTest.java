@@ -24,6 +24,7 @@ import org.junit.jupiter.api.function.Executable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Random;
@@ -32,6 +33,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class MessageUtilTest {
 
@@ -214,6 +216,44 @@ class MessageUtilTest {
 
         final var e = assertThrows(ReadingBodyException.class, () -> MessageUtil.getContent(encodedRequest(truncated, "", "gzip")));
         assertEquals("gzip", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
+    }
+
+    /**
+     * The zstd decoder needs sun.misc.Unsafe memory access, which later JDKs are to deny by default
+     * (JEP 471). On such a JVM, zstd is handled like a coding that Membrane does not decode. The JVM
+     * option exists from JDK 23 on.
+     */
+    @Test
+    void zstdIsNotDecodedOnAJvmThatDeniesUnsafe() throws Exception {
+        assumeTrue(Runtime.version().feature() >= 23, "--sun-misc-unsafe-memory-access needs JDK 23 or later");
+        final var process = new ProcessBuilder(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "--sun-misc-unsafe-memory-access=deny",
+                "-cp", System.getProperty("java.class.path"),
+                ZstdOnAJvmThatDeniesUnsafe.class.getName())
+                .redirectErrorStream(true)
+                .start();
+        try {
+            final var output = assertTimeoutPreemptively(Duration.ofMinutes(1), () -> new String(process.getInputStream().readAllBytes(), UTF_8));
+            assertEquals(0, process.waitFor(), output);
+        } finally {
+            process.destroyForcibly();
+        }
+    }
+
+    /**
+     * Runs in a JVM started with <code>--sun-misc-unsafe-memory-access=deny</code>. The frame is
+     * fixed because the zstd encoder cannot run there either.
+     */
+    static final class ZstdOnAJvmThatDeniesUnsafe {
+        public static void main(String[] args) throws Exception {
+            final var encoded = ZstdDecodingInputStreamTest.REFERENCE_FRAME;
+            assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, "zstd")));
+            try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, "zstd"))) {
+                assertArrayEquals(encoded, content.readAllBytes());
+            }
+            assertFalse(encodedRequest(encoded, "zstd").isContentEncodingDecoded());
+        }
     }
 
     private static void assertDecodesTo(String expected, byte[] compressed) throws Exception {

@@ -225,8 +225,8 @@ distribution/src/main/java/com/predic8/membrane/build/.
 
 -------------------------------------------------------------------------------
 
-This product bundles the Brotli decoder (org.brotli.dec) for decoding the br
-Content-Encoding. Its source is included under:
+This product bundles the Brotli decoder (org.brotli.dec). Its source is
+included under:
 
     core/src/main/java/org/brotli/dec/
 
@@ -255,8 +255,7 @@ Content-Encoding. Its source is included under:
 
 -------------------------------------------------------------------------------
 
-This product bundles aircompressor (io.airlift:aircompressor) for decoding the
-zstd Content-Encoding.
+This product bundles aircompressor (io.airlift:aircompressor).
 
     Licensed under the Apache License, Version 2.0.
     Source: https://github.com/airlift/aircompressor

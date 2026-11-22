@@ -48,7 +48,7 @@ public class MessageUtil {
 			if (msg.isBrotli()) {
 				return associateDecodingFailures(new BrotliInputStream(msg.getBodyAsStream()), msg);
 			}
-			if (msg.isZstd()) {
+			if (msg.isZstd() && ZstdDecodingInputStream.isDecoderAvailable()) {
 				return associateDecodingFailures(new ZstdDecodingInputStream(msg.getBodyAsStream()), msg);
 			}
 			return msg.getBodyAsStream();
@@ -82,7 +82,7 @@ public class MessageUtil {
 					return decoded.readAllBytes();
 				}
 			}
-			if (msg.isZstd()) {
+			if (msg.isZstd() && ZstdDecodingInputStream.isDecoderAvailable()) {
 				try (var decoded = new ZstdDecodingInputStream(msg.getBodyAsStream())) {
 					return decoded.readAllBytes();
 				}
