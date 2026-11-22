@@ -160,6 +160,7 @@ public class Header {
 
     private static final Pattern timeoutPattern = compile("timeout\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
     private static final Pattern maxPattern = compile("max\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
+    private static final Pattern NON_ALPHANUMERIC = compile("[^A-Za-z0-9]");
 
     private final List<HeaderField> fields = new ArrayList<>();
 
@@ -334,6 +335,24 @@ public class Header {
 
     public void removeFields(String name) {
         fields.removeIf(hf -> hf.getHeaderName().hasName(name));
+    }
+
+    /**
+     * Removes the fields named {@code name}, ignoring case, and those that only differ from it in characters
+     * other than letters and digits, like "X_User" or "X.User" for "X-User".
+     * <p>
+     * CGI (RFC 3875 4.1.18), and following it PHP and many WSGI servers, turn "-" into "_", so "X-User" and
+     * "X_User" become the same variable. lighttpd turns every character other than a letter or digit into "_".
+     * Before Membrane sets a header that a backend trusts, such as the identity of a logged-in user, it must remove
+     * every spelling a client could have sent, or the backend may see the client's value.
+     */
+    public void removeFieldsAndUnderscoreAliases(String name) {
+        final var canonical = toCgiVariableName(name);
+        fields.removeIf(hf -> toCgiVariableName(hf.getHeaderName().toString()).equalsIgnoreCase(canonical));
+    }
+
+    private static String toCgiVariableName(String headerName) {
+        return NON_ALPHANUMERIC.matcher(headerName).replaceAll("_");
     }
 
     /**

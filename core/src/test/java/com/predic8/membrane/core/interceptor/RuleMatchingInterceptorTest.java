@@ -15,18 +15,30 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.config.security.KeyStore;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.security.TrustStore;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
+import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.proxies.STOMPProxy;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.transport.http.FakeHttpHandler;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -40,6 +52,8 @@ import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.test.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
@@ -674,6 +688,185 @@ class RuleMatchingInterceptorTest {
 
         assertSame(proxyRule, exc.getProxy());
         assertEquals("http://example.com/a\\b", exc.getRequest().getUri());
+    }
+
+    /**
+     * Two APIs share a TLS port. The TLS handshake is done by the context that the SNI selects, the API by the Host
+     * header. A client must not reach an API that requires a client certificate through a handshake that did not
+     * ask for one or that checked it against another trust store, see Traefik CVE-2026-48491 and Apache httpd
+     * CVE-2025-23048.
+     */
+    @Nested
+    class ClientCertificateOfAnotherApiOnTheSamePort {
+
+        private static final int PORT = 3141;
+        private static final String SERVER_KEY = "classpath:/ssl-rsa.keystore";
+        private static final String SERVER_KEY_TRUST = "classpath:/ssl-rsa-pub.keystore";
+        private static final String OTHER_KEY = "classpath:/ssl-rsa2.keystore";
+        private static final String OTHER_KEY_TRUST = "classpath:/ssl-rsa-pub2.keystore";
+
+        private DefaultRouter tlsRouter;
+
+        @AfterEach
+        void stopTlsRouter() {
+            if (tlsRouter != null)
+                tlsRouter.stop();
+        }
+
+        @Test
+        @DisplayName("No client certificate for an API that needs one: 421")
+        void noCertificateForApiThatNeedsOne() throws Exception {
+            // "public" comes first, so it does the handshake of a client sending no SNI and asks for no certificate
+            startRouter(api("public.example", null, null), api("secure.example", "need", SERVER_KEY_TRUST));
+
+            final var rejected = request(null, "secure.example");
+            assertEquals("HTTP/1.1 421", statusOf(rejected));
+            // A retry with this host name as SNI can select the same context again, e.g. for APIs that only differ by path
+            assertFalse(rejected.contains("SNI"), rejected);
+            assertEquals("HTTP/1.1 200", statusOf(request(null, "public.example")));
+        }
+
+        @Test
+        @DisplayName("A client certificate the API does not trust: 421")
+        void certificateTheApiDoesNotTrust() throws Exception {
+            // "partner" does the handshake and trusts OTHER_KEY, "secure" only trusts SERVER_KEY
+            startRouter(api("partner.example", "need", OTHER_KEY_TRUST), api("secure.example", "need", SERVER_KEY_TRUST));
+
+            assertEquals("HTTP/1.1 421", statusOf(request(OTHER_KEY, "secure.example")));
+            assertEquals("HTTP/1.1 200", statusOf(request(OTHER_KEY, "partner.example")));
+        }
+
+        @Test
+        @DisplayName("A client certificate the API trusts passes, and an API without client authentication admits anyone")
+        void certificateTheApiTrusts() throws Exception {
+            startRouter(api("secure.example", "need", SERVER_KEY_TRUST), api("public.example", null, null));
+
+            assertEquals("HTTP/1.1 200", statusOf(request(SERVER_KEY, "secure.example")));
+            assertEquals("HTTP/1.1 200", statusOf(request(SERVER_KEY, "public.example")));
+        }
+
+        @Test
+        @DisplayName("Two APIs with the same TLS configuration on the same port both work")
+        void sameConfigurationOnBothApis() throws Exception {
+            startRouter(api("secure.example", "need", SERVER_KEY_TRUST), api("secure2.example", "need", SERVER_KEY_TRUST));
+
+            final var response = request(SERVER_KEY, "secure2.example");
+            assertEquals("HTTP/1.1 200", statusOf(response));
+            assertTrue(response.endsWith("secure2.example"), response);
+        }
+
+        @Test
+        @DisplayName("An earlier API whose certificate covers the host name does the handshake, even for SNI and a valid certificate: 421")
+        void earlierCertificateCoveringTheHostNameShadowsClientAuthentication() throws Exception {
+            // The test certificates have no DNS names, so "public" matches every SNI and does every handshake
+            startRouter(api("public.example", null, null), api("secure.example", "need", SERVER_KEY_TRUST));
+
+            assertEquals("HTTP/1.1 421", statusOf(request(SERVER_KEY, "secure.example", "/", "secure.example")));
+        }
+
+        @Test
+        @DisplayName("A target that cannot be parsed does not reach a forward proxy without its client authentication")
+        void malformedTargetToForwardProxyThatNeedsCertificate() throws Exception {
+            // The request does not match the host of "public", so it falls through to the forward proxy
+            startRouter(api("public.example", null, null), forwardProxy("need", SERVER_KEY_TRUST));
+
+            // A proxy must not answer 421 (RFC 9110 15.5.20)
+            assertEquals("HTTP/1.1 403", statusOf(request(null, "http://example.com/bad%zz", "example.com")));
+        }
+
+        @Test
+        @DisplayName("A target that cannot be parsed reaches a forward proxy whose client authentication the handshake did")
+        void malformedTargetToForwardProxyWithItsCertificate() throws Exception {
+            // The forward proxy comes first, so it does the handshake and asks for the certificate
+            startRouter(forwardProxy("need", SERVER_KEY_TRUST), api("public.example", null, null));
+
+            assertEquals("HTTP/1.1 200", statusOf(request(SERVER_KEY, "http://example.com/bad%zz", "example.com")));
+        }
+
+        private void startRouter(SSLableProxy... apis) throws Exception {
+            tlsRouter = new DefaultRouter();
+            tlsRouter.getConfiguration().setHotDeploy(false);
+            for (final var api : apis)
+                tlsRouter.add(api);
+            tlsRouter.start();
+        }
+
+        private static ServiceProxy api(String host, String clientAuth, String trustStore) {
+            final var api = new ServiceProxy(new ServiceProxyKey(host, "*", ".*", PORT), null, 0);
+            api.setName(host);
+            return withTlsAndAnswer(api, host, clientAuth, trustStore);
+        }
+
+        private static ProxyRule forwardProxy(String clientAuth, String trustStore) {
+            final var proxy = new ProxyRule(new ProxyRuleKey(PORT));
+            proxy.setName("forward-proxy");
+            return withTlsAndAnswer(proxy, "forward-proxy", clientAuth, trustStore);
+        }
+
+        private static <P extends SSLableProxy> P withTlsAndAnswer(P proxy, String answer, String clientAuth, String trustStore) {
+            final var ssl = new SSLParser();
+            ssl.setKeyStore(keyStore(SERVER_KEY));
+            ssl.setEndpointIdentificationAlgorithm(""); // The client certificates were not issued for a host name
+            if (clientAuth != null) {
+                ssl.setClientAuth(clientAuth);
+                ssl.setTrustStore(trustStore(trustStore));
+            }
+            proxy.setSslInboundParser(ssl);
+            proxy.getFlow().add(new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exc) {
+                    exc.setResponse(Response.ok(answer).build());
+                    return RETURN;
+                }
+            });
+            return proxy;
+        }
+
+        private static String request(String clientKey, String host) throws Exception {
+            return request(clientKey, "/", host);
+        }
+
+        /**
+         * Sends a request without SNI, so that the first API on the port does the handshake.
+         */
+        private static String request(String clientKey, String target, String host) throws Exception {
+            return request(clientKey, "", target, host);
+        }
+
+        /**
+         * @param sni the SNI host name to send, or the empty string for none
+         */
+        private static String request(String clientKey, String sni, String target, String host) throws Exception {
+            final var ssl = new SSLParser();
+            ssl.setTrustStore(trustStore(SERVER_KEY_TRUST));
+            ssl.setEndpointIdentificationAlgorithm(""); // The certificate was not issued for 'localhost'
+            if (clientKey != null)
+                ssl.setKeyStore(keyStore(clientKey));
+            final var client = new StaticSSLContext(ssl, new ResolverMap(), null);
+            try (final var socket = client.createSocket("localhost", PORT, 30000, sni, null)) {
+                socket.getOutputStream().write("GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n".formatted(target, host).getBytes(US_ASCII));
+                socket.getOutputStream().flush();
+                return new String(socket.getInputStream().readAllBytes(), US_ASCII);
+            }
+        }
+
+        private static String statusOf(String response) {
+            return response.substring(0, Math.min(12, response.length()));
+        }
+
+        private static KeyStore keyStore(String location) {
+            final var keyStore = new KeyStore();
+            keyStore.setLocation(location);
+            keyStore.setKeyPassword("secret");
+            return keyStore;
+        }
+
+        private static TrustStore trustStore(String location) {
+            final var trustStore = new TrustStore();
+            trustStore.setLocation(location);
+            trustStore.setPassword("secret");
+            return trustStore;
+        }
     }
 
     @Test
