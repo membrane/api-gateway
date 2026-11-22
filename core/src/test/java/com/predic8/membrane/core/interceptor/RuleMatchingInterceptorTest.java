@@ -770,7 +770,8 @@ class RuleMatchingInterceptorTest {
             // The request does not match the host of "public", so it falls through to the forward proxy
             startRouter(api("public.example", null, null), forwardProxy("need", SERVER_KEY_TRUST));
 
-            assertEquals("HTTP/1.1 421", statusOf(request(null, "http://example.com/bad%zz", "example.com")));
+            // A proxy must not answer 421 (RFC 9110 15.5.20)
+            assertEquals("HTTP/1.1 403", statusOf(request(null, "http://example.com/bad%zz", "example.com")));
         }
 
         @Test

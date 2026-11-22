@@ -17,12 +17,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLProtocolException;
+import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -50,52 +52,64 @@ class SSLContextCollectionTest {
     }
 
     /**
-     * The first context whose certificate covers a host name does its handshakes. If only one of two contexts
-     * covering a name needs a client certificate, the API of the other one cannot be reached under that name.
+     * The first context whose certificate covers a host name does its handshakes. If two contexts covering a name
+     * authenticate clients differently, the API of the other one cannot be reached under that name.
      */
     @Test
-    void contextsThatDifferInClientAuthAndShareAHostNameConflict() {
+    void contextsThatAuthenticateClientsDifferentlyAndShareAHostNameConflict() {
         // Wildcard first, own certificate with clientAuth second: the API with clientAuth answers 421
-        assertConflict("*.example.com", false, "secure.example.com", true, "secure.example.com");
+        assertConflict(context("*.example.com", null, CA_A), context("secure.example.com", "need", CA_A), "secure.example.com");
         // clientAuth first, wildcard second: clients of the other API without a certificate fail the handshake
-        assertConflict("secure.example.com", true, "*.example.com", false, "secure.example.com");
+        assertConflict(context("secure.example.com", "need", CA_A), context("*.example.com", null, CA_A), "secure.example.com");
         // Same certificate for both, in either order
-        assertConflict("secure.example.com", false, "secure.example.com", true, "secure.example.com");
-        assertConflict("secure.example.com", true, "secure.example.com", false, "secure.example.com");
+        assertConflict(context("secure.example.com", null, CA_A), context("secure.example.com", "need", CA_A), "secure.example.com");
+        assertConflict(context("secure.example.com", "need", CA_A), context("secure.example.com", null, CA_A), "secure.example.com");
+        // want lets a client without a certificate through, need does not
+        assertConflict(context("secure.example.com", "want", CA_A), context("secure.example.com", "need", CA_A), "secure.example.com");
         // A certificate without DNS names matches every host name
-        assertConflict("*", false, "secure.example.com", true, "secure.example.com");
-        assertConflict("public.example.com", false, "*", true, "public.example.com");
+        assertConflict(context("*", null, CA_A), context("secure.example.com", "need", CA_A), "secure.example.com");
+        assertConflict(context("public.example.com", null, CA_A), context("*", "need", CA_A), "public.example.com");
+        // Both ask for a certificate, but trust different issuers
+        assertConflict(context("*.example.com", "need", CA_A), context("secure.example.com", "need", CA_B), "secure.example.com");
+        assertConflict(context("*.example.com", "want", CA_A), context("secure.example.com", "want", CA_B), "secure.example.com");
     }
 
     @Test
     void noConflictReported() {
         // Different host names
-        assertNoConflict("public.example.com", false, "secure.example.com", true);
-        // Neither needs client authentication
-        assertNoConflict("*.example.com", false, "public.example.com", false);
-        // Both need client authentication
-        assertNoConflict("*.example.com", true, "secure.example.com", true);
+        assertNoConflict(context("public.example.com", null, CA_A), context("secure.example.com", "need", CA_B));
+        // Neither asks for a client certificate, whatever their trust stores
+        assertNoConflict(context("*.example.com", null, CA_A), context("public.example.com", null, CA_B));
+        // Both need client authentication with the same issuers
+        assertNoConflict(context("*.example.com", "need", CA_A), context("secure.example.com", "need", CA_A));
+        // A context that does not ask for a certificate admits every session, so its trust store does not matter
+        assertNoConflict(context("*.example.com", null, CA_B), context("secure.example.com", "want", CA_A));
     }
 
-    private static void assertConflict(String firstNames, boolean firstNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth, String hostName) {
-        final var first = contextFor(firstNames, firstNeedsClientAuth);
-        final var later = contextFor(laterNames, laterNeedsClientAuth);
+    private static final X509Certificate CA_A = mock(X509Certificate.class);
+    private static final X509Certificate CA_B = mock(X509Certificate.class);
 
+    private static void assertConflict(SSLContext first, SSLContext later, String hostName) {
         assertEquals(List.of(new SSLContextCollection.Builder.ClientAuthenticationConflict(first, later, hostName)),
                 new SSLContextCollection.Builder().add(first).add(later).getClientAuthenticationConflicts());
     }
 
-    private static void assertNoConflict(String firstNames, boolean firstNeedsClientAuth, String laterNames, boolean laterNeedsClientAuth) {
-        assertEquals(List.of(), new SSLContextCollection.Builder()
-                .add(contextFor(firstNames, firstNeedsClientAuth))
-                .add(contextFor(laterNames, laterNeedsClientAuth))
-                .getClientAuthenticationConflicts());
+    private static void assertNoConflict(SSLContext first, SSLContext later) {
+        assertEquals(List.of(), new SSLContextCollection.Builder().add(first).add(later).getClientAuthenticationConflicts());
     }
 
-    private static SSLContext contextFor(String dnsNames, boolean needClientAuth) {
+    /**
+     * @param clientAuth null, "want" or "need"
+     * @param acceptedIssuer the only issuer of client certificates the context trusts
+     */
+    private static SSLContext context(String dnsNames, String clientAuth, X509Certificate acceptedIssuer) {
+        final var trustManager = mock(X509TrustManager.class);
+        when(trustManager.getAcceptedIssuers()).thenReturn(new X509Certificate[]{acceptedIssuer});
         final var context = mock(SSLContext.class);
         when(context.constructHostNamePattern()).thenReturn(dnsNames);
-        when(context.isNeedClientAuth()).thenReturn(needClientAuth);
+        when(context.isNeedClientAuth()).thenReturn("need".equals(clientAuth));
+        when(context.isWantClientAuth()).thenReturn("want".equals(clientAuth));
+        when(context.getClientTrustManager()).thenReturn(trustManager);
         return context;
     }
 

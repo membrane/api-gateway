@@ -109,6 +109,8 @@ class HeaderTest {
         h.add("X-Auth-User", "1");
         h.add("X_Auth_User", "2");
         h.add("x-auth_user", "3");
+        h.add("X.Auth.User", "4");
+        h.add("X~Auth-User", "5");
         h.add("X-AuthUser", "kept");
         h.add("Host", "example.com");
 
