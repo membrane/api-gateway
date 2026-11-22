@@ -19,13 +19,14 @@
 api:
   port: 2000
   flow:
-    - for:
-        # Evaluates to a list
-        in: $.fruits
-        language: jsonpath
-        flow:
-          - log:
-              # `it` refers to the current list element
-              message: 'Fruit: ${it["name"]}'
+    - request:
+        - for:
+            # Evaluates to a list
+            in: $.fruits
+            language: jsonpath
+            flow:
+              - log:
+                  # `it` refers to the current list element
+                  message: 'Fruit: ${it["name"]}'
     - return:
         status: 200
