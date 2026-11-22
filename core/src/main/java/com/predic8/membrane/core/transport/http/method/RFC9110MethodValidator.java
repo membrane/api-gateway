@@ -15,7 +15,8 @@
 package com.predic8.membrane.core.transport.http.method;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.util.HttpUtil;
+
+import static com.predic8.membrane.core.util.HttpUtil.isToken;
 
 /**
  * @description Accepts any method matching the RFC 9110 token grammar (the spec's definition of a valid method),
@@ -33,10 +34,10 @@ import com.predic8.membrane.core.util.HttpUtil;
 public class RFC9110MethodValidator extends AbstractMethodValidator {
 
     /**
-     * RFC 9110 §5.6.2 token: {@code 1*tchar}. The method is known to be non-empty here.
+     * RFC 9110 §5.6.2 token: {@code 1*tchar}.
      */
     @Override
     protected boolean matches(String method) {
-        return method.chars().allMatch(HttpUtil::isTchar);
+        return isToken(method);
     }
 }

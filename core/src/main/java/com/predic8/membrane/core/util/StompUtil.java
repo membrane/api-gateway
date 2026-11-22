@@ -23,6 +23,16 @@ import static java.lang.Boolean.TRUE;
 
 public class StompUtil {
 
+    /**
+     * The version of a {@link Request} that holds a STOMP frame instead of an HTTP request.
+     */
+    public static final String STOMP_VERSION = "STOMP";
+
+    /**
+     * The STOMP 1.2 frame that opens a session like CONNECT.
+     */
+    public static final String COMMAND_STOMP = "STOMP";
+
     private StompUtil() {
     }
 
@@ -31,8 +41,8 @@ public class StompUtil {
      * server must handle in the same manner (STOMP 1.2, "CONNECT or STOMP Frame").
      */
     public static boolean isSTOMPConnectFrame(Request request) {
-        return "STOMP".equals(request.getVersion())
-               && (METHOD_CONNECT.equals(request.getMethod()) || "STOMP".equals(request.getMethod()));
+        return STOMP_VERSION.equals(request.getVersion())
+               && (METHOD_CONNECT.equals(request.getMethod()) || COMMAND_STOMP.equals(request.getMethod()));
     }
 
     /**

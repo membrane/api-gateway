@@ -86,6 +86,23 @@ class HeaderTest {
         assertEquals("example.com", h.getFirstValue("Host"));
     }
 
+    /**
+     * RFC 9110 5.3: several field lines form one list, in order. RFC 9110 5.6.1: empty list
+     * elements do not count.
+     */
+    @Test
+    void getContentCodingsCombinesFieldLinesAndDropsEmptyElements() {
+        assertEquals(List.of(), new Header().getContentCodings());
+
+        final var h = new Header();
+        h.add(CONTENT_ENCODING, "");
+        h.add(CONTENT_ENCODING, ", gzip,");
+        h.add("content-encoding", "br");
+
+        assertEquals(List.of("gzip", "br"), h.getContentCodings());
+        assertThrows(UnsupportedOperationException.class, () -> h.getContentCodings().add("zstd"));
+    }
+
     @Test
     void removeFieldsAndUnderscoreAliasesRemovesEverySpelling() {
         var h = new Header();

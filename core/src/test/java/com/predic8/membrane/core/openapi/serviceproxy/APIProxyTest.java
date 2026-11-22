@@ -19,7 +19,9 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
@@ -125,6 +127,30 @@ class APIProxyTest {
     private static OpenAPISpec invalidPathTemplateSpec() {
         final var spec = new OpenAPISpec();
         spec.location = getPathFromResource("openapi/specs/invalid-path-template.yml");
+        return spec;
+    }
+
+    @Test
+    @DisplayName("openapi: resolving to several base paths: each is rendered as a complete URL, comma-separated")
+    void startupLabelMultipleBasePathsCommaSeparated() {
+        final var proxy = openApiProxy("customers.yml");
+
+        assertEquals(Set.of("/", "/foo/"), proxy.getBasePaths().keySet());
+        assertEquals("shop  http://127.0.0.1:2000/, http://127.0.0.1:2000/foo/", proxy.getStartupLabel());
+    }
+
+    private static APIProxy openApiProxy(String fixture) {
+        final var proxy = new APIProxy();
+        proxy.setName("shop");
+        proxy.setOpenapi(List.of(openApiSpec(fixture)));
+        proxy.setKey(new APIProxyKey(2000));
+        proxy.init(new DummyTestRouter());
+        return proxy;
+    }
+
+    private static OpenAPISpec openApiSpec(String fixture) {
+        final var spec = new OpenAPISpec();
+        spec.location = getPathFromResource("openapi/specs/" + fixture);
         return spec;
     }
 }

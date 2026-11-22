@@ -46,6 +46,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.InetAddress;
 
+import static com.predic8.membrane.core.http.Header.HOST;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_HOST;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -863,5 +866,25 @@ class RuleMatchingInterceptorTest {
             trustStore.setPassword("secret");
             return trustStore;
         }
+    }
+
+    @Test
+    @DisplayName("All received X-Forwarded-Host field lines are kept when the Host is appended")
+    void xForwardedHostKeepsEveryFieldLine() throws Exception {
+        final var exc = get("/x").header(X_FORWARDED_HOST, "a.example.com").header(X_FORWARDED_HOST, "b.example.com").header(HOST, "membrane.example.com").buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertArrayEquals(new String[]{"a.example.com,b.example.com, membrane.example.com"}, exc.getRequest().getHeader().getValues(new HeaderName(X_FORWARDED_HOST)).stream().map(HeaderField::getValue).toArray());
+    }
+
+    @Test
+    @DisplayName("All received X-Forwarded-Proto field lines are kept")
+    void xForwardedProtoKeepsEveryFieldLine() throws Exception {
+        final var exc = get("/x").header(X_FORWARDED_PROTO, "https").header(X_FORWARDED_PROTO, "http").buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertArrayEquals(new String[]{"https,http"}, exc.getRequest().getHeader().getValues(new HeaderName(X_FORWARDED_PROTO)).stream().map(HeaderField::getValue).toArray());
     }
 }

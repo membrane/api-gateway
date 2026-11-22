@@ -381,6 +381,35 @@ public class BodyTest {
 		assertEquals("/second", second.getUri());
 	}
 
+	/**
+	 * With <code>retries: 0</code> the request body is sent without keeping a copy. The error has to tell
+	 * how to keep it readable for the response flow.
+	 */
+	@Test
+	void bodyStreamedWithoutCopyCannotBeReadAndTellsHowToKeepIt() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.write(new PlainBodyTransferer(new ByteArrayOutputStream()), false);
+
+		final var e = assertThrows(IllegalStateException.class, body::getContent);
+		assertTrue(e.getMessage().contains("read it in the request flow"), e.getMessage());
+	}
+
+	/**
+	 * Reading the request body in the request flow, e.g. in a script, keeps it readable in the response
+	 * flow, even when it is sent without keeping a copy.
+	 */
+	@Test
+	void bodyReadBeforeItIsSentWithoutCopyStaysReadable() throws IOException {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.getContent();
+		final var out = new ByteArrayOutputStream();
+
+		body.write(new PlainBodyTransferer(out), false);
+
+		assertEquals("content", out.toString(UTF_8));
+		assertEquals("content", new String(body.getContent(), UTF_8));
+	}
+
 	private static class RecordingObserver extends AbstractMessageObserver {
 		final ByteArrayOutputStream observed = new ByteArrayOutputStream();
 		boolean completed;

@@ -14,16 +14,21 @@
 
 package com.predic8.membrane.core.util.json;
 
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.http.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Optional;
@@ -101,6 +106,59 @@ public class JsonUtil {
      */
     public static String escapeJsonPointerSegment(String segment) {
         return segment.replace("~", "~0").replace("/", "~1");
+    }
+
+    /**
+     * Reads exactly one JSON value. Plain Jackson ignores input after the first value, and with
+     * FAIL_ON_TRAILING_TOKENS its message names Jackson types; this reports that case, and every other syntax error,
+     * as plain text with line and column.
+     *
+     * @param json text that should hold one JSON value
+     * @return the value, or a {@link MissingNode} if the text is empty or only whitespace
+     * @throws InvalidJsonException if the text is not valid JSON or holds more than one value
+     */
+    public static JsonNode readSingleValue(String json) throws InvalidJsonException {
+        try (final var parser = om.createParser(json)) {
+            final var node = readValue(parser);
+            if (node == null)
+                return MissingNode.getInstance();
+            final var after = locationOfInputAfterValue(parser);
+            if (after != null)
+                throw invalidJson("input after the JSON value", after, null);
+            return node;
+        } catch (InvalidJsonException e) {
+            throw e;
+        } catch (IOException e) {
+            // A parser over a String has no I/O that could fail.
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static JsonNode readValue(JsonParser parser) throws IOException {
+        try {
+            return om.readTree(parser);
+        } catch (JsonProcessingException e) {
+            // An end-of-input message embeds the start marker as "[Source: REDACTED (...); line: 1, column: 1]".
+            final var problem = e.getOriginalMessage().replaceAll("\\[Source: .*?; line: ", "[line: ");
+            throw invalidJson(problem, e.getLocation(), e);
+        }
+    }
+
+    /** @return where input after the value starts, or null if only whitespace follows it */
+    private static JsonLocation locationOfInputAfterValue(JsonParser parser) throws IOException {
+        try {
+            return parser.nextToken() == null ? null : parser.currentTokenLocation();
+        } catch (JsonProcessingException e) {
+            // Not even a token, e.g. a ']' that closes nothing
+            return e.getLocation() != null ? e.getLocation() : parser.currentLocation();
+        }
+    }
+
+    private static InvalidJsonException invalidJson(String problem, JsonLocation location, Throwable cause) {
+        if (location == null)
+            return new InvalidJsonException("Invalid JSON: %s".formatted(problem), cause);
+        return new InvalidJsonException("Invalid JSON: %s at line %d, column %d"
+                .formatted(problem, location.getLineNr(), location.getColumnNr()), cause);
     }
 
     /**

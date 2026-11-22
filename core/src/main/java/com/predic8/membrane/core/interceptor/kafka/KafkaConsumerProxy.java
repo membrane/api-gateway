@@ -121,7 +121,7 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
     public void init() {
         super.init();
         if (name == null || name.isEmpty())
-            name = topic + "-" + groupId;
+            name = defaultName();
         ((InternalProxyKey) key).setServiceName(getName());
         checkRouterConfiguration();
         stopConsumer();
@@ -453,5 +453,27 @@ public class KafkaConsumerProxy extends AbstractServiceProxy implements NotPortO
 
     public String getSaslJaasConfig() {
         return saslJaasConfig;
+    }
+
+    private String defaultName() {
+        return topic + "-" + groupId;
+    }
+
+    @Override
+    public String getKindLabel() {
+        return "KafkaConsumer:";
+    }
+
+    /**
+     * @return Topic and consumer group, preceded by the name when it differs from the default name
+     */
+    @Override
+    public String getStartupLabel() {
+        final var label = "topic:%s group:%s".formatted(getTopic(), getGroupId());
+        final var name = getName();
+        if (name == null || name.isEmpty() || name.equals(defaultName())) {
+            return label;
+        }
+        return name + " " + label;
     }
 }
