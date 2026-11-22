@@ -240,19 +240,6 @@ public class Header {
     }
 
     /**
-     * Whether the first {@code end} characters of the line form an RFC 9110 &sect;5.6.2 token:
-     * 1*tchar. Works on the line in place, as it runs for every header line.
-     */
-    private static boolean isToken(String line, int end) {
-        if (end == 0)
-            return false;
-        for (int i = 0; i < end; i++)
-            if (!isTchar(line.charAt(i)))
-                return false;
-        return true;
-    }
-
-    /**
      * Builds the rejection message, which is logged and handed to the client in the 400 response.
      * It names the offending field at most, never the field-line value, which may carry a
      * credential: everything up to the first colon is the field name and the characters that make
