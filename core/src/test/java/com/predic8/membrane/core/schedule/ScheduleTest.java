@@ -205,6 +205,18 @@ class ScheduleTest {
         assertNoMoreCalls();
     }
 
+    /**
+     * The router stops the schedule before it closes the HTTP clients, so no call starts that cannot reach its target.
+     */
+    @Test
+    void stopInboundStopsCalls() throws Exception {
+        startGateway(config("http://localhost:3000"));
+        await(calls::get, 1);
+        final var job = assertInstanceOf(InternalProxy.class, gateway.getRuleManager().getRuleByName("job", InternalProxy.class));
+        job.stopInbound();
+        assertNoMoreCalls();
+    }
+
     @Test
     void reloadWithoutScheduleStopsCalls() throws Exception {
         final var reloader = startGateway(config("http://localhost:3000"));

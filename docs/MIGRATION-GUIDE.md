@@ -1,3 +1,91 @@
+# Migrate to Membrane 7.9
+
+See `distribution/release-notes/7.9.0.md` for the complete list of changes.
+
+## SOAP faults of the WSDL `validator`
+
+A `validator` with `wsdl` no longer answers a rejected message with `200`:
+
+| Rejected message | SOAP 1.1                         | SOAP 1.2                                   |
+|------------------|----------------------------------|--------------------------------------------|
+| Request          | `500`, `Client` fault            | `400`, `Sender` fault                      |
+| Response         | `500`, `Server` fault            | `500`, `Receiver` fault                    |
+
+A SOAP 1.2 fault is sent with `Content-Type: application/soap+xml` instead of `text/xml`.
+Adapt clients, monitoring and scripts that treated `200` with a fault body as a validation error,
+or that expect a `Client`/`Sender` fault for an invalid backend response.
+
+## Redis over TLS
+
+Membrane now uses Jedis 8.
+
+- `redis` with `ssl: true` checks that the server certificate names the configured `host`. A
+  connector that connects by IP address, or by a name the certificate does not list, fails to
+  connect. Set `host` to a name in the certificate, or issue a certificate for the `host`.
+- `redis` with `useSentinels: true` honors `ssl: true`: the connections to the Sentinels and to the
+  master use TLS. Before, `ssl` was ignored there. If your Sentinels or master don't speak TLS,
+  remove `ssl: true`. If they do, the certificate of every Redis instance that can become master
+  must name the address the Sentinels announce for it. Sentinel announces IP addresses unless it
+  monitors the master by host name and the replicas announce host names:
+
+  ```
+  # sentinel.conf
+  sentinel resolve-hostnames yes
+  sentinel announce-hostnames yes
+  sentinel monitor mymaster redis-1.example.com 6379 2
+
+  # redis.conf of each replica
+  replica-announce-ip redis-2.example.com
+  ```
+
+## `rewriter` redirects with a group in the host
+
+A redirect may only go to the host of the request or to the scheme and host written literally in
+`to`. A `to` with a group inside the host, e.g. `https://$1.example.com/`, answers every request
+with `400`. Write one rule per target host instead:
+
+```yaml
+rewriter:
+  - from: ^/tenant-a/(.*)
+    to: https://tenant-a.example.com/$1
+  - from: ^/tenant-b/(.*)
+    to: https://tenant-b.example.com/$1
+```
+
+## `rateLimiter` sets the quota headers
+
+Responses to requests that passed a `rateLimiter` carry `X-RateLimit-Limit`,
+`X-RateLimit-Remaining`, `X-RateLimit-Reset` and `X-RateLimit-Duration` for the limiter's quota.
+Headers of the same name sent by the backend are replaced. If clients rely on the backend's own
+quota headers, don't put a `rateLimiter` in front of that backend, or have the backend send them
+under other names.
+
+## HTTP message framing
+
+- A message with a transfer coding other than `chunked`, e.g. `Transfer-Encoding: gzip, chunked`,
+  is rejected: a request with `501`, a backend response with `502`. Use `Content-Encoding` for
+  compression instead.
+- Chunked bodies must follow RFC 9112 exactly: every chunk-size line, chunk, trailer line and the
+  end of the body ends with CRLF, and the chunk size consists of hexadecimal digits only. Other
+  framing is rejected; there is no option to accept it. Fix clients and backends that send it.
+- A CR in a request, status or header line that is not followed by LF is rejected, with `400` for a
+  request and `502` for a backend response.
+
+## Discarded message bodies
+
+Reading a message body that was discarded, e.g. a request body the gateway did not need to answer
+the request, fails like reading a body that was streamed. Before, it returned an empty body or the
+part read before the discard. Scripts and plugins that read its content, e.g. with
+`getBodyAsStringDecoded()` or `getContent()`, get an exception. With
+`memoryExchangeStore`, the admin console shows an error for such a body instead of an empty one.
+
+## Exchange stores and HTTP/2
+
+With `bodyExceedingMaxSizeStrategy: ERROR`, exchange stores apply `maxBodySize` to HTTP/2 bodies
+as well. An HTTP/2 message whose body exceeds the limit fails instead of passing through. Raise
+`maxBodySize` or use `TRUNCATE` if large HTTP/2 bodies are expected.
+
+
 # Migrate to Membrane 7.8.1
 
 See `distribution/release-notes/7.8.1.md` for the complete list of changes.

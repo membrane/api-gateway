@@ -104,6 +104,23 @@ class BodyStickyErrorTest {
         assertEquals(0, stream.getReadCallsAfterFailure());
     }
 
+    /**
+     * Whether a failed body leaves its connection out of step is decided by the handler that owns the connection,
+     * not by the message's headers: those are forwarded, and the message may never have been on a connection.
+     */
+    @Test
+    void messageDiscardBodyLeavesConnectionHeaderAlone() {
+        final var request = new Request();
+        request.setVersion("1.1");
+        request.setBody(body);
+
+        request.discardBody();
+
+        assertTrue(request.getBody().hasFailed());
+        assertTrue(request.isKeepAlive());
+        assertNull(request.getHeader().getFirstValue(Header.CONNECTION));
+    }
+
     @Test
     void bodyFailedFiresOnceAndClearsObservers() {
         RecordingObserver observer = new RecordingObserver();

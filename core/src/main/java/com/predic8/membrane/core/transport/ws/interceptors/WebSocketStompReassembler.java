@@ -123,7 +123,7 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
                 throw new IOException("STOMP frame is not terminated by \\0.");
 
             // STOMP bodies run up to the terminating NUL; HTTP framing would drop a body without content-length
-            request.read(bais, false);
+            request.readSTOMP(bais);
             request.setBody(new Body(bais, request.getHeader().getContentLength()));
         }
 

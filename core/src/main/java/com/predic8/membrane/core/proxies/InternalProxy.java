@@ -71,6 +71,16 @@ public class InternalProxy extends AbstractServiceProxy implements NotPortOpenin
             schedule.start(router, this);
     }
 
+    /**
+     * Stops the schedule. Without one, the API has no inbound of its own: it only runs when another API calls it, and
+     * stays available for exchanges in progress.
+     */
+    @Override
+    public void stopInbound() {
+        if (schedule != null)
+            schedule.stop();
+    }
+
     @PreDestroy
     public void destroy() {
         if (schedule != null)
@@ -87,5 +97,18 @@ public class InternalProxy extends AbstractServiceProxy implements NotPortOpenin
     @MCChildElement(order = 30)
     public void setSchedule(Schedule schedule) {
         this.schedule = schedule;
+    }
+
+    @Override
+    public String getKindLabel() {
+        return "Internal:";
+    }
+
+    /**
+     * @return The name only: the API opens no port
+     */
+    @Override
+    public String getStartupLabel() {
+        return getName();
     }
 }

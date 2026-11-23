@@ -325,4 +325,14 @@ public class SOAPProxy extends AbstractServiceProxy {
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
+
+    @Override
+    public String getKindLabel() {
+        return "SOAP:";
+    }
+
+    @Override
+    public String getStartupDetails() {
+        return "\n    using WSDL @ %s".formatted(getWsdl());
+    }
 }

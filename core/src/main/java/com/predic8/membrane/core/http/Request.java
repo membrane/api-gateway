@@ -20,7 +20,9 @@ import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
+import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.StompUtil;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLUtil;
 import org.slf4j.Logger;
@@ -31,22 +33,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashSet;
-import java.util.regex.Pattern;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.util.HttpUtil.containsWhitespace;
+import static com.predic8.membrane.core.util.HttpUtil.isToken;
+import static com.predic8.membrane.core.util.StompUtil.COMMAND_STOMP;
+import static com.predic8.membrane.core.util.StompUtil.STOMP_VERSION;
 import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
+import static com.predic8.membrane.core.util.URIValidationUtil.isDigit;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Request extends Message {
 
     private static final Logger log = LoggerFactory.getLogger(Request.class);
 
-    private static final String HTTP_VERSION_PREFIX = " HTTP/";
-    private static final char NEXT_LINE = '\u0085';
-    private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
+    private static final String HTTP_VERSION_PREFIX = "HTTP/";
 
     /**
      * How many empty lines before the request line are ignored, see {@link #readFirstNonEmptyLine(InputStream)}.
@@ -89,20 +93,15 @@ public class Request extends Message {
     protected void parseStartLine(InputStream in) throws IOException {
         try {
             final var firstLine = readFirstNonEmptyLine(in);
-            // readLine() maps each byte to one char and stops at CR and LF, so NEL (0x85) is the only regex line
-            // terminator that can remain. The former regex parser dropped or misread the parts around it, and
-            // stompPattern still accepts it at the end of the line.
-            if (firstLine.indexOf(NEXT_LINE) >= 0)
-                throw new EOFWhileReadingFirstLineException(firstLine);
-            if (parseHttpStartLine(firstLine))
-                return;
-            if (stompPattern.matcher(firstLine).find()) {
+            if (firstLine.isEmpty())
+                throw new NoMoreRequestsException(); // too many empty lines, see readFirstNonEmptyLine()
+            if (isStompConnectCommand(firstLine)) {
                 method = firstLine;
                 uri = "";
-                version = "STOMP";
-            } else {
-                throw new EOFWhileReadingFirstLineException(firstLine);
+                version = STOMP_VERSION;
+                return;
             }
+            parseHttpStartLine(firstLine);
         } catch (EOFWhileReadingLineException e) {
             if (e.getLineSoFar().isEmpty())
                 throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
@@ -124,20 +123,52 @@ public class Request extends Message {
     }
 
     /**
-     * Splits {@code <method> <uri> HTTP/<version>}. The method ends at the first space, the uri at the first
-     * " HTTP/" after it, and method, uri and version must not be empty.
+     * A first line of CONNECT or STOMP opens a STOMP session, see {@link StompUtil#isSTOMPConnectFrame(Request)}.
      */
-    private boolean parseHttpStartLine(final String line) {
-        final var methodEnd = line.indexOf(' ', 1);
-        if (methodEnd < 0)
-            return false;
-        final var uriEnd = line.indexOf(HTTP_VERSION_PREFIX, methodEnd + 2);
-        if (uriEnd < 0 || uriEnd + HTTP_VERSION_PREFIX.length() == line.length())
-            return false;
-        method = line.substring(0, methodEnd);
-        uri = line.substring(methodEnd + 1, uriEnd);
-        version = line.substring(uriEnd + HTTP_VERSION_PREFIX.length());
-        return true;
+    private static boolean isStompConnectCommand(final String line) {
+        return METHOD_CONNECT.equals(line) || COMMAND_STOMP.equals(line);
+    }
+
+    /**
+     * Parses {@code method SP request-target SP HTTP-version} (RFC 9112 3). The method must be a token (RFC 9110
+     * 9.1), the request-target must not be empty or contain whitespace, and the version must be
+     * {@code HTTP/DIGIT.DIGIT} (RFC 9112 2.3). Whether the method is supported is decided later by the transport's
+     * MethodValidator (501).
+     *
+     * @throws MalformedHeaderException        if the line does not have this form (400)
+     * @throws UnsupportedHttpVersionException if the major version is not 1 (505)
+     */
+    private void parseHttpStartLine(final String line) {
+        final var methodEnd = line.indexOf(' ');
+        final var targetEnd = line.lastIndexOf(' ');
+        if (methodEnd <= 0 || targetEnd <= methodEnd + 1)
+            throw invalidRequestLine();
+        final var requestMethod = line.substring(0, methodEnd);
+        final var target = line.substring(methodEnd + 1, targetEnd);
+        if (!isToken(requestMethod) || containsWhitespace(target))
+            throw invalidRequestLine();
+        method = requestMethod;
+        uri = target;
+        version = parseVersion(line.substring(targetEnd + 1));
+    }
+
+    /**
+     * Returns the version without the "HTTP/" prefix, e.g. "1.1".
+     */
+    private static String parseVersion(final String httpVersion) {
+        if (httpVersion.length() != HTTP_VERSION_PREFIX.length() + 3
+            || !httpVersion.startsWith(HTTP_VERSION_PREFIX)
+            || !isDigit(httpVersion.charAt(5))
+            || httpVersion.charAt(6) != '.'
+            || !isDigit(httpVersion.charAt(7)))
+            throw invalidRequestLine();
+        if (httpVersion.charAt(5) != '1')
+            throw new UnsupportedHttpVersionException("HTTP version not supported.");
+        return httpVersion.substring(HTTP_VERSION_PREFIX.length());
+    }
+
+    private static MalformedHeaderException invalidRequestLine() {
+        return new MalformedHeaderException("Invalid request line.");
     }
 
     public String getMethod() {
@@ -257,6 +288,29 @@ public class Request extends Message {
         super.createBody(in);
     }
 
+    /**
+     * The next hop finds the end of the body only through Content-Length or chunked Transfer-Encoding: without them,
+     * an HTTP/1.1 request has no body (RFC 9112 6.3), and the body would be read as the next request. A request that
+     * has a body but neither field, e.g. because a headerFilter removed them or an HTTP/2 request had no
+     * content-length, gets them here. A body that is already read, or of an HTTP/1.0 request or a method without a
+     * body, is measured; any other body is sent chunked, so it can still be streamed.
+     */
+    @Override
+    protected boolean prepareBodyForWrite() {
+        if (body instanceof EmptyBody || header.hasContentLength() || header.getFirstValue(TRANSFER_ENCODING) != null)
+            return true;
+
+        if (body.isRead() || isHTTP10() || methodsWithoutBody.contains(method)) {
+            final var length = body.getLength();
+            if (length > 0)
+                header.setContentLength(length);
+            return true;
+        }
+
+        header.setValue(TRANSFER_ENCODING, CHUNKED);
+        return true;
+    }
+
     @Override
     protected String getMessageType() {
         return "request";
@@ -308,6 +362,20 @@ public class Request extends Message {
 
         if (methodsWithoutBody.contains(newMethod.toUpperCase()))
             emptyBody();
+    }
+
+    /**
+     * Reads the command and the headers of a STOMP frame, the counterpart of {@link #writeSTOMP(OutputStream, boolean)}.
+     * The command becomes the method and the version is {@link StompUtil#STOMP_VERSION}. Any command is accepted. The body is not read.
+     */
+    public void readSTOMP(InputStream in) throws IOException, EndOfStreamException {
+        final var command = HttpUtil.readLine(in);
+        if (command.isEmpty())
+            throw new IOException("Empty STOMP command.");
+        method = command;
+        uri = "";
+        version = STOMP_VERSION;
+        header = new Header(in);
     }
 
     public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
