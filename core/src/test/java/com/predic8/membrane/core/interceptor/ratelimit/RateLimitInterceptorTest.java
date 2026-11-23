@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwt.JwtClaims;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,6 @@ import static java.lang.Long.parseLong;
 import static java.lang.Thread.sleep;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.stream.IntStream.range;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -380,21 +380,13 @@ public class RateLimitInterceptorTest {
 		assertThrows(ConfigurationException.class, () -> limiter.init(new DummyTestRouter()));
 	}
 
-	@Test
-	void retryAfterRoundsUpPartialSecond() throws InterruptedException {
-		final var limiter = new RateLimitInterceptor(ofMinutes(1), 0);
-		// The deadline lies in the same second as now, so whole seconds would yield 0
-		while (Instant.now().getNano() > 500_000_000)
-			sleep(10);
-		final var deadline = Instant.now().truncatedTo(SECONDS).plusMillis(900);
-		limiter.setStore((key, period) -> new RateLimitStore.RequestCount(1, deadline));
-		limiter.init(new DummyTestRouter());
+	@ParameterizedTest
+	@CsvSource({"100, 1", "1000, 1", "1100, 2", "0, 0", "-500, 0"})
+	void secondsUntilRoundsUpPartialSecond(long millisLeft, String expected) {
+		// Within one second, so whole seconds would yield 0 for 100 ms
+		final var now = Instant.parse("2026-11-18T10:00:00.800Z");
 
-		final var exc = new Request.Builder().buildExchange();
-		exc.setRemoteAddrIp("192.0.2.1");
-		limiter.handleRequest(exc);
-
-		assertEquals("1", exc.getResponse().getHeader().getFirstValue(RETRY_AFTER));
+		assertEquals(expected, secondsUntil(now.plusMillis(millisLeft), now));
 	}
 
 	@Test

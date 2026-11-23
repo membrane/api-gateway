@@ -229,11 +229,15 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         exc.setProperty(QUOTA_PROPERTY, quota);
     }
 
+    private static String secondsUntil(Instant deadline) {
+        return secondsUntil(deadline, Instant.now());
+    }
+
     /**
      * @return seconds from now until the deadline, rounded up so a client does not retry too early, 0 if it has passed
      */
-    private static String secondsUntil(Instant deadline) {
-        final var millis = Duration.between(Instant.now(), deadline).toMillis();
+    static String secondsUntil(Instant deadline, Instant now) {
+        final var millis = Duration.between(now, deadline).toMillis();
         return Long.toString(Math.max(0, Math.ceilDiv(millis, 1000)));
     }
 
