@@ -156,11 +156,10 @@ class CallInterceptorTest {
         router.add(recordingCallout(port, received));
         router.start();
         final var exchange = get("/foo")
-                .header(CONNECTION, "close, x-hop")
+                .header(CONNECTION, "close")
                 .header(KEEP_ALIVE, "timeout=5")
                 .header("TE", "trailers")
                 .header("Trailer", "X-Checksum")
-                .header("X-Hop", "nominated by Connection")
                 .header("X-End-To-End", "42")
                 .buildExchange();
 
@@ -168,8 +167,33 @@ class CallInterceptorTest {
 
         final var header = received.get().header();
         assertEquals("42", header.getFirstValue("X-End-To-End"));
-        assertAll(Stream.of(CONNECTION, KEEP_ALIVE, "TE", "Trailer", "X-Hop")
+        assertAll(Stream.of(CONNECTION, KEEP_ALIVE, "TE", "Trailer")
                 .map(name -> () -> assertNull(header.getFirstValue(name), name)));
+    }
+
+    /**
+     * By the time <code>call</code> runs, the gateway has added fields of its own. A client must not be able to
+     * remove them from the callout by naming them in <code>Connection</code>.
+     */
+    @Test
+    void connectionCannotRemoveFieldsAddedByTheGateway() throws Exception {
+        final var received = new AtomicReference<ReceivedRequest>();
+        final var port = freePort();
+        router.add(recordingCallout(port, received));
+        router.start();
+        final var exchange = get("/foo")
+                .header(CONNECTION, "X-Forwarded-For, Authorization")
+                .header(X_FORWARDED_FOR, "192.0.2.1")
+                .header(AUTHORIZATION, "Bearer gateway-token")
+                .buildExchange();
+
+        call("GET", "http://localhost:" + port + "/").handleRequest(exchange);
+
+        final var header = received.get().header();
+        // The callout endpoint appends the address of its own client
+        assertEquals("192.0.2.1, 127.0.0.1", header.getFirstValue(X_FORWARDED_FOR));
+        assertEquals("Bearer gateway-token", header.getFirstValue(AUTHORIZATION));
+        assertNull(header.getFirstValue(CONNECTION));
     }
 
     /**

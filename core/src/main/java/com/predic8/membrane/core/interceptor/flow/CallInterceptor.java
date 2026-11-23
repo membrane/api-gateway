@@ -98,13 +98,17 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     /**
      * Fields that apply to one connection only, and are neither sent to the called resource nor copied from its
-     * response: the hop-by-hop fields of RFC 9110, section 7.6.1, together with the fields a message's
-     * <code>Connection</code> header names, and <code>Trailer</code>, which announces the trailer fields of a
-     * chunked body. Bodies are sent and set with a framing of their own.
+     * response: the hop-by-hop fields of RFC 9110, section 7.6.1, and <code>Trailer</code>, which announces the
+     * trailer fields of a chunked body. Bodies are sent and set with a framing of their own. The fields the
+     * response's <code>Connection</code> header names are not copied either.
      */
     private static final List<String> HOP_BY_HOP_HEADERS = List.of(
             CONNECTION, KEEP_ALIVE, PROXY_CONNECTION, "TE", "Trailer", UPGRADE
     );
+
+    private static final Set<String> FIXED_HOP_BY_HOP_HEADERS = HOP_BY_HOP_HEADERS.stream()
+            .map(name -> name.toLowerCase(ROOT))
+            .collect(toUnmodifiableSet());
 
     private String method = GET;
 
@@ -237,12 +241,14 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     /**
      * Filters and returns the request headers relevant for the outgoing request.
+     * Only the fixed hop-by-hop fields are left out, not the fields the message's <code>Connection</code> header
+     * names: by now the gateway may have added fields of its own, such as <code>X-Forwarded-For</code> or
+     * credentials, and the client must not be able to remove them by naming them.
      */
     Header getFilteredRequestHeader(Message message) {
-        final var hopByHopHeaders = getHopByHopHeaders(message.getHeader());
         Header requestHeader = new Header();
         for (HeaderField field : message.getHeader().getAllHeaderFields()) {
-            if (isHopByHop(field, hopByHopHeaders))
+            if (isHopByHop(field, FIXED_HOP_BY_HOP_HEADERS))
                 continue;
             // Not using a reference on purpose
             requestHeader.add(field.getHeaderName().getName(), field.getValue());
