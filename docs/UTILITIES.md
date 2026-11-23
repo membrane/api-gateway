@@ -82,6 +82,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/security/BasicAuthenticationUtil` | Parse/create `Authorization: Basic` headers |
 | `util/DateAndTimeUtil` | Pretty-print time spans, parse configured ISO dates |
 | `util/Util` | Grab bag: line count, socket shutdown, thread pool, split by comma |
+| `util/SystemPropertyUtil` | Tuning settings from JVM system properties; positive integer with default, invalid value names the property |
 | `util/ClassFinder` | Classpath scanning |
 | `util/ExtensionLoader` | Create the implementation of an optional Membrane extension (Kafka, JMS) by class name; `ConfigurationException` if missing |
 | `util/ComparatorFactory` | Comparators for admin-console statistics tables |

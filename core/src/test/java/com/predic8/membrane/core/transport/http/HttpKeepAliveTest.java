@@ -217,21 +217,20 @@ public class HttpKeepAliveTest {
 	}
 
 	/**
-	 * <code>limit</code> wraps the body in one of unknown length, which fails when it is discarded unread. The body
-	 * read from the connection is complete, though, so replacing the wrapper must not close the connection.
+	 * A body of unknown length set by the flow fails when it is discarded unread. The body read from the connection
+	 * is complete, though, so replacing the flow's body must not close the connection.
 	 */
 	@Test
-	void connectionKeptAliveWhenUnreadLimitedBodyIsReplaced() throws Exception {
+	void connectionKeptAliveWhenUnreadFlowBodyIsReplaced() throws Exception {
 		sp1.getFlow().addFirst(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) {
-				exc.getRequest().setBodyContent("replaced".getBytes(US_ASCII));
+				final var request = exc.getRequest();
+				request.setBody(new Body(new ByteArrayInputStream("unread".getBytes(US_ASCII))));
+				request.setBodyContent("replaced".getBytes(US_ASCII));
 				return CONTINUE;
 			}
 		});
-		final var limit = new LimitInterceptor();
-		limit.setMaxBodyLength(1000);
-		sp1.getFlow().addFirst(limit);
 
 		final var responses = sendRaw("""
 				POST /foo HTTP/1.1\r
@@ -335,6 +334,27 @@ public class HttpKeepAliveTest {
 	void bareCrIsRejected(String request) throws Exception {
 		final var response = sendRaw(request);
 		assertTrue(response.startsWith("HTTP/1.1 400 "), response);
+	}
+
+	/**
+	 * The rest of a request body left unread on the connection would be read as the next request, so the
+	 * connection is closed. The response says so, whichever plugin left the body unread.
+	 */
+	@Test
+	void responseToRequestWithUnreadBodyAnnouncesClose() throws Exception {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				exc.getRequest().getBody().readUpTo(3);
+				exc.setResponse(Response.statusCode(403).build());
+				return RETURN;
+			}
+		});
+
+		final var response = sendRaw("POST /foo HTTP/1.1\r\nHost: localhost:2003\r\nContent-Length: 10\r\n\r\n0123456789");
+
+		assertTrue(response.startsWith("HTTP/1.1 403 "), response);
+		assertTrue(response.toLowerCase().contains("\r\nconnection: close\r\n"), response);
 	}
 
 	/**

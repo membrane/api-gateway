@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
+import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static com.predic8.membrane.core.http.BodyState.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -98,18 +100,94 @@ public abstract class AbstractBody {
 		if (isRead())
 			return;
 
+		readFromStart(Long.MAX_VALUE);
+	}
+
+	/**
+	 * Reads the body into memory like {@link #read()}, unless it is longer than {@code maxLength} bytes.
+	 * <p>
+	 * Reading stops as soon as more than {@code maxLength} bytes have arrived, so a longer body is not
+	 * held in memory beyond that point. Such a body is abandoned: it fails with a
+	 * {@link BodyLengthExceededException} and the rest of it is left in the stream, so its connection is
+	 * closed instead of reused. A body whose {@linkplain #getDeclaredLength() declared length} is longer
+	 * is abandoned without being requested from the observers, so a client waiting for "100 Continue" is
+	 * not asked to send it. A body that is already in memory is only measured.
+	 *
+	 * @param maxLength the largest length in bytes the body may have
+	 * @throws ReadingBodyException if reading from the stream fails, or failed earlier
+	 * @throws IllegalStateException if the body was discarded: it holds nothing, whatever its length was
+	 */
+	public BodyLengthCheck readUpTo(long maxLength) {
+		throwIfFailed();
+		if (retention == Retention.DISCARDED)
+			throw new IllegalStateException("Cannot measure body after it was discarded.");
+		if (isRead())
+			return getLength() <= maxLength ? WITHIN : TOO_LONG;
+
+		requireReadable();
+
+		if (getDeclaredLength() > maxLength)
+			return abandon(maxLength);
+
+		return readFromStart(maxLength);
+	}
+
+	private BodyLengthCheck readFromStart(long maxLength) {
 		requireReadable();
 
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
 
 		chunks.clear();
+		return readRest(maxLength);
+	}
+
+	/**
+	 * Reads what is left of the body after the observers were told it is requested, keeping what
+	 * {@link #chunks} already hold. Abandons the body if it is longer than {@code maxLength} bytes.
+	 */
+	protected final BodyLengthCheck readRest(long maxLength) {
 		try {
-			readLocal();
+			if (!readChunksWithin(maxLength))
+				return abandon(maxLength);
 		} catch (IOException e) {
 			throw fail(e);
 		}
 		markAsRead();
+		return WITHIN;
+	}
+
+	private BodyLengthCheck abandon(long maxLength) {
+		fail(new BodyLengthExceededException(maxLength));
+		return TOO_LONG;
+	}
+
+	/**
+	 * @return the length the body announced before it is read, or {@code -1} if it is not known up front.
+	 *         Unlike {@link #getLength()}, this never reads the body. A body with a declared length never
+	 *         yields more than that.
+	 */
+	public long getDeclaredLength() {
+		return -1;
+	}
+
+	/**
+	 * Reads the rest of the body into {@link #chunks}, passing the new chunks to the observers. Stops once
+	 * {@link #chunks} hold more than {@code maxLength} bytes; {@link #read()} passes
+	 * {@link Long#MAX_VALUE}.
+	 *
+	 * @return <code>false</code> if the body is longer than {@code maxLength} bytes
+	 */
+	protected abstract boolean readChunksWithin(long maxLength) throws IOException;
+
+	/**
+	 * @return the number of bytes in {@link #chunks}, without reading anything
+	 */
+	protected long getLengthOfChunks() {
+		long length = 0;
+		for (Chunk chunk : chunks)
+			length += chunk.getLength();
+		return length;
 	}
 
 	/**
@@ -253,8 +331,9 @@ public abstract class AbstractBody {
 	}
 
 	private void notifyBodyFailed(ReadingBodyException e) {
-		// Copy and clear first: observers may access the list (e.g. ShadowingInterceptor) and this is the
-		// last event fired on them, just as in markAsRead().
+		// bodyFailed is the last event: drop the observers (e.g. Connection, which holds the exchange) so a
+		// failed body does not keep them reachable, as markAsRead() does. Iterate over a copy because
+		// getObservers() exposes the list to code that could change it during the loop.
 		List<MessageObserver> os = new ArrayList<>(observers);
 		observers.clear();
 		for (MessageObserver observer : os) {
@@ -301,8 +380,6 @@ public abstract class AbstractBody {
 	public ReadingBodyException getObservedException() {
 		return state instanceof Failed(var cause) ? cause : null;
 	}
-
-	protected abstract void readLocal() throws IOException;
 
 	/**
 	 * Returns the body's content as a byte[] representation.
@@ -445,6 +522,13 @@ public abstract class AbstractBody {
 
 	public boolean isRead() {
 		return state instanceof Read;
+	}
+
+	/**
+	 * @return whether the body has neither been read completely nor failed
+	 */
+	boolean isUnread() {
+		return state instanceof Unread;
 	}
 
 	/**
