@@ -1,0 +1,54 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
+package com.predic8.membrane.core.util;
+
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+
+import static com.predic8.membrane.core.exchange.Exchange.TUNNELED_WITHOUT_RESPONSE;
+import static com.predic8.membrane.core.http.Request.METHOD_CONNECT;
+import static java.lang.Boolean.TRUE;
+
+public class StompUtil {
+
+    /**
+     * The version of a {@link Request} that holds a STOMP frame instead of an HTTP request.
+     */
+    public static final String STOMP_VERSION = "STOMP";
+
+    /**
+     * The STOMP 1.2 frame that opens a session like CONNECT.
+     */
+    public static final String COMMAND_STOMP = "STOMP";
+
+    private StompUtil() {
+    }
+
+    /**
+     * Tells whether the request is a STOMP frame that opens a STOMP session: CONNECT, or STOMP, which a STOMP 1.2
+     * server must handle in the same manner (STOMP 1.2, "CONNECT or STOMP Frame").
+     */
+    public static boolean isSTOMPConnectFrame(Request request) {
+        return STOMP_VERSION.equals(request.getVersion())
+               && (METHOD_CONNECT.equals(request.getMethod()) || COMMAND_STOMP.equals(request.getMethod()));
+    }
+
+    /**
+     * See {@link Exchange#TUNNELED_WITHOUT_RESPONSE}.
+     */
+    public static boolean isTunneledWithoutResponse(Exchange exchange) {
+        return exchange.getProperty(TUNNELED_WITHOUT_RESPONSE) == TRUE;
+    }
+}

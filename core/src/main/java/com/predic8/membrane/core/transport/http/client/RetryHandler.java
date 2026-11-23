@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.transport.http.ConnectTimeoutException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
@@ -37,6 +38,8 @@ import java.util.Set;
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportException;
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportStatusCode;
 import static com.predic8.membrane.core.util.HttpUtil.isIdempotent;
+import static com.predic8.membrane.core.util.URLParamUtil.uriForLog;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
@@ -216,6 +219,14 @@ public class RetryHandler {
             log.debug("Request body could not be read: {}", e.getMessage());
             return true;
         }
+        // The response has invalid framing or a transfer coding Membrane does not decode. The node would
+        // answer the same way again, so only a node not yet asked is worth a try. Nodes are taken round-robin,
+        // so after attempt #(nodes - 1) every node has been asked. The request has been processed, so a retry
+        // is only safe for an idempotent method.
+        if (e instanceof MalformedHeaderException) {
+            log.debug("{} sent a malformed response: {}", dest, e.getMessage());
+            return !isIdempotent(exc.getRequest().getMethod()) || attempt + 1 >= exc.getDestinations().size();
+        }
         // switch with throwable is only possible in Java 21 with preview features
         if (e instanceof MalformedURLException || e instanceof URISyntaxException) {
             log.debug("URI {} caused: {}", dest, e);
@@ -258,6 +269,9 @@ public class RetryHandler {
                 log.debug("Connection to {} was aborted externally.", dest);
             } else if (message.contains("reset")) {
                 log.debug("Connection to {} was reset externally.", dest);
+            } else if (e instanceof NoRouteToHostException) {
+                // A known outage (no route, firewall, host down), not an unknown condition: no stack trace.
+                log.warn("No route to {}: {}", uriForLog(dest), escapeControlCharsForLog(e.getMessage()));
             } else {
                 logException(exc, attempt, e);
                 log.info("Unexpected SocketException: {}", e.getMessage(), e); // Unknown condition => log stacktrace
@@ -265,7 +279,7 @@ public class RetryHandler {
             return !isIdempotent(exc.getRequest().getMethod());
         }
         if (e instanceof UnknownHostException) {
-            log.warn("Unknown host: {}", dest); // Could be a configuration error => WARN
+            log.warn("Unknown host: {}", uriForLog(dest)); // Could be a configuration error => WARN
             return !hasMultipleNodes(exc);
         }
         if (e instanceof EOFWhileReadingFirstLineException eofE) {
@@ -281,7 +295,7 @@ public class RetryHandler {
                   return true;
             }
         }
-        log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
+        log.info("Error while attempting to forward request to {}. Reason: {}", uriForLog(dest), escapeControlCharsForLog(e.getMessage()));
         logException(exc, attempt, e);
         return !isIdempotent(exc.getRequest().getMethod()); // If not sure, do not retry for non idempotent methods
     }
@@ -332,6 +346,15 @@ public class RetryHandler {
     /**
      * @description Number of <em>additional</em> retry attempts after the initial call. A value of 0 or
      *              less disables retries, so only the initial call is made.
+     *              With 0, the request body is streamed to the backend without keeping a copy, so it
+     *              cannot be read in the response flow anymore. To use it there, read it in the request
+     *              flow first, e.g. in a script:
+     *              <pre><code>request:
+     *  - groovy:
+     *      src: |
+     *        request.bodyAsStringDecoded
+     *        CONTINUE</code></pre>
+     *              This keeps the whole body in memory, as with retries greater than 0.
      * @default 2
      * @example 5
      */

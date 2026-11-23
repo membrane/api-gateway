@@ -158,6 +158,23 @@ class InvalidResponseFramingTest {
         assertGatewayRejects();
     }
 
+    /**
+     * RFC 9112 &sect;2.2: a bare CR must not be read as a line terminator or be skipped together with the byte
+     * after it (#3378).
+     */
+    @Test
+    void backendWithBareCrInHeaderYields502() throws Exception {
+        backendResponse =
+                "HTTP/1.1 200 OK" + CRLF +
+                "Content-Type: text/plain\rContent-Length: 99" + CRLF +
+                "Content-Length: 5" + CRLF +
+                "Connection: close" + CRLF +
+                CRLF +
+                "hello";
+
+        assertGatewayRejects();
+    }
+
     private void assertGatewayRejects() throws Exception {
         try (HttpAssertions ha = new HttpAssertions()) {
             ha.getAndAssert(502, "http://localhost:" + frontendPort + "/");

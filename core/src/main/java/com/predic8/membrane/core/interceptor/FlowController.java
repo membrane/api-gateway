@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.bodyFailure;
+import static com.predic8.membrane.core.exceptions.BodyFailureProblems.bodyFailure;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;

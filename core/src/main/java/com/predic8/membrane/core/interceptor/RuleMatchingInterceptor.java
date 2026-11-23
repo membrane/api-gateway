@@ -21,10 +21,13 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLSocket;
 import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -34,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.HttpUtil.isAbsoluteURI;
+import static com.predic8.membrane.core.util.StompUtil.isSTOMPConnectFrame;
 import static com.predic8.membrane.core.util.URIUtil.containsAmbiguousPathParameters;
 import static com.predic8.membrane.core.util.URIUtil.normalizeRequestTarget;
 import static com.predic8.membrane.core.util.URIUtil.toDecodedDelimiterRoutingPaths;
@@ -75,7 +79,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			// A forward proxy passes the absolute URI on unchanged and does not route by its path, so it need not parse
 			if (absoluteForm && getRule(exc) instanceof ProxyRule forwardProxy) {
 				assignRule(exc, forwardProxy);
-				return CONTINUE;
+				return checkClientAuthentication(exc, forwardProxy);
 			}
 			log.info("Rejected request with malformed request target.");
 			log.debug("Malformed request target: {} ({})", received, e.getMessage());
@@ -106,6 +110,9 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 				restoreHost(request, receivedHost);
 		}
 		assignRule(exc, proxy);
+
+		if (checkClientAuthentication(exc, proxy) == ABORT)
+			return ABORT;
 
 		if (request.isCONNECTRequest() && !acceptsConnect(proxy)) {
 			log.info("Rejected CONNECT request that is not routed to a forward proxy.");
@@ -213,12 +220,55 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	 * Other targets like <code>admin</code> or <code>x:/admin</code> are not normalized and do not match the path of
 	 * an API, but the DispatchingInterceptor would still forward them as <code>/admin</code>.
 	 * A CONNECT passes with any target, since the proxy it is routed to decides, see {@link #acceptsConnect(Proxy)}.
+	 * The CONNECT or STOMP frame of STOMP has no target.
 	 */
 	private static boolean isSupportedRequestTarget(Request request) {
 		final var uri = request.getUri();
 		return uri.startsWith("/")
 			   || request.isCONNECTRequest()
+			   || isSTOMPConnectFrame(request)
 			   || (request.isOPTIONSRequest() && "*".equals(uri));
+	}
+
+	/**
+	 * Rejects the request if the TLS handshake of the connection did not perform the client authentication of the
+	 * proxy, see {@link #lacksClientAuthenticationOf}. Every path that assigns a proxy must call it.
+	 * <p>
+	 * An API answers 421, which RFC 9110 15.5.20 allows a gateway acting on behalf of the origin server. A forward
+	 * proxy answers 403: "A proxy MUST NOT generate a 421 response", and the retry on another connection it invites
+	 * would go to the origin itself, around the proxy.
+	 */
+	private Outcome checkClientAuthentication(Exchange exc, Proxy proxy) {
+		if (!lacksClientAuthenticationOf(exc, proxy))
+			return CONTINUE;
+		log.info("Rejected request to API '{}', whose client authentication the TLS handshake of the connection did not perform. The handshake was done by the TLS configuration of another API on the same port, the first whose certificate covers the host name the client sent, or the default one without SNI.", proxy.getName());
+		if (proxy instanceof ProxyRule) {
+			user(router.getConfiguration().isProduction(), "client-authentication-required")
+					.status(403)
+					.title("Client authentication required")
+					.detail("The TLS connection does not meet the client authentication this proxy requires.")
+					.buildAndSetResponse(exc);
+			return ABORT;
+		}
+		user(router.getConfiguration().isProduction(), "misdirected-request")
+				.status(421)
+				.title("Misdirected request")
+				.detail("The TLS connection does not meet the client authentication this API requires.")
+				.buildAndSetResponse(exc);
+		return ABORT;
+	}
+
+	/**
+	 * Several APIs can share a TLS port: the TLS context of the handshake is selected by the SNI, the API by the Host
+	 * header. A request must not reach an API that requires a client certificate over a connection whose handshake did
+	 * not ask for one or validated it with another trust store, see {@link SSLContext#admitsSessionOf}.
+	 */
+	private static boolean lacksClientAuthenticationOf(Exchange exc, Proxy proxy) {
+		if (!(proxy instanceof SSLableProxy sp) || sp.getSslInboundContext() == null)
+			return false;
+		if (!(exc.getHandler() instanceof HttpServerHandler handler) || !(handler.getSourceSocket() instanceof SSLSocket socket))
+			return false;
+		return !sp.getSslInboundContext().admitsSessionOf(socket.getSession());
 	}
 
 	/**
@@ -301,8 +351,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return exc.getRequest().getHeader().getHost();
 	}
 
+	/**
+	 * @return all X-Forwarded-Host field lines joined by commas, since they are replaced by a single line
+	 */
 	private String getXForwardedHost(AbstractExchange exc) {
-		return exc.getRequest().getHeader().getXForwardedHost();
+		return exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_HOST);
 	}
 
 	private String getXForwardedForHeaderValue(AbstractExchange exc) {
@@ -323,8 +376,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return exc.getRequest().getHeader().getXForwardedFor();
 	}
 
+	/**
+	 * @return all X-Forwarded-Proto field lines joined by commas, since they are replaced by a single line
+	 */
 	private String getXForwardedProto(AbstractExchange exc) {
-		return exc.getRequest().getHeader().getXForwardedProto();
+		return exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_PROTO);
 	}
 
 	@Override

@@ -177,9 +177,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return noContent().build();
 		}
-		return ok().contentType(TEXT_HTML_UTF8)
-				.body(formatXML(msg.getBodyAsStreamDecoded(), true))
+		try (final var body = msg.getBodyAsStreamDecoded()) {
+			return ok().contentType(TEXT_HTML_UTF8)
+				.body(formatXML(body, true))
 				.build();
+		}
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
@@ -201,9 +203,9 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				.header(CONTENT_DISPOSITION, "attachment")
 				.header(X_CONTENT_TYPE_OPTIONS, "nosniff")
 				.header(CONTENT_SECURITY_POLICY, "sandbox");
-		String contentEncoding = msg.getHeader().getContentEncoding();
-		if (contentEncoding != null)
-			rb.header(CONTENT_ENCODING, contentEncoding);
+		final var codings = msg.getHeader().getContentCodings();
+		if (!codings.isEmpty())
+			rb.header(CONTENT_ENCODING, String.join(", ", codings));
 		return rb.build();
 	}
 

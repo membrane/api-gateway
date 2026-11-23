@@ -19,11 +19,13 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
+import org.jose4j.keys.HmacKey;
 import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
@@ -58,8 +60,58 @@ public class JwtAuthInterceptorTest{
                 unknownKeyWithCorrectKid(),
                 noJwtInHeader(),
                 malformedJwt(),
-                threeDotsNonJwt()
+                threeDotsNonJwt(),
+                unsignedAlgNone(),
+                hmacSignedWithPublicKey()
         ).map(data -> Named.of(data.testName(), data));
+    }
+
+    /**
+     * A token with "alg":"none" carries no signature and must not be accepted, see CVE-2015-9235.
+     */
+    private static TestData unsignedAlgNone() {
+        return new TestData(
+                "unsignedAlgNone",
+                (RsaJsonWebKey privateKey) -> {
+                    final var jws = new JsonWebSignature();
+                    jws.setPayload(createClaims(AUDIENCE, TENANT_ID).toJson());
+                    jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.NONE);
+                    jws.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
+                    jws.setKeyIdHeaderValue(privateKey.getKeyId());
+                    return new Request.Builder()
+                            .get("")
+                            .header("Authorization", "Bearer " + jws.getCompactSerialization())
+                            .buildExchange();
+                },
+                JwtAuthInterceptorTest::assertRejected
+        );
+    }
+
+    /**
+     * Algorithm confusion: an attacker knows the RSA public key and uses its bytes as the secret of an HMAC
+     * signature. A verifier that takes the algorithm from the token would accept it, see WSO2 CVE-2026-5430.
+     */
+    private static TestData hmacSignedWithPublicKey() {
+        return new TestData(
+                "hmacSignedWithPublicKey",
+                (RsaJsonWebKey privateKey) -> {
+                    final var jws = new JsonWebSignature();
+                    jws.setPayload(createClaims(AUDIENCE, TENANT_ID).toJson());
+                    jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.HMAC_SHA256);
+                    jws.setKey(new HmacKey(privateKey.getRsaPublicKey().getEncoded()));
+                    jws.setKeyIdHeaderValue(privateKey.getKeyId());
+                    return new Request.Builder()
+                            .get("")
+                            .header("Authorization", "Bearer " + jws.getCompactSerialization())
+                            .buildExchange();
+                },
+                JwtAuthInterceptorTest::assertRejected
+        );
+    }
+
+    private static void assertRejected(Exchange exc) {
+        assertTrue(exc.getResponse().isUserError());
+        assertNull(exc.getProperties().get("jwt"));
     }
 
     private static TestData threeDotsNonJwt() {

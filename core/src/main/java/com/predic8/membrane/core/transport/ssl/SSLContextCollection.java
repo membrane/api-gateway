@@ -28,9 +28,11 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -60,9 +62,78 @@ public class SSLContextCollection implements SSLProvider {
 
 		public SSLProvider build() {
 			if (sslContexts.size() > 1 || useCollection) {
+				for (final var c : getClientAuthenticationConflicts())
+					log.warn("TLS configurations {} and {} on the same port authenticate clients differently (clientAuth or trust store), but both cover the host name '{}'. Only {} does the handshake for that name, so requests to the other API may fail with 421 or a failed handshake. Use certificates whose names do not overlap, or separate ports.",
+							c.first().getLocation(), c.later().getLocation(), c.hostName(), c.first().getLocation());
 				return new SSLContextCollection(sslContexts, dnsNames);
 			} else
 				return sslContexts.getFirst();
+		}
+
+		/**
+		 * Two contexts of a port that authenticate clients differently, and a host name both cover.
+		 *
+		 * @param first the context that does the handshakes for that host name
+		 * @param later the context that never gets them
+		 */
+		record ClientAuthenticationConflict(SSLContext first, SSLContext later, String hostName) {}
+
+		/**
+		 * The handshake for a host name is done by the first context whose certificate covers it, not by the API
+		 * whose host matches. If two contexts that cover a host name authenticate clients differently, the API of the
+		 * later one may not be reachable under that name: an API that needs a client certificate answers 421 (see
+		 * {@link SSLContext#admitsSessionOf}), and clients of an API that does not need one fail the handshake when
+		 * they have none, or a certificate that only the other trust store accepts.
+		 */
+		List<ClientAuthenticationConflict> getClientAuthenticationConflicts() {
+			final var result = new ArrayList<ClientAuthenticationConflict>();
+			for (int later = 1; later < sslContexts.size(); later++) {
+				for (int earlier = 0; earlier < later; earlier++) {
+					if (!authenticateClientsDifferently(sslContexts.get(earlier), sslContexts.get(later)))
+						continue;
+					final var name = getSharedHostName(dnsNames.get(earlier), dnsNames.get(later));
+					if (name != null)
+						result.add(new ClientAuthenticationConflict(sslContexts.get(earlier), sslContexts.get(later), name));
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * Whether only one of the contexts needs a client certificate, or both ask for one and accept certificates
+		 * of different issuers. Comparing the accepted issuers is an approximation of comparing the trust stores.
+		 * A context that does not ask for a certificate admits every session, so its trust store does not matter.
+		 */
+		private static boolean authenticateClientsDifferently(SSLContext first, SSLContext second) {
+			if (first.isNeedClientAuth() != second.isNeedClientAuth())
+				return true;
+			if (!asksForClientCertificate(first) || !asksForClientCertificate(second))
+				return false;
+			return !getAcceptedIssuers(first).equals(getAcceptedIssuers(second));
+		}
+
+		private static boolean asksForClientCertificate(SSLContext context) {
+			return context.isNeedClientAuth() || context.isWantClientAuth();
+		}
+
+		private static Set<X509Certificate> getAcceptedIssuers(SSLContext context) {
+			return Set.copyOf(Arrays.asList(context.getClientTrustManager().getAcceptedIssuers()));
+		}
+
+		/**
+		 * @return a host name of one pattern that the other one also matches, in either direction since both may
+		 *         contain wildcards, or null if they share none
+		 */
+		private static @Nullable String getSharedHostName(String earlierNames, String laterNames) {
+			final var earlier = new HostPattern(earlierNames);
+			final var later = new HostPattern(laterNames);
+			for (final var name : laterNames.split(" +"))
+				if (earlier.matches(name))
+					return name;
+			for (final var name : earlierNames.split(" +"))
+				if (later.matches(name))
+					return name;
+			return null;
 		}
 
 		public Builder add(SSLContext sslContext) {

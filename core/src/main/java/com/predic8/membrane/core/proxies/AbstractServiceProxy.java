@@ -22,6 +22,9 @@ import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
 import java.util.List;
 
+import static com.predic8.membrane.core.util.NetworkUtil.addBracketsIfIPv6;
+import static java.util.stream.Collectors.joining;
+
 public abstract class AbstractServiceProxy extends SSLableProxy {
 
     private ProxyInfo info;
@@ -142,6 +145,40 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
     @Override
     public boolean isTargetAdjustHostHeader() {
         return target.isAdjustHostHeader();
+    }
+
+    /**
+     * @return The name, then the URL the API listens on
+     */
+    @Override
+    public String getStartupLabel() {
+        return getName() + "  " + buildUrl();
+    }
+
+    /**
+     * @return URLs the API listens on, comma-separated
+     */
+    String buildUrl() {
+        final var origin = "%s://%s:%d".formatted(getProtocol(), displayHost(key), key.getPort());
+        return startupPaths().stream()
+                .map(path -> origin + path)
+                .collect(joining(", "));
+    }
+
+    /**
+     * @return Paths of the URLs shown in the startup log
+     */
+    protected List<String> startupPaths() {
+        final var path = key.getPath();
+        return List.of(path != null ? path : "");
+    }
+
+    private static String displayHost(RuleKey key) {
+        if (key.getIp() != null) {
+            return addBracketsIfIPv6(key.getIp());
+        }
+        final var host = key.getHost();
+        return addBracketsIfIPv6((host == null || host.equals("*")) ? "127.0.0.1" : host);
     }
 
 }

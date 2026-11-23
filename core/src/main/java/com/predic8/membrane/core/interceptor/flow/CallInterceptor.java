@@ -148,7 +148,9 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
              * The content is copied from the response with decoding. The response headers transfer-encoding
              * and content-encoding are removed by the setBodyContent method.
              */
-            exc.getRequest().setBodyContent(newExc.getResponse().getBodyAsStreamDecoded().readAllBytes());
+            try (final var body = newExc.getResponse().getBodyAsStreamDecoded()) {
+                exc.getRequest().setBodyContent(body.readAllBytes());
+            }
             copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {

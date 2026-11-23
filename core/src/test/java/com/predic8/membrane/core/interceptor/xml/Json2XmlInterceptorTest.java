@@ -16,15 +16,23 @@ package com.predic8.membrane.core.interceptor.xml;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.path.json.*;
 import io.restassured.path.xml.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 import org.xml.sax.*;
 
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.*;
 import java.io.*;
 import java.net.*;
+import java.util.Iterator;
+import java.util.List;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -184,12 +192,107 @@ public class Json2XmlInterceptorTest {
     }
 
     @Test
-    void invalid() throws URISyntaxException {
-        Exchange exc = put("/invalid").json("{").buildExchange();
+    void invalidJsonInTheRequestIsA400() throws URISyntaxException {
+        final var exc = put("/invalid").json("{").buildExchange();
         assertEquals(ABORT,  interceptor.handleRequest(exc));
-        Response res = exc.getResponse();
-        assertEquals(500, res.getStatusCode());
-        assertEquals("Error parsing JSON",     new JsonPath(res.getBodyAsStringDecoded()).get("title"));
+        final var res = exc.getResponse();
+        assertEquals(400, res.getStatusCode());
+        assertEquals("The JSON request could not be converted to XML.", new JsonPath(res.getBodyAsStringDecoded()).get("detail"));
+    }
+
+    @Test
+    void invalidJsonFromTheBackendIsA500ThatHidesIt() throws URISyntaxException {
+        final var exc = get("/invalid").buildExchange();
+        exc.setResponse(Response.ok().json("{\"db-host-3\" 1}").build());
+        interceptor.getRouter().getConfiguration().setProduction(true);
+
+        assertEquals(ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("db-host-3"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"price\":9.99} {\"price\":12}",
+            "{\"price\":9.99}]]] garbage",
+            "{\"a\":1,}",
+            "{a:1}",
+            "hello",
+    })
+    void nonStandardJsonInTheRequestIsA400(String json) throws URISyntaxException {
+        final var exc = put("/invalid").json(json).buildExchange();
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void inputAfterTheJsonFromTheBackendIsA500() throws URISyntaxException {
+        final var exc = get("/invalid").buildExchange();
+        exc.setResponse(Response.ok().json("{\"price\":9.99} {\"price\":12}").build());
+
+        assertEquals(ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+    }
+
+    @Nested
+    class EmptyBody {
+
+        static List<Named<Json2XmlInterceptor>> interceptors() {
+            final var heuristic = new Json2XmlInterceptor();
+            heuristic.init(new DefaultRouter());
+            return List.of(Named.of("without xmlSchema", heuristic),
+                    Named.of("with xmlSchema", withSchema("classpath:/xml-schema/library.xsd")));
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void anEmptyRequestIsA400(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            final var exc = put("/empty").json("").buildExchange();
+
+            assertEquals(ABORT, json2Xml.handleRequest(exc));
+            assertEquals(400, exc.getResponse().getStatusCode());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void anEmptyResponseIsA500(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            final var exc = get("/empty").buildExchange();
+            exc.setResponse(Response.ok().json("").build());
+
+            assertEquals(ABORT, json2Xml.handleResponse(exc));
+            assertEquals(500, exc.getResponse().getStatusCode());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void aNotModifiedResponseIsPassedThrough(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            assertPassedThrough(json2Xml, get("/empty").buildExchange(),
+                    Response.notModified("Thu, 19 Nov 2026 10:00:00 GMT").contentType(APPLICATION_JSON).build());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void aNoContentResponseIsPassedThrough(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            assertPassedThrough(json2Xml, get("/empty").buildExchange(),
+                    Response.noContent().contentType(APPLICATION_JSON).build());
+        }
+
+        @ParameterizedTest
+        @MethodSource("interceptors")
+        void theResponseToAHeadRequestIsPassedThrough(Json2XmlInterceptor json2Xml) throws URISyntaxException {
+            assertPassedThrough(json2Xml, get("/empty").method("HEAD").buildExchange(),
+                    Response.ok().contentType(APPLICATION_JSON).build());
+        }
+
+        private static void assertPassedThrough(Json2XmlInterceptor json2Xml, Exchange exc, Response res) {
+            exc.setResponse(res);
+            final var status = res.getStatusCode();
+
+            assertEquals(CONTINUE, json2Xml.handleResponse(exc));
+            assertEquals(status, exc.getResponse().getStatusCode());
+            assertTrue(exc.getResponse().isJSON(), "Content-Type is left as it is");
+            assertTrue(exc.getResponse().isBodyEmpty());
+        }
     }
 
     private static String xPath(String body, String expression) throws XPathExpressionException {
@@ -198,5 +301,137 @@ public class Json2XmlInterceptorTest {
 
     private void assertXPath(String expected, Message msg, String xpath) throws XPathExpressionException {
         assertEquals(expected, xPath(msg.getBodyAsStringDecoded(), xpath));
+    }
+
+    private static Json2XmlInterceptor withSchema(String xsd) {
+        final var interceptor = new Json2XmlInterceptor();
+        interceptor.setXmlSchema(xsd);
+        interceptor.init(new DefaultRouter());
+        return interceptor;
+    }
+
+    @Test
+    void anXmlSchemaWritesFieldsInDeclaredOrderAndNamespace() throws Exception {
+        final var exc = put("/order").json("""
+                {"order": {
+                    "address": {"zip": "01234", "city": "Bonn"},
+                    "item": [{"quantity": 2, "article": "Coffee"}, {"article": "Tea", "quantity": 1}],
+                    "id": 42
+                }}""").buildExchange();
+
+        assertEquals(CONTINUE, withSchema("classpath:/xml-schema/shop.xsd").handleRequest(exc));
+
+        final var xml = exc.getRequest().getBodyAsStringDecoded();
+        assertTrue(exc.getRequest().isXML());
+        assertEquals("42", shopXPath(xml, "/s:order/s:id"));
+        assertEquals("2", shopXPath(xml, "count(/s:order/s:item)"), "an array becomes repeated elements: " + xml);
+        assertEquals("Tea", shopXPath(xml, "/s:order/s:item[2]/s:article"));
+        assertEquals("Bonn", shopXPath(xml, "/s:order/c:address/c:city"));
+        assertTrue(xml.indexOf("<id") < xml.indexOf("item") && xml.indexOf("item") < xml.indexOf("address"),
+                "fields in XSD order: " + xml);
+    }
+
+    @Test
+    void aRootKeyTheXmlSchemaDoesNotDeclareIsA400() throws Exception {
+        final var exc = put("/x").json("{\"magazine\": {}}").buildExchange();
+
+        assertEquals(ABORT, withSchema("classpath:/xml-schema/library.xsd").handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("magazine"));
+    }
+
+    @Test
+    void jsonWithoutASingleRootKeyIsA400() throws Exception {
+        final var exc = put("/x").json(noRoot).buildExchange();
+
+        assertEquals(ABORT, withSchema("classpath:/xml-schema/library.xsd").handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void jsonThatCannotBeConvertedWithAnXmlSchemaKeepsItsExplanationInProduction() throws Exception {
+        final var exc = put("/x").json("{\"library\": ").buildExchange();
+        final var interceptor = withSchema("classpath:/xml-schema/library.xsd");
+        interceptor.getRouter().getConfiguration().setProduction(true);
+
+        assertEquals(ABORT, interceptor.handleRequest(exc));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("The JSON request could not be converted to XML."), body);
+    }
+
+    @Test
+    void anUndeclaredRootKeyFromTheBackendIsA500ThatHidesIt() throws Exception {
+        final var exc = get("/x").buildExchange();
+        exc.setResponse(Response.ok().json("{\"db-host-3\": {}}").build());
+
+        final var interceptor = withSchema("classpath:/xml-schema/library.xsd");
+        interceptor.getRouter().getConfiguration().setProduction(true);
+
+        assertEquals(ABORT, interceptor.handleResponse(exc));
+        assertEquals(500, exc.getResponse().getStatusCode());
+        assertFalse(exc.getResponse().getBodyAsStringDecoded().contains("db-host-3"));
+    }
+
+    @Test
+    void rootCannotBeCombinedWithAnXmlSchema() {
+        final var interceptor = new Json2XmlInterceptor();
+        interceptor.setXmlSchema("classpath:/xml-schema/library.xsd");
+        interceptor.setRoot("library");
+
+        final var e = assertThrows(ConfigurationException.class, () -> interceptor.init(new DefaultRouter()));
+        assertTrue(e.getMessage().contains("root"), e.getMessage());
+    }
+
+    @Test
+    void xml2JsonAndBackWithTheSameXmlSchemaKeepsTheContent() throws Exception {
+        final var original = """
+                <library name="City">
+                    <book id="7">
+                        <title>Dune</title>
+                        <author>Frank Herbert</author>
+                        <author>Brian Herbert</author>
+                        <pages>412</pages>
+                        <price currency="EUR">12.5</price>
+                        <available>true</available>
+                        <note xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+                    </book>
+                </library>""";
+        final var xml2Json = Xml2JsonInterceptorTest.withSchema("classpath:/xml-schema/library.xsd");
+
+        final var exc = post("/").contentType("application/xml").body(original).buildExchange();
+        xml2Json.handleRequest(exc);
+        final var json = exc.getRequest().getBodyAsStringDecoded();
+        assertEquals(CONTINUE, withSchema("classpath:/xml-schema/library.xsd").handleRequest(exc));
+        final var xml = exc.getRequest().getBodyAsStringDecoded();
+        assertEquals("Brian Herbert", xPath(xml, "/library/book/author[2]"));
+        assertEquals("EUR", xPath(xml, "/library/book/price/@currency"));
+        xml2Json.handleRequest(exc);
+
+        final var mapper = new ObjectMapper();
+        assertEquals(mapper.readTree(json), mapper.readTree(exc.getRequest().getBodyAsStringDecoded()),
+                "XML -> JSON -> XML -> JSON is stable: " + xml);
+    }
+
+    private static String shopXPath(String body, String expression) throws XPathExpressionException {
+        final var xpath = xPathFactory.newXPath();
+        xpath.setNamespaceContext(new NamespaceContext() {
+            public String getNamespaceURI(String prefix) {
+                return switch (prefix) {
+                    case "s" -> "https://example.com/shop";
+                    case "c" -> "https://example.com/common";
+                    default -> null;
+                };
+            }
+            public String getPrefix(String namespaceURI) { return null; }
+            public Iterator<String> getPrefixes(String namespaceURI) { return null; }
+        });
+        final var factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        try {
+            final var doc = factory.newDocumentBuilder().parse(new InputSource(new StringReader(body)));
+            return xpath.evaluate(expression, doc);
+        } catch (javax.xml.parsers.ParserConfigurationException | SAXException | IOException e) {
+            throw new AssertionError(e);
+        }
     }
 }

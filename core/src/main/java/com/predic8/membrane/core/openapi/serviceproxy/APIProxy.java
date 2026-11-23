@@ -45,6 +45,7 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.ensureTrailingSlash
 import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
@@ -103,6 +104,11 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
+
+    /**
+     * Indent of the lines about the OpenAPI documents in the startup log.
+     */
+    private static final int STARTUP_DETAILS_INDENT = 55;
 
     public static final String X_MEMBRANE_VALIDATION = "x-membrane-validation";
     public static final String X_MEMBRANE_ID = "x-membrane-id";
@@ -392,6 +398,38 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     public XmlConfig getXmlConfig() {
         return xmlConfig;
+    }
+
+    @Override
+    public String getKindLabel() {
+        return "";
+    }
+
+    /**
+     * @return The base paths of the OpenAPI documents, or the configured path when there are none
+     */
+    @Override
+    protected List<String> startupPaths() {
+        final var paths = getBasePaths();
+        if (paths != null && !paths.isEmpty())
+            return List.copyOf(paths.keySet());
+        return super.startupPaths();
+    }
+
+    /**
+     * @return One line per OpenAPI document with its location
+     */
+    @Override
+    public String getStartupDetails() {
+        final var records = getApiRecords();
+        if (records.isEmpty())
+            return "";
+        return "\n" + records.entrySet().stream()
+                .map(e -> " ".repeat(STARTUP_DETAILS_INDENT) + "- \"%s\" @ %s".formatted(
+                        e.getKey(),
+                        e.getValue().getSpec().getLocation()
+                ))
+                .collect(joining("\n"));
     }
 
 }

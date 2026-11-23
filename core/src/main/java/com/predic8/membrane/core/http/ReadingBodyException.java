@@ -92,9 +92,13 @@ public class ReadingBodyException extends RuntimeException {
      *     <li>{@link javax.net.ssl.SSLException}: TLS failure while reading</li>
      *     <li>{@link DecodingException}: the message names the Content-Encoding that failed</li>
      *     <li>{@link IOException} from the body framing, for example an invalid chunk size</li>
+     *     <li>{@link com.predic8.membrane.core.multipart.XopReassemblyException}: the message names
+     *     what is wrong with the XOP package</li>
      * </ul>
      * <p>
-     * Also true for a failure without a cause: its message is the whole explanation.
+     * Also true for a failure without a cause: its message is the whole explanation. And for an
+     * {@link InvalidContentTypeException}: its message gives the parser's reason, and the frames
+     * only show which plugin happened to read the body first.
      * </p>
      * <p>
      * False for causes that are not I/O errors, such as a {@link RuntimeException} from a decoder
@@ -103,6 +107,8 @@ public class ReadingBodyException extends RuntimeException {
      * @return boolean indicating whether the message of the exception provides all details
      */
     public boolean exceptionMessageIsSufficient() {
-        return getCause() == null || throwableOfType(this, IOException.class) != null;
+        return getCause() == null
+                || throwableOfType(this, IOException.class) != null
+                || throwableOfType(this, InvalidContentTypeException.class) != null;
     }
 }

@@ -15,9 +15,13 @@ limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+
+import static com.predic8.membrane.core.util.StompUtil.STOMP_VERSION;
+import static com.predic8.membrane.core.util.StompUtil.isSTOMPConnectFrame;
 
 /**
- * @description <p>Proxies incoming STOMP CONNECT requests. Use a &lt;stompClient&gt; to forward these requests so some other machine.</p>
+ * @description <p>Proxies incoming STOMP CONNECT and STOMP frames. Use a <code>stompClient</code> to forward these requests to some other machine.</p>
  * @topic 1. Proxies and Flow
  */
 @MCElement(name="stompProxy")
@@ -27,10 +31,17 @@ public class STOMPProxy extends SSLableProxy {
 		this.key = new ServiceProxyKey(80) {
 			@Override
 			public boolean matchesVersion(String version) {
-				return version.equals("STOMP");
+				return STOMP_VERSION.equals(version);
+			}
+
+			/**
+			 * The key method is a wildcard, since a session is opened by a CONNECT or a STOMP frame.
+			 */
+			@Override
+			public boolean complexMatch(Exchange exc) {
+				return isSTOMPConnectFrame(exc.getRequest());
 			}
 		};
-		((ServiceProxyKey)key).setMethod("CONNECT");
 	}
 
 }

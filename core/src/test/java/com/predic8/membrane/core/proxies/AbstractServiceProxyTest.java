@@ -27,6 +27,7 @@ import java.io.*;
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SuppressWarnings("UastIncorrectHttpHeaderInspection")
 class AbstractServiceProxyTest extends AbstractTestWithRouter {
@@ -67,5 +68,24 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
         p.getFlow().add(sh);
         p.getFlow().add(new ReturnInterceptor());
         return p;
+    }
+
+    @Test
+    @DisplayName("Startup label of a named API: configured name, then the URL")
+    void startupLabelNamed() {
+        final var proxy = new ServiceProxy(new ServiceProxyKey("*", "*", "/shop/v2/", 2000), "backend", 80);
+        proxy.setName("Fruitshop API");
+
+        assertEquals("Fruitshop API  http://127.0.0.1:2000/shop/v2/", proxy.getStartupLabel());
+    }
+
+    @Test
+    @DisplayName("Unbracketed IPv6 ip: is bracketed so the URL authority stays valid")
+    void explicitIPv6IsBracketed() {
+        final var key = new ServiceProxyKey(2000);
+        key.setIp("::1");
+        final var proxy = new ServiceProxy(key, "backend", 80);
+
+        assertEquals("http://[::1]:2000", proxy.buildUrl());
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://example.com/shop"
+           elementFormDefault="qualified">
+
+    <xs:complexType name="ItemType">
+        <xs:sequence>
+            <xs:element name="article" type="xs:string"/>
+            <xs:element name="quantity" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

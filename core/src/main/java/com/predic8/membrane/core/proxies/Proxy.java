@@ -49,4 +49,26 @@ public interface Proxy extends Cloneable {
 	Proxy clone() throws CloneNotSupportedException;
 
 	String getProtocol();
+
+	/**
+	 * @return Kind of the API in the startup log, e.g. <code>Service:</code>
+	 */
+	default String getKindLabel() {
+		return "Proxy:";
+	}
+
+	/**
+	 * @return What identifies the API in the startup log, e.g. its name and URL
+	 */
+	default String getStartupLabel() {
+		return getName();
+	}
+
+	/**
+	 * @return Further lines for the startup log, e.g. the OpenAPI documents or the WSDL. Starts with a line break, or
+	 * is empty.
+	 */
+	default String getStartupDetails() {
+		return "";
+	}
 }

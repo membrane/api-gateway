@@ -91,10 +91,10 @@ public class MessageUtil {
 	 * plain wrapping: {@link #getContentAsStream} reads an unencoded body through the same try block.
 	 */
 	private static ReadingBodyException decodingFailure(Message message, IOException e) {
-		final String contentEncoding = message.getHeader().getContentEncoding();
-		if (contentEncoding == null)
+		final var codings = message.getHeader().getContentCodings();
+		if (codings.isEmpty())
 			return new ReadingBodyException(e, message);
-		return new ReadingBodyException(new DecodingException(contentEncoding, e), message);
+		return new ReadingBodyException(new DecodingException(String.join(", ", codings), e), message);
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class MessageUtil {
 	 * The cost is that a {@code catch (IOException)} around a read of this stream does not fire.
 	 * Callers that handle a decoding failure themselves have to catch {@link ReadingBodyException}
 	 * too, and describe it with
-	 * {@link com.predic8.membrane.core.exceptions.ProblemDetails#bodyFailure} rather than deciding a
+	 * {@link com.predic8.membrane.core.exceptions.BodyFailureProblems#bodyFailure} rather than deciding a
 	 * status of their own; everything else lets it travel to the flow controller, which does the same.
 	 */
 	private static InputStream associateDecodingFailures(InputStream decoded, Message message) {

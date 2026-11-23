@@ -14,8 +14,10 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
@@ -25,19 +27,27 @@ import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.util.NetworkTestUtil.freePorts;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class HttpClientTest {
+
+    private static final int TIMEOUT_MILLIS = 5_000;
 
     HttpClient client;
 
@@ -67,8 +77,208 @@ class HttpClientTest {
         assertEquals("/", request.getUri());
     }
 
+    /**
+     * A refused connection is the failure the RetryHandler repeats a POST for: it happens before
+     * anything was written, so the request cannot have been applied (RFC 9110 §9.2.2). The next node
+     * has to receive the complete body.
+     */
+    @Test
+    void postBodyReachesNextNodeAfterConnectionRefused() throws Exception {
+        final var refusedPort = closedPort();
+        try (final var backend = new ServerSocket(0);
+             final var executor = Executors.newSingleThreadExecutor();
+             final var httpClient = new HttpClient()) {
+            backend.setSoTimeout(TIMEOUT_MILLIS);
+            final var receivedBody = executor.submit(() -> {
+                try (final var peer = backend.accept()) {
+                    peer.setSoTimeout(TIMEOUT_MILLIS);
+                    final var request = new Request();
+                    request.read(peer.getInputStream(), true);
+                    final var body = request.getBodyAsStringDecoded();
+                    peer.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(US_ASCII));
+                    return body;
+                }
+            });
+            final var payload = "hello".getBytes(US_ASCII);
+            final var exc = post("/foo").body(payload.length, new ByteArrayInputStream(payload)).buildExchange();
+            exc.setDestinations(List.of(
+                    "http://localhost:%d/foo".formatted(refusedPort),
+                    "http://localhost:%d/foo".formatted(backend.getLocalPort())));
+
+            httpClient.call(exc);
+
+            assertEquals("hello", receivedBody.get(TIMEOUT_MILLIS, MILLISECONDS));
+            assertEquals(200, exc.getResponse().getStatusCode());
+        }
+    }
+
+    @Nested
+    class ProxyAuthorization {
+
+        static final String INBOUND = "Basic aW5ib3VuZA==";
+        static final String PROXY_CREDENTIALS = "Basic YWxpY2U6c2VjcmV0";
+
+        final AtomicInteger proxyRequests = new AtomicInteger();
+        volatile boolean failFirstProxyRequest;
+        TestRouter backend;
+        TestRouter proxy;
+        HttpClient proxiedClient;
+        int backendPort;
+        int tlsBackendPort;
+        int proxyPort;
+
+        @BeforeEach
+        void setUp() throws Exception {
+            final var ports = freePorts(3);
+            backendPort = ports[0];
+            tlsBackendPort = ports[1];
+            proxyPort = ports[2];
+
+            backend = new TestRouter();
+            backend.add(createEchoProxyAuthorizationBackend(backendPort));
+            final var tlsBackend = createEchoProxyAuthorizationBackend(tlsBackendPort);
+            tlsBackend.setSslInboundParser(keyStoreParser());
+            backend.add(tlsBackend);
+            backend.start();
+
+            proxy = new TestRouter();
+            final var rule = new ProxyRule(new ProxyRuleKey(proxyPort));
+            rule.getFlow().add(new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exc) {
+                    if (proxyRequests.incrementAndGet() == 1 && failFirstProxyRequest) {
+                        exc.setResponse(Response.statusCode(408).build());
+                        return RETURN;
+                    }
+                    return super.handleRequest(exc);
+                }
+            });
+            proxy.add(rule);
+            proxy.start();
+
+            final var pc = new ProxyConfiguration();
+            pc.setHost("localhost");
+            pc.setPort(proxyPort);
+            pc.setAuthentication(true);
+            pc.setUsername("alice");
+            pc.setPassword("secret");
+            final var hcc = new HttpClientConfiguration();
+            hcc.setProxy(pc);
+            hcc.setSslParser(trustStoreParser());
+            hcc.setBaseLocation("");
+            proxiedClient = new HttpClient(hcc);
+        }
+
+        @AfterEach
+        void tearDown() {
+            try {
+                if (proxiedClient != null)
+                    proxiedClient.close();
+            } finally {
+                try {
+                    if (proxy != null)
+                        proxy.stop();
+                } finally {
+                    if (backend != null)
+                        backend.stop();
+                }
+            }
+        }
+
+        @Test
+        void proxyCredentialsOfPlainAttemptAreNotSentThroughTunnelOfRetry() throws Exception {
+            final var exc = callPlainThenTls(get("/foo"));
+
+            assertEquals(2, proxyRequests.get());
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals("", exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
+        void inboundProxyAuthorizationIsSentThroughTunnelOfRetry() throws Exception {
+            final var exc = callPlainThenTls(get("/foo").header(PROXY_AUTHORIZATION, INBOUND));
+
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals(INBOUND, exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
+        void proxyCredentialsAreSentToProxyForPlainHttp() throws Exception {
+            final var exc = get("http://localhost:%d/foo".formatted(backendPort))
+                    .header(PROXY_AUTHORIZATION, INBOUND)
+                    .buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals(PROXY_CREDENTIALS, exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
+        void proxyCredentialsAreRemovedFromRequestAfterProxiedCall() throws Exception {
+            final var exc = get("http://localhost:%d/foo".formatted(backendPort)).buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertNull(exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION));
+        }
+
+        @Test
+        void inboundProxyAuthorizationIsRestoredOnRequestAfterProxiedCall() throws Exception {
+            final var exc = get("http://localhost:%d/foo".formatted(backendPort))
+                    .header(PROXY_AUTHORIZATION, INBOUND)
+                    .buildExchange();
+            proxiedClient.call(exc);
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals(INBOUND, exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION));
+        }
+
+        private Exchange callPlainThenTls(Request.Builder builder) throws Exception {
+            failFirstProxyRequest = true;
+            final var exc = builder.buildExchange();
+            exc.setDestinations(List.of(
+                    "http://localhost:%d/foo".formatted(backendPort),
+                    "https://localhost:%d/foo".formatted(tlsBackendPort)));
+            proxiedClient.call(exc);
+            return exc;
+        }
+
+        private static ServiceProxy createEchoProxyAuthorizationBackend(int port) {
+            final var sp = new ServiceProxy(new ServiceProxyKey(port), null, 0);
+            sp.getFlow().add(new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exc) {
+                    final var proxyAuthorization = exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION);
+                    exc.setResponse(Response.ok(proxyAuthorization != null ? proxyAuthorization : "").build());
+                    return RETURN;
+                }
+            });
+            return sp;
+        }
+
+        private static SSLParser keyStoreParser() {
+            final var ssl = new SSLParser();
+            ssl.setKeyStore(new KeyStore());
+            ssl.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
+            ssl.getKeyStore().setKeyPassword("secret");
+            return ssl;
+        }
+
+        private static SSLParser trustStoreParser() {
+            final var ssl = new SSLParser();
+            ssl.setTrustStore(new TrustStore());
+            ssl.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
+            ssl.getTrustStore().setPassword("secret");
+            ssl.setEndpointIdentificationAlgorithm(""); // the certificate was not issued for 'localhost'
+            return ssl;
+        }
+    }
+
     @Nested
     class NoProxy {
+
+        static final String INBOUND = "Basic aW5ib3VuZA==";
+        static final String PROXY_CREDENTIALS = "Basic YWxpY2U6c2VjcmV0";
 
         final AtomicInteger proxyRequests = new AtomicInteger();
         volatile boolean failFirstProxyRequest;
@@ -85,11 +295,11 @@ class HttpClientTest {
             proxyPort = ports[1];
 
             backend = new TestRouter();
-            var sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
+            final var sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
             sp.getFlow().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
-                    var proxyAuthorization = exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION);
+                    final var proxyAuthorization = exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION);
                     exc.setResponse(Response.ok(proxyAuthorization != null ? proxyAuthorization : "").build());
                     return RETURN;
                 }
@@ -98,7 +308,7 @@ class HttpClientTest {
             backend.start();
 
             proxy = new TestRouter();
-            var rule = new ProxyRule(new ProxyRuleKey(proxyPort));
+            final var rule = new ProxyRule(new ProxyRuleKey(proxyPort));
             rule.getFlow().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
@@ -116,14 +326,14 @@ class HttpClientTest {
         }
 
         private HttpClient createProxiedClient(String noProxy) {
-            var pc = new ProxyConfiguration();
+            final var pc = new ProxyConfiguration();
             pc.setHost("localhost");
             pc.setPort(proxyPort);
             pc.setAuthentication(true);
             pc.setUsername("alice");
             pc.setPassword("secret");
             pc.setNoProxy(noProxy);
-            var hcc = new HttpClientConfiguration();
+            final var hcc = new HttpClientConfiguration();
             hcc.setProxy(pc);
             return new HttpClient(hcc);
         }
@@ -146,7 +356,7 @@ class HttpClientTest {
 
         @Test
         void bypassedHostIsCalledDirectlyWithoutProxyCredentials() throws Exception {
-            var exc = get("http://localhost:%d/foo".formatted(backendPort)).buildExchange();
+            final var exc = get("http://localhost:%d/foo".formatted(backendPort)).buildExchange();
             proxiedClient.call(exc);
 
             assertEquals(200, exc.getResponse().getStatusCode());
@@ -156,41 +366,17 @@ class HttpClientTest {
 
         @Test
         void otherHostsGoThroughTheProxy() throws Exception {
-            var exc = get("http://127.0.0.1:%d/foo".formatted(backendPort)).buildExchange();
+            final var exc = get("http://127.0.0.1:%d/foo".formatted(backendPort)).buildExchange();
             proxiedClient.call(exc);
 
             assertEquals(200, exc.getResponse().getStatusCode());
             assertEquals(1, proxyRequests.get());
-        }
-
-        @Test
-        void proxyCredentialsAreRemovedFromRequestAfterProxiedCall() throws Exception {
-            final var exc = get("http://127.0.0.1:%d/foo".formatted(backendPort)).buildExchange();
-            proxiedClient.call(exc);
-
-            assertEquals(1, proxyRequests.get());
-            assertNull(exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION));
-        }
-
-        @Test
-        void inboundProxyAuthorizationIsRestoredOnRequestAfterProxiedCall() throws Exception {
-            final var exc = get("http://127.0.0.1:%d/foo".formatted(backendPort))
-                    .header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==")
-                    .buildExchange();
-            proxiedClient.call(exc);
-
-            assertEquals(1, proxyRequests.get());
-            assertEquals("Basic aW5ib3VuZA==", exc.getRequest().getHeader().getFirstValue(PROXY_AUTHORIZATION));
+            assertEquals(PROXY_CREDENTIALS, exc.getResponse().getBodyAsStringDecoded());
         }
 
         @Test
         void retryToBypassedHostDropsProxyCredentialsOfProxiedAttempt() throws Exception {
-            failFirstProxyRequest = true;
-            final var exc = get("/foo").buildExchange();
-            exc.setDestinations(List.of(
-                    "http://127.0.0.1:%d/foo".formatted(backendPort),
-                    "http://localhost:%d/foo".formatted(backendPort)));
-            proxiedClient.call(exc);
+            final var exc = callProxiedThenBypassed(get("/foo"));
 
             assertEquals(1, proxyRequests.get());
             assertEquals(200, exc.getResponse().getStatusCode());
@@ -198,38 +384,33 @@ class HttpClientTest {
         }
 
         @Test
+        void inboundProxyAuthorizationIsRestoredForBypassedHostAfterProxiedAttempt() throws Exception {
+            final var exc = callProxiedThenBypassed(get("/foo").header(PROXY_AUTHORIZATION, INBOUND));
+
+            assertEquals(1, proxyRequests.get());
+            assertEquals(200, exc.getResponse().getStatusCode());
+            assertEquals(INBOUND, exc.getResponse().getBodyAsStringDecoded());
+        }
+
+        @Test
         void inboundProxyAuthorizationIsKeptForBypassedHost() throws Exception {
             final var exc = get("http://localhost:%d/foo".formatted(backendPort))
-                    .header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==")
+                    .header(PROXY_AUTHORIZATION, INBOUND)
                     .buildExchange();
             proxiedClient.call(exc);
 
-            assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
+            assertEquals(INBOUND, exc.getResponse().getBodyAsStringDecoded());
         }
 
         @Test
         void inboundProxyAuthorizationEqualToConfiguredCredentialsIsKeptForBypassedHost() throws Exception {
             final var exc = get("http://localhost:%d/foo".formatted(backendPort))
-                    .header(PROXY_AUTHORIZATION, "Basic YWxpY2U6c2VjcmV0")
+                    .header(PROXY_AUTHORIZATION, PROXY_CREDENTIALS)
                     .buildExchange();
             proxiedClient.call(exc);
 
             assertEquals(0, proxyRequests.get());
-            assertEquals("Basic YWxpY2U6c2VjcmV0", exc.getResponse().getBodyAsStringDecoded());
-        }
-
-        @Test
-        void inboundProxyAuthorizationIsRestoredForBypassedHostAfterProxiedAttempt() throws Exception {
-            failFirstProxyRequest = true;
-            final var exc = get("/foo").header(PROXY_AUTHORIZATION, "Basic aW5ib3VuZA==").buildExchange();
-            exc.setDestinations(List.of(
-                    "http://127.0.0.1:%d/foo".formatted(backendPort),
-                    "http://localhost:%d/foo".formatted(backendPort)));
-            proxiedClient.call(exc);
-
-            assertEquals(1, proxyRequests.get());
-            assertEquals(200, exc.getResponse().getStatusCode());
-            assertEquals("Basic aW5ib3VuZA==", exc.getResponse().getBodyAsStringDecoded());
+            assertEquals(PROXY_CREDENTIALS, exc.getResponse().getBodyAsStringDecoded());
         }
 
         @ParameterizedTest
@@ -246,12 +427,31 @@ class HttpClientTest {
             assertEquals(0, proxyRequests.get());
         }
 
+        private Exchange callProxiedThenBypassed(Request.Builder builder) throws Exception {
+            failFirstProxyRequest = true;
+            final var exc = builder.buildExchange();
+            exc.setDestinations(List.of(
+                    "http://127.0.0.1:%d/foo".formatted(backendPort),
+                    "http://localhost:%d/foo".formatted(backendPort)));
+            proxiedClient.call(exc);
+            return exc;
+        }
+
         private static boolean isIpv6LoopbackAvailable() {
             try (var ignored = new ServerSocket(0, 1, InetAddress.getByName("::1"))) {
                 return true;
             } catch (IOException e) {
                 return false;
             }
+        }
+    }
+
+    /**
+     * A port nobody listens on, so connecting to it is refused.
+     */
+    private static int closedPort() throws IOException {
+        try (final var socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
         }
     }
 }

@@ -22,9 +22,7 @@ import org.xml.sax.InputSource;
 
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.EOFException;
 import java.io.StringReader;
-import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -249,6 +247,18 @@ public class ProblemDetailsTest {
             assertTrue(detail.startsWith("Origin not allowed by CORS policy. Internal details are hidden."), detail);
             assertTrue(detail.contains("key"), detail);
             assertFalse(detail.contains("evil"), detail);
+        }
+
+        @Test
+        @DisplayName("A public detail does not make an attached exception irrelevant: production still logs it under a key")
+        void publicDetailWithExceptionGetsLogKey() throws Exception {
+            final var j = parseJson(user(true, "a")
+                    .detail("Did not find multipart with id bin@example.com.", true)
+                    .exception(new IllegalStateException("decoder bug"))
+                    .build());
+
+            assertTrue(j.get(DETAIL).asText().startsWith("Did not find multipart with id bin@example.com. "), j.get(DETAIL).asText());
+            assertTrue(j.get(DETAIL).asText().contains("See server log (key:"), j.get(DETAIL).asText());
         }
 
         @Test
@@ -484,127 +494,6 @@ public class ProblemDetailsTest {
 
         private static Request.Builder get(String path) throws URISyntaxException {
             return Request.get(path).header(ACCEPT, BROWSER_ACCEPT);
-        }
-    }
-
-    /**
-     * Which end of the exchange a body failure is charged to, and how much of it a production
-     * deployment still tells the sender. Either body can be read in either flow, so the exception
-     * decides rather than the flow it surfaced in.
-     */
-    @Nested
-    class bodyFailures {
-
-        private static final String TRUNCATED_GZIP = "Unexpected end of ZLIB input stream";
-
-        @Test
-        @DisplayName("An undecodable request body is the sender's error, naming the coding that failed")
-        void undecodableRequestBody() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-
-            Response r = bodyFailure(false, "xml protection", exc, decodingFailure(exc.getRequest())).build();
-
-            assertEquals(400, r.getStatusCode());
-            JsonNode json = parseJson(r);
-            assertEquals("Request body could not be decoded", json.get(TITLE).asText());
-            assertEquals("https://membrane-api.io/problems/user/body-decoding", json.get(TYPE).asText());
-            assertEquals("gzip", json.get("contentEncoding").asText());
-            assertTrue(json.get(DETAIL).asText().contains(TRUNCATED_GZIP), json.get(DETAIL).asText());
-        }
-
-        @Test
-        @DisplayName("The same failure on a backend response body is ours, not the sender's")
-        void undecodableResponseBody() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-            exc.setResponse(Response.ok().body("x").build());
-
-            Response r = bodyFailure(false, "validator", exc, decodingFailure(exc.getResponse())).build();
-
-            assertEquals(500, r.getStatusCode());
-            // Nothing the sender can act on, so it is not dressed up as a decoding problem of theirs
-            assertEquals("https://membrane-api.io/problems/internal", parseJson(r).get(TYPE).asText());
-        }
-
-        @Test
-        @DisplayName("A backend body cut off by the connection names the place and needs no stack trace")
-        void socketFailureOnBackendBody() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-            exc.setResponse(Response.ok().body("x").build());
-            var failure = new ReadingBodyException(new SocketException("Connection reset"), exc.getResponse());
-
-            JsonNode json = parseJson(bodyFailure(false, "validator", exc, failure).build());
-
-            assertEquals("Could not read the response body from the backend.", json.get(DETAIL).asText());
-            assertEquals("java.net.SocketException: Connection reset", json.get("message").asText());
-            assertFalse(json.has("stackTrace"), json.toString());
-        }
-
-        @Test
-        @DisplayName("A backend body failure that is not an I/O error keeps its stack trace")
-        void otherFailureOnBackendBodyKeepsStackTrace() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-            exc.setResponse(Response.ok().body("x").build());
-            var failure = new ReadingBodyException(new IllegalStateException("decoder bug"), exc.getResponse());
-
-            assertTrue(parseJson(bodyFailure(false, "validator", exc, failure).build()).has("stackTrace"));
-        }
-
-        @Test
-        @DisplayName("Production hides a failure on a backend body behind a log key")
-        void productionGivesLogKeyForBackendBody() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-            exc.setResponse(Response.ok().body("x").build());
-            var failure = new ReadingBodyException(new SocketException("Connection reset"), exc.getResponse());
-
-            JsonNode json = parseJson(bodyFailure(true, "validator", exc, failure).build());
-
-            assertTrue(json.get(DETAIL).asText().contains("See server log (key:"), json.toString());
-        }
-
-        @Test
-        @DisplayName("A body failure that is not a decoding failure keeps its own cause and plain type")
-        void readFailureWithoutDecoding() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-            var failure = new ReadingBodyException(new EOFException("peer went away"), exc.getRequest());
-
-            Response r = bodyFailure(false, "openapi", exc, failure).build();
-
-            assertEquals(400, r.getStatusCode());
-            JsonNode json = parseJson(r);
-            assertEquals("peer went away", json.get(DETAIL).asText());
-            assertEquals("https://membrane-api.io/problems/user", json.get(TYPE).asText());
-        }
-
-        @Test
-        @DisplayName("Production keeps the title, type and coding but withholds the decoder's wording")
-        void production() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-
-            Response r = bodyFailure(true, "xml protection", exc, decodingFailure(exc.getRequest())).build();
-
-            assertEquals(400, r.getStatusCode());
-            JsonNode json = parseJson(r);
-            assertEquals("Request body could not be decoded", json.get(TITLE).asText());
-            assertEquals("https://membrane-api.io/problems/user/body-decoding", json.get(TYPE).asText());
-            assertEquals("gzip", json.get("contentEncoding").asText());
-            assertFalse(r.getBodyAsStringDecoded().contains(TRUNCATED_GZIP), r.getBodyAsStringDecoded());
-        }
-
-        /**
-         * {@link ProblemDetails#addSubSee} concatenates without a separator, so the factory has to be
-         * the only one adding a suffix - a caller adding its own would run the two together.
-         */
-        @Test
-        void seeSuffixIsSetOnceAndWellFormed() throws Exception {
-            Exchange exc = Request.post("/").body("x").buildExchange();
-
-            Response r = bodyFailure(false, "openapi", exc, decodingFailure(exc.getRequest())).build();
-
-            assertTrue(parseJson(r).get(SEE).asText().endsWith("/reading-body"), parseJson(r).get(SEE).asText());
-        }
-
-        private static ReadingBodyException decodingFailure(Message source) {
-            return new ReadingBodyException(new DecodingException("gzip", new EOFException(TRUNCATED_GZIP)), source);
         }
     }
 

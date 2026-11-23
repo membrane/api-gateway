@@ -40,7 +40,6 @@ import java.util.*;
 
 import static com.predic8.membrane.core.security.KeyStoreUtil.*;
 import static com.predic8.membrane.core.util.NetworkUtil.isIpLiteral;
-import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 
 public class StaticSSLContext extends SSLContext {
 
@@ -70,6 +69,10 @@ public class StaticSSLContext extends SSLContext {
     private final SSLParser sslParser; // TODO push up to super class?
     private List<String> dnsNames;
     private javax.net.ssl.SSLContext sslc;
+    /**
+     * The trust manager given to {@link #sslc}, null if the JDK's default is used.
+     */
+    private X509TrustManager clientTrustManager;
 
     private Validity validity;
 
@@ -199,13 +202,25 @@ public class StaticSSLContext extends SSLContext {
         TrustManager[] tms;
         if (sslParser.isInsecureValidation()) {
             log.warn("TLS certificate validation is disabled (insecureValidation=true) for {}. This accepts any certificate and must never be used in production.", getLocation());
-            return new TrustManager[]{new TrustAllX509TrustManager()};
+            final var trustAll = new TrustAllX509TrustManager();
+            clientTrustManager = trustAll;
+            return new TrustManager[]{trustAll};
         }
         tms = tmf != null ? tmf.getTrustManagers() : null;
         if (sslParser.isIgnoreTimestampCheckFailure())
             tms = new TrustManager[]{new TrustManagerWrapper(tms, true)};
 
+        clientTrustManager = tms == null ? null : Arrays.stream(tms)
+                .filter(X509TrustManager.class::isInstance)
+                .map(X509TrustManager.class::cast)
+                .findFirst()
+                .orElse(null);
         return tms;
+    }
+
+    @Override
+    protected X509TrustManager getClientTrustManager() {
+        return clientTrustManager != null ? clientTrustManager : super.getClientTrustManager();
     }
 
     private static String getKeyAlias(SSLParser sslParser, KeyStore ks) throws KeyStoreException {
@@ -495,7 +510,7 @@ public class StaticSSLContext extends SSLContext {
             return;
         if (sniServerName == null) {
             // RFC 6066 forbids IP literals as SNI host names.
-            if (isIpLiteral(removeBracketsIfPresent(defaultHost)))
+            if (isIpLiteral(defaultHost))
                 return;
             sniServerName = defaultHost;
         }

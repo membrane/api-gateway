@@ -47,6 +47,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * threads is illegal. Using a Body Stream after the Body as been accessed by
  * someone else (using streams or not) is illegal.
  * <p>
+ * A body's content is not changed in place. To change a message's body, set a new one with
+ * {@link Message#setBody(AbstractBody)}.
+ * <p>
  * Failing to read a body is terminal: the {@link ReadingBodyException} is recorded (see
  * {@link #fail(IOException)}), the observers are notified via
  * {@link MessageObserver#bodyFailed(ReadingBodyException)} and every later access re-throws that same
@@ -77,10 +80,19 @@ public abstract class AbstractBody {
 	protected final List<MessageObserver> observers = new ArrayList<>(1);
 
 	/**
-	 * Whether the body was passed through without being retained. Orthogonal to {@link #state}: a
-	 * streamed body still becomes {@link BodyState.Read} once it has been consumed completely.
+	 * What happens to the content once it is consumed. Orthogonal to {@link #state}: a streamed or
+	 * discarded body still becomes {@link BodyState.Read} once it has been consumed completely.
 	 */
-	private boolean wasStreamed = false;
+	private Retention retention = Retention.RETAINED;
+
+	private enum Retention {
+		/** Read into {@link #chunks}, where it stays. */
+		RETAINED,
+		/** Passed through to the receiver without being retained. */
+		STREAMED,
+		/** Dropped without being retained, e.g. because nobody needed it. */
+		DISCARDED
+	}
 
 	public void read() {
 		if (isRead())
@@ -100,14 +112,90 @@ public abstract class AbstractBody {
 		markAsRead();
 	}
 
-	public void discard() {
-		if (state instanceof Failed(var cause)) {
-			// Nothing left to drain and no reason to bother the caller: discard() is a best-effort
-			// operation (see Message.discardBody()).
-			log.debug("Not discarding body: reading it already failed ({}).", cause.getMessage());
+	/**
+	 * Consumes the rest of the body, so that the connection can carry the next message. Does nothing if
+	 * the body was already read, streamed, or has failed.
+	 * <p>
+	 * A body that {@linkplain #dropsContentOnDiscard() drops its content} passes it to the observers
+	 * without retaining it; any other body is read into memory. A body that is
+	 * {@linkplain DropOutcome.Abandoned abandoned} instead of drained is marked failed without an
+	 * exception, so that its connection is closed instead of reused.
+	 *
+	 * @throws ReadingBodyException if reading from the stream fails or the body ends early
+	 */
+	public final void discard() {
+		switch (state) {
+			case Failed(var cause) -> {
+				// Nothing left to drain and no reason to bother the caller: discard() is a best-effort
+				// operation (see Message.discardBody()).
+				log.debug("Not discarding body: reading it already failed ({}).", cause.getMessage());
+				return;
+			}
+			case Read ignored -> {
+				return;
+			}
+			case Unread ignored -> {
+				// consume it below
+			}
+		}
+		if (wasStreamed())
+			return;
+
+		if (!dropsContentOnDiscard()) {
+			read();
 			return;
 		}
-		read();
+
+		retention = Retention.DISCARDED; // before observers learn the body is complete and look for its content
+		for (MessageObserver observer : observers)
+			observer.bodyRequested(this);
+		try {
+			switch (dropContent()) {
+				case DropOutcome.Drained ignored -> markAsRead();
+				case DropOutcome.Abandoned(var reason) -> fail(new IOException(reason));
+			}
+		} catch (IOException e) {
+			throw fail(e);
+		}
+	}
+
+	/**
+	 * How {@link #dropContent()} left the body. A failure to drain it is not an outcome but an
+	 * {@link IOException}.
+	 */
+	protected sealed interface DropOutcome {
+
+		/** Consumed completely: the stream is positioned after the body. */
+		record Drained() implements DropOutcome {}
+
+		/**
+		 * Deliberately not consumed, the stream is left untouched. The body cannot become read, as that
+		 * would let the connection be reused with the body still in it.
+		 *
+		 * @param reason why the body was not drained, recorded as the cause of the failure
+		 */
+		record Abandoned(String reason) implements DropOutcome {}
+
+		DropOutcome DRAINED = new Drained();
+	}
+
+	/**
+	 * @return whether {@link #discard()} drops the content via {@link #dropContent()} instead of reading
+	 *         it into memory
+	 */
+	protected boolean dropsContentOnDiscard() {
+		return false;
+	}
+
+	/**
+	 * Consumes the rest of the content without retaining it, passing it to the observers. Called by
+	 * {@link #discard()} for bodies that {@linkplain #dropsContentOnDiscard() drop their content}, which
+	 * marks the body as read or failed according to the outcome.
+	 *
+	 * @throws IOException if reading from the stream fails or the body ends early
+	 */
+	protected DropOutcome dropContent() throws IOException {
+		throw new UnsupportedOperationException("%s does not drop its content.".formatted(getClass().getSimpleName()));
 	}
 
 	/**
@@ -120,14 +208,22 @@ public abstract class AbstractBody {
 	private void requireReadable() {
 		switch (state) {
 			case Failed(var cause) -> throw cause;
-			case Unread ignored -> requireNotStreamed();
-			case Read ignored -> requireNotStreamed();
+			case Unread ignored -> requireContentRetained();
+			case Read ignored -> requireContentRetained();
 		}
 	}
 
-	private void requireNotStreamed() {
-		if (wasStreamed)
-			throw new IllegalStateException("Cannot read body after it was streamed.");
+	/**
+	 * @throws IllegalStateException if the content was streamed or discarded. It is gone, or only its
+	 *         start is left in {@link #chunks}; returning that would pass a truncated body off as complete.
+	 */
+	protected void requireContentRetained() {
+		switch (retention) {
+			case RETAINED -> {}
+			// Mostly a request body read in the response flow: it is sent without a copy with retries: 0.
+			case STREAMED -> throw new IllegalStateException("Cannot read body after it was streamed without keeping a copy. With retries: 0 the request body is streamed to the backend; to use it in the response flow, read it in the request flow first.");
+			case DISCARDED -> throw new IllegalStateException("Cannot read body after it was discarded.");
+		}
 	}
 
 	/**
@@ -184,21 +280,10 @@ public abstract class AbstractBody {
 			case Unread ignored -> state = READ;
 		}
 
-		onMarkedAsRead();
-
 		for (MessageObserver observer : observers)
 			observer.bodyComplete(this);
 
 		observers.clear();
-	}
-
-	/**
-	 * Hook for subclasses that keep their own completion state. Runs only when the body actually
-	 * transitioned to read, so such state can never contradict {@link #isRead()} - in particular it
-	 * stays unset for a body whose read failed.
-	 */
-	protected void onMarkedAsRead() {
-		// no additional state to update
 	}
 
 	/**
@@ -262,13 +347,16 @@ public abstract class AbstractBody {
 		// never (re-)transmit a body whose read failed: that would send a truncated body
 		if (state instanceof Failed(var cause))
 			throw cause;
+		// nor one that was discarded: nothing or only its start is left, the header may announce more
+		if (retention == Retention.DISCARDED)
+			throw new IllegalStateException("Cannot write body after it was discarded.");
 		try {
 			if (!isRead() && !retainCopy) {
-				if (wasStreamed)
+				if (wasStreamed())
 					log.warn("Streaming the body twice will not work.");
 				for (MessageObserver observer : observers)
 					observer.bodyRequested(this);
-				wasStreamed = true;
+				retention = Retention.STREAMED;
 				writeStreamed(out);
 				return;
 			}
@@ -375,7 +463,7 @@ public abstract class AbstractBody {
 			observer.bodyFailed(cause);
 			return;
 		}
-		if (wasStreamed)
+		if (wasStreamed())
 			log.warn("adding body observer after body was streamed.");
 		observers.add(observer);
 	}
@@ -385,7 +473,16 @@ public abstract class AbstractBody {
 	}
 
 	public boolean wasStreamed() {
-		return wasStreamed;
+		return retention == Retention.STREAMED;
+	}
+
+	/**
+	 * @return whether the content is kept in this body once it has been consumed. <code>false</code>
+	 *         for a body that was streamed or discarded: observers that need its content must have
+	 *         collected it from the chunks passed to them, see {@link BodyCollectingMessageObserver}.
+	 */
+	public boolean isContentRetained() {
+		return retention == Retention.RETAINED;
 	}
 
 	public Header getTrailer() {

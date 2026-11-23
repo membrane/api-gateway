@@ -20,18 +20,19 @@ Keep this file in sync when adding, renaming or removing a util class.
 
 | Class | Purpose |
 |---|---|
-| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, cross-origin (CSRF) check, token/whitespace char classes |
+| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, cross-origin (CSRF) check, token/whitespace char classes, `isToken`, `containsWhitespace` (incl. NEL) |
 | `MediaTypeUtil` | Most specific matching media type from a set |
 | `ContentTypeDetector` | Effective content type of a `Message` |
 | `http/SSEParser` | Incremental Server-Sent Events parser (`SSEEvent` with `json()`) |
 | `URI`, `URIFactory` | Membrane's own URI type and its configurable factory (illegal characters, backslashes); use instead of `java.net.URI` where lenient parsing is needed |
 | `URIUtil` | File path ↔ file URI conversion, path-char encoding, normalization |
 | `URIValidationUtil` | RFC 3986 character classes and host/port validation |
-| `URLUtil` | Authority, path+query, name component, port of a URL |
+| `URLUtil` | Authority, path+query, name component, port of a URL; scheme and authority of a URL reference as a browser reads it (`getSchemeAndAuthority`, for open-redirect checks) |
 | `URLParamUtil` | Query/form parameters from an `Exchange`; build, parse and encode query strings; mask query values for logging |
 | `UrlNormalizer` | Normalize a base URL |
 | `UriIllegalCharacterDetector` | Detect illegal characters in URIs |
 | `WebServerUtil` | Content type by file extension for static serving |
+| `StompUtil` | STOMP CONNECT/STOMP frame check; whether an exchange became a tunnel without an HTTP response |
 | `ip/IPv6Util` | IPv6 address validation |
 
 ## Messages, SOAP, JSON, XML
@@ -43,11 +44,15 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/SOAPEnvelopeReader` | Package-private; reads a message event by event for `SOAPUtil.analyseSOAPMessage` and `validateSOAPEnvelope` (envelope structure and well-formedness checks) |
 | `util/soap/SoapVersion`, `util/soap/WSDLUtil` | SOAP version constants; rewrite relative WSDL paths |
 | `util/wsdl/parser/*` | Lightweight WSDL model (`Definitions`, `Binding`, `Operation`, `Port`, ...) |
-| `util/json/JsonUtil` | Parse body to `ObjectNode`, set JSON body, scalar → `JsonNode`, escape JSON Pointer segment (RFC 6901) |
+| `util/json/JsonUtil` | Parse body to `ObjectNode`, read exactly one JSON value (`readSingleValue`, errors with line/column as `InvalidJsonException`), set JSON body, scalar → `JsonNode`, escape JSON Pointer segment (RFC 6901) |
 | `util/json/JsonToXml` | JSON → XML conversion |
-| `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath) |
+| `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath); `newSerializer()` for DOM → text/bytes (JDK serializer, use instead of `TransformerFactory.newInstance()`) |
 | `util/xml/XMLEncodingUtil` | XML character encoding |
 | `util/xml/NormalizeXMLForJsonUtil` | Normalize XML for JSON conversion |
+| `util/xml/schema/XmlSchemaMapping` | XSD-driven XML ↔ JSON conversion of whole documents (`xml2Json`/`json2Xml` with `xmlSchema`) |
+| `util/xml/schema/XsdToSchema` | XSD declarations → OpenAPI schemas (WSDL message parts: `interceptor.soap2json.WsdlPartsToSchema`) |
+| `util/xml/schema/Xml2JsonMapper`, `Json2XmlTransformer` | XML element → JSON and JSON → XML element, following an XSD-derived schema |
+| `util/xml/schema/XsdDomUtil`, `XsdContentModel` | XSD DOM traversal: name/type resolution across imports and includes, content models |
 | `util/MapNamespaceContext` | `NamespaceContext` backed by a map (XPath) |
 | `config/xml/XmlConfig.global`, `localOrGlobal` | The global `xmlConfig` from `components`, or a local one that replaces it (XPath namespaces) |
 | `util/LSInputImpl` | `LSInput` implementation for schema resolvers |

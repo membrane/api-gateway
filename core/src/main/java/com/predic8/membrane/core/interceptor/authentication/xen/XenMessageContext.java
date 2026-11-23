@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.authentication.xen;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -23,7 +24,6 @@ import org.xml.sax.InputSource;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
@@ -71,7 +71,7 @@ public class XenMessageContext {
 
     public void writeBack() {
         try {
-            Transformer t = TransformerFactory.newInstance().newTransformer();
+            Transformer t = XMLUtil.newSerializer();
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             t.transform(new DOMSource(doc), new StreamResult(baos));

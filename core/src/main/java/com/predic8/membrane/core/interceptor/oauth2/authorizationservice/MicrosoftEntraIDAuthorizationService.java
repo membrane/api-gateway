@@ -48,10 +48,12 @@ public class MicrosoftEntraIDAuthorizationService extends AuthorizationService {
 
     @Override
     public void init() throws Exception {
-        parseSrc(resolve(
+        try (final var wellKnown = resolve(
                 router.getResolverMap(),
                 getBeanBaseLocation(),
-                getWellKnownUrl("https://login.microsoftonline.com/" + tenantId + "/v2.0/")));
+                getWellKnownUrl("https://login.microsoftonline.com/" + tenantId + "/v2.0/"))) {
+            parseSrc(wellKnown);
+        }
         adjustScope();
         prepareClaimsForLoginUrl();
     }

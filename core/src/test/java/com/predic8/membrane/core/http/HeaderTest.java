@@ -86,6 +86,39 @@ class HeaderTest {
         assertEquals("example.com", h.getFirstValue("Host"));
     }
 
+    /**
+     * RFC 9110 5.3: several field lines form one list, in order. RFC 9110 5.6.1: empty list
+     * elements do not count.
+     */
+    @Test
+    void getContentCodingsCombinesFieldLinesAndDropsEmptyElements() {
+        assertEquals(List.of(), new Header().getContentCodings());
+
+        final var h = new Header();
+        h.add(CONTENT_ENCODING, "");
+        h.add(CONTENT_ENCODING, ", gzip,");
+        h.add("content-encoding", "br");
+
+        assertEquals(List.of("gzip", "br"), h.getContentCodings());
+        assertThrows(UnsupportedOperationException.class, () -> h.getContentCodings().add("zstd"));
+    }
+
+    @Test
+    void removeFieldsAndUnderscoreAliasesRemovesEverySpelling() {
+        var h = new Header();
+        h.add("X-Auth-User", "1");
+        h.add("X_Auth_User", "2");
+        h.add("x-auth_user", "3");
+        h.add("X.Auth.User", "4");
+        h.add("X~Auth-User", "5");
+        h.add("X-AuthUser", "kept");
+        h.add("Host", "example.com");
+
+        h.removeFieldsAndUnderscoreAliases("X-Auth-User");
+
+        assertEquals(List.of("X-AuthUser", "Host"), Arrays.stream(h.getAllHeaderFields()).map(f -> f.getHeaderName().toString()).toList());
+    }
+
     @Test
     void getMimeType() throws Exception {
         assertTrue(new MimeType(header.getContentType()).match(TEXT_XML));
@@ -515,6 +548,17 @@ class HeaderTest {
             Header h = new Header();
             h.add(CONTENT_LENGTH, value);
             assertThrows(MalformedHeaderException.class, h::getContentLength);
+        }
+
+        /**
+         * The message is logged and returned in problem details, and a backend may echo a credential as the value.
+         */
+        @Test
+        void invalidValueIsNotQuotedInMessage() {
+            final var h = new Header();
+            h.add(CONTENT_LENGTH, "secret-token");
+            final var e = assertThrows(MalformedHeaderException.class, h::getContentLength);
+            assertFalse(e.getMessage().contains("secret-token"), e.getMessage());
         }
     }
 

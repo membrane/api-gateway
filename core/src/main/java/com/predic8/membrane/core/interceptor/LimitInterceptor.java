@@ -18,11 +18,13 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
@@ -39,6 +41,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * Content-Encoding compression (gzip, brotli, deflate) cannot be used to bypass it.
  * When decoding is applied, <code>Content-Encoding</code> and <code>Content-Length</code> are
  * removed from the forwarded message because the decoded size is not known ahead of time.
+ * A body with a <code>Content-Encoding</code> that Membrane does not decode is forwarded encoded
+ * with its <code>Content-Encoding</code>, and the limit applies to its encoded bytes.
  * </p>
  * <p>
  * Due to Membrane's streaming architecture, request headers may already have been forwarded to
@@ -110,8 +114,10 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return ABORT;
 		}
 
+		final var decoded = msg.isContentEncodingDecoded();
 		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStreamDecoded())));
-		msg.getHeader().removeFields(CONTENT_ENCODING);
+		if (decoded)
+			msg.getHeader().removeFields(CONTENT_ENCODING);
 		msg.getHeader().removeFields(CONTENT_LENGTH);
 
 		return CONTINUE;
@@ -123,22 +129,50 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		private long pos;
 
+		/** Set at the end of input, once the decoder has been closed. */
+		private boolean ended;
+
 		public LengthLimitingStream(InputStream is) {
 			this.is = is;
+		}
+
+		/** A failed read ends the body, so the decoder is released here; a failure to close is kept as suppressed. */
+		private void closeAfterFailure(Exception failure) {
+			try {
+				is.close();
+			} catch (IOException e) {
+				failure.addSuppressed(e);
+			}
+		}
+
+		/** Releases the decoder. Later reads must still report the end, not reach the closed decoder. */
+		private int end() throws IOException {
+			ended = true;
+			is.close();
+			return -1;
 		}
 
 		private void checkPosition() throws IOException {
 			if (pos > maxBodyLength) {
 				log.info("Message length >= {} exceeded limit {}.",pos,maxBodyLength);
+				is.close();
 				throw new IOException("Message body too large.");
 			}
 		}
 
 		@Override
 		public int read() throws IOException {
-			int i = is.read();
+			if (ended)
+				return -1;
+			int i;
+			try {
+				i = is.read();
+			} catch (IOException | ReadingBodyException e) {
+				closeAfterFailure(e);
+				throw e;
+			}
 			if (i == -1)
-				return i;
+				return end();
 			pos++;
 			checkPosition();
 			return i;
@@ -146,9 +180,17 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read(byte[] b) throws IOException {
-			int l = is.read(b);
+			if (ended)
+				return b.length == 0 ? 0 : -1;
+			int l;
+			try {
+				l = is.read(b);
+			} catch (IOException | ReadingBodyException e) {
+				closeAfterFailure(e);
+				throw e;
+			}
 			if (l == -1)
-				return l;
+				return end();
 			pos += l;
 			checkPosition();
 			return l;
@@ -156,9 +198,19 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
-			int l = is.read(b, off, len);
+			if (ended) {
+				Objects.checkFromIndexSize(off, len, b.length);
+				return len == 0 ? 0 : -1;
+			}
+			int l;
+			try {
+				l = is.read(b, off, len);
+			} catch (IOException | ReadingBodyException e) {
+				closeAfterFailure(e);
+				throw e;
+			}
 			if (l == -1)
-				return l;
+				return end();
 			pos += l;
 			checkPosition();
 			return l;
@@ -166,6 +218,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public long skip(long n) throws IOException {
+			if (ended)
+				return 0;
 			long l = is.skip(n);
 			if (l == -1) // Is always false
 				return l;
@@ -176,6 +230,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		@Override
 		public int available() throws IOException {
+			if (ended)
+				return 0;
 			return is.available();
 		}
 
