@@ -343,12 +343,12 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
 
 ### Redesign of `call`
 
-- Story: `call` sends a request built from the current message (method from the `method` attribute, all header fields except the hop-by-hop ones, and the body for `POST`, `PUT` and `PATCH`) and merges the answer back into the current message: the response body replaces the message body, and the response header fields overwrite the message's fields of the same name. Since #3842 it works on the response in the response flow. The callout's status code is not kept anywhere.
+- Story: `call` sends a request built from the current message (method from the `method` attribute, all header fields except `Connection`, `Keep-Alive`, `Proxy-Connection`, `TE`, `Trailer` and `Upgrade`, and the body for `POST`, `PUT` and `PATCH`) and merges the answer back into the current message: the response body replaces the message body, and the response header fields overwrite the message's fields of the same name. Since #3842 it works on the response in the response flow. The callout's status code is not kept anywhere.
 - Problems:
-  - **Everything is copied out.** `Authorization`, `Cookie`, API keys and any other field the client sent go to the callout endpoint, which the client never addressed and which may belong to someone else. In the response flow, the backend response's fields (`Set-Cookie` with session IDs, internal fields) go out too. The user has to know this and remove fields beforehand, which also removes them from the message that goes on to the backend.
+  - **Everything is copied out.** `Authorization`, `Cookie`, API keys and any other field the client sent go to the callout endpoint, which the client never addressed and which may belong to someone else. In the response flow, the backend response's fields (`Set-Cookie` with session IDs, internal fields) go out too. Fields named in `Connection` are sent as well, so the client cannot remove fields the gateway added. The user has to know this and remove fields beforehand, which also removes them from the message that goes on to the backend.
   - **Everything is merged back.** Fields of the callout response overwrite those of the message: a callout `Content-Type` replaces the request's, and a callout `Set-Cookie` lands on a request, where it means nothing (tutorial `orchestration/40-Authentication-Call.yaml` has to copy it to `Cookie` and then remove it). `setValue` keeps only the last of several fields with the same name, so the backend's `Set-Cookie` plus two from the callout leaves one.
   - **The message body is lost.** The callout body replaces the message body, so the original body is gone unless it was saved before (e.g. with `setProperty`). Combining the original body with the callout result in a `template` needs that workaround.
-  - **Errors fail open.** A 401, 404 or 500 from the callout is merged like a 200 and the flow continues with the error body as message body. Only network errors abort with 500. The status code is not available to `if`, so the flow cannot react to it.
+  - **Errors fail open.** A 401, 404 or 500 from the callout is merged like a 200 and the flow continues with the error body as message body. Only failures to get or decode the callout response (network errors, unknown host, undecodable body) abort with 500. The status code is not available to `if`, so the flow cannot react to it.
   - **Request flow and response flow behave differently** (since #3842), which is hard to see in the configuration. A `call` directly under `flow`, next to a target, runs twice and the second run replaces the target's response.
   - **No limits.** The outbound body is decoded with `MessageUtil.getContent` and the callout response is read with `readAllBytes`, both without the decompression and size limits that apply elsewhere (MEM-38).
   - **The request can't be built freely.** The body is always the current body, the method is fixed per element, and header fields can only be changed on the current message before the call.
@@ -363,10 +363,10 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - Kong `request-callout`: named callouts, `headers.forward` and `body.forward` default to `false`, results under `kong.ctx.shared.callouts.<name>`.
   - Envoy `ext_authz`: allow lists for the fields sent to the authorization service and for the fields copied back.
 - To decide:
-  - A/B (compatible, keeps today's model) or C/D (new model, breaking).
+  - A/B (keeps today's merge model; breaks configurations that rely on forwarded or merged fields, or on error statuses passing through) or C/D (new model, breaking).
   - Default reaction to a callout error status: abort (which status for the client, 502?) or continue with the status exposed.
   - Name and syntax for accessing results in expressions (SpEL, Groovy, JSONPath, templates), and how long they live (exchange property).
   - Size limit for the callout response and for the decoded outbound body.
   - Whether `call` in the response flow needs anything special once results no longer merge.
   - Migration: the orchestration tutorials (`distribution/tutorials/orchestration/`) and the `call` reference docs.
-- **Breaking** with C/D, and with A/B for configurations that rely on header fields being sent or merged.
+- **Breaking** with C/D, and with A/B for configurations that rely on header fields being sent or merged, and with B for configurations that rely on error statuses passing through.
