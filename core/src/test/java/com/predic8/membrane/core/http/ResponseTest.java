@@ -466,6 +466,67 @@ public class ResponseTest {
     }
 
     /**
+     * RFC 9110 §9.3.2: the response to a HEAD request has the header fields of the GET response, including its
+     * Content-Length, but no content.
+     */
+    @Test
+    void writeWithoutBodyKeepsContentLength() throws Exception {
+        final var written = writeWithoutBodyToString(Response.ok("hello").build());
+        assertTrue(written.contains("Content-Length: 5\r\n"), written);
+        assertTrue(written.endsWith("\r\n\r\n"), written);
+        assertFalse(written.contains("hello"), written);
+    }
+
+    /**
+     * RFC 9112 §6.3: a response to HEAD ends after its header fields, so a last chunk is not written either.
+     */
+    @Test
+    void writeWithoutBodyWritesNoLastChunk() throws Exception {
+        final var res = Response.ok().build();
+        res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
+
+        final var written = writeWithoutBodyToString(res);
+        assertTrue(written.contains("Transfer-Encoding: chunked\r\n"), written);
+        assertFalse(written.endsWith("0\r\n\r\n"), written);
+    }
+
+    @Test
+    void writeWithoutBodyDropsContentLengthOfChunkedResponse() throws Exception {
+        final var res = Response.ok().build();
+        res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
+        res.getHeader().add(Header.CONTENT_LENGTH, "5");
+
+        assertFalse(writeWithoutBodyToString(res).contains("Content-Length"));
+    }
+
+    @Test
+    void writeWithoutBodyOmitsFramingOfNoContent() throws Exception {
+        final var written = writeWithoutBodyToString(Response.statusCode(204).body("hello").build());
+        assertFalse(written.contains("Content-Length"), written);
+        assertFalse(written.contains("Transfer-Encoding"), written);
+    }
+
+    /**
+     * The body is consumed, because that is what frees the connection it is read from.
+     */
+    @Test
+    void writeWithoutBodyDrainsBody() throws Exception {
+        final var in = new ByteArrayInputStream("hello".getBytes());
+        final var res = Response.ok().build();
+        res.setBody(new Body(in, 5));
+
+        writeWithoutBodyToString(res);
+        assertEquals(0, in.available());
+        assertTrue(res.getBody().isRead());
+    }
+
+    private static String writeWithoutBodyToString(Response res) throws IOException {
+        final var out = new ByteArrayOutputStream();
+        res.writeWithoutBody(out);
+        return out.toString(ISO_8859_1);
+    }
+
+    /**
      * RFC 9112 5.1: unlike a request, a response with whitespace before the colon is not rejected,
      * because a proxy must strip the whitespace before forwarding it. Stripping makes Membrane read
      * the body length a trimming backend meant, so a sloppy backend keeps working instead of

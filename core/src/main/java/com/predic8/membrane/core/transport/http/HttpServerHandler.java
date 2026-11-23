@@ -71,6 +71,12 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
      */
     private AbstractBody clientBody;
 
+    /**
+     * Whether the client sent the current request as HEAD. The flow may change the method, e.g. to POST for a SOAP
+     * backend, but the client still ends the response after its header fields.
+     */
+    private boolean headRequest;
+
     private boolean showSSLExceptions = false;
     private Http2ServerHandler http2ServerHandler;
 
@@ -308,6 +314,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     private void readAndParseRequest() throws IOException, EndOfStreamException {
         srcReq.read(srcIn, true);
         clientBody = srcReq.getBody();
+        headRequest = srcReq.isHEADRequest();
         exchange.received();
 
         log.debug("Requested URI: {}", srcReq.getUri());
@@ -500,7 +507,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     protected void writeResponse(Response res) throws IOException {
         if (!canKeepConnectionAlive(res))
             res.getHeader().setConnection(Header.CLOSE);
-        res.write(srcOut, false);
+        if (headRequest)
+            res.writeWithoutBody(srcOut);
+        else
+            res.write(srcOut, false);
         srcOut.flush();
         exchange.setTimeResSent(System.currentTimeMillis());
         exchange.collectStatistics();

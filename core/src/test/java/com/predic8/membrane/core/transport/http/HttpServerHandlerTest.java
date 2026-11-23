@@ -15,6 +15,11 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.test.*;
@@ -23,10 +28,19 @@ import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.*;
 
 import javax.net.ssl.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.*;
 import java.nio.*;
 import java.time.*;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.NetworkTestUtil.freePort;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpServerHandlerTest {
@@ -113,6 +127,121 @@ class HttpServerHandlerTest {
             assertEquals(1, log.eventsContaining(HANDSHAKE_FAILED).size(), log.getMessages().toString());
         } finally {
             stopCapture(log);
+        }
+    }
+
+    /**
+     * RFC 9112, section 6.3: the client ends a response to HEAD after its header fields, whatever they announce.
+     * Anything sent after them is read as the start of the next response on the connection.
+     */
+    @Nested
+    class HeadRequest {
+
+        private static final int TIMEOUT_MILLIS = 5000;
+
+        private final Router gateway = new TestRouter();
+
+        @AfterEach
+        void stopGateway() {
+            gateway.stop();
+        }
+
+        @Test
+        void bodySetInTheFlowIsNotSent() throws Exception {
+            final var port = freePort();
+            gateway.add(responding(port, "*", exc -> Response.ok("hello").build()));
+            gateway.start();
+
+            try (final var client = new Socket("localhost", port)) {
+                client.setSoTimeout(TIMEOUT_MILLIS);
+                final var in = new BufferedInputStream(client.getInputStream());
+
+                // The length a GET gets
+                assertEquals(5, sendHead(client, in).getHeader().getContentLength());
+                assertNextResponseStartsWithStatusLine(client, in);
+            }
+        }
+
+        /**
+         * Plugins such as json2Soap send a request on as POST, but the client still sent HEAD.
+         */
+        @Test
+        void methodChangedByTheFlowStillGetsNoBody() throws Exception {
+            final var port = freePort();
+            gateway.add(responding(port, "*", exc -> {
+                exc.getRequest().setMethod("POST");
+                return Response.ok("hello").build();
+            }));
+            gateway.start();
+
+            try (final var client = new Socket("localhost", port)) {
+                client.setSoTimeout(TIMEOUT_MILLIS);
+                final var in = new BufferedInputStream(client.getInputStream());
+
+                assertEquals(200, sendHead(client, in).getStatusCode());
+                assertNextResponseStartsWithStatusLine(client, in);
+            }
+        }
+
+        @Test
+        void chunkedResponseFromBackendGetsNoLastChunk() throws Exception {
+            try (final var backend = new ServerSocket(0);
+                 final var executor = Executors.newSingleThreadExecutor()) {
+                backend.setSoTimeout(TIMEOUT_MILLIS);
+                final var backendTask = executor.submit(() -> {
+                    try (final var peer = backend.accept()) {
+                        new Request().read(peer.getInputStream(), true);
+                        peer.getOutputStream().write("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n".getBytes(US_ASCII));
+                        peer.getOutputStream().flush();
+                    }
+                    return null;
+                });
+                final var port = freePort();
+                gateway.add(new ServiceProxy(new ServiceProxyKey("*", "HEAD", ".*", port), "localhost", backend.getLocalPort()));
+                gateway.add(responding(port, "GET", exc -> Response.ok("hello").build()));
+                gateway.start();
+
+                try (final var client = new Socket("localhost", port)) {
+                    client.setSoTimeout(TIMEOUT_MILLIS);
+                    final var in = new BufferedInputStream(client.getInputStream());
+
+                    assertEquals(200, sendHead(client, in).getStatusCode());
+                    backendTask.get(TIMEOUT_MILLIS, MILLISECONDS);
+                    assertNextResponseStartsWithStatusLine(client, in);
+                }
+            }
+        }
+
+        private static ServiceProxy responding(final int port, final String method, final Function<Exchange, Response> response) {
+            final var proxy = new ServiceProxy(new ServiceProxyKey("*", method, ".*", port), "", -1);
+            proxy.getFlow().add(new AbstractInterceptor() {
+                @Override
+                public Outcome handleRequest(Exchange exc) {
+                    exc.setResponse(response.apply(exc));
+                    return RETURN;
+                }
+            });
+            return proxy;
+        }
+
+        private static Response sendHead(final Socket client, final InputStream in) throws Exception {
+            client.getOutputStream().write("HEAD / HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes(US_ASCII));
+            final var response = new Response();
+            response.read(in, false);
+            return response;
+        }
+
+        /**
+         * Sends a GET on the same connection and reads the first line of its response as is, because
+         * <code>Response.read()</code> skips bytes in front of the status line.
+         */
+        private static void assertNextResponseStartsWithStatusLine(final Socket client, final InputStream in) throws Exception {
+            client.getOutputStream().write("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes(US_ASCII));
+            final var line = new ByteArrayOutputStream();
+            for (var b = in.read(); b != '\n' && b != -1; b = in.read())
+                line.write(b);
+            final var statusLine = line.toString(US_ASCII);
+            assertTrue(statusLine.startsWith("HTTP/1.1 200 "), statusLine);
         }
     }
 

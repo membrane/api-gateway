@@ -372,17 +372,10 @@ public abstract class Message {
 		final boolean writeBody = prepareBodyForWrite();
 		final boolean chunked = header.isChunked();
 
-		// RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding, and a
-		// receiver - Membrane included, see rejectIfChunkedWithContentLength - may reject one that has both.
-		// setBodyContent keeps the two consistent, but not every path goes through it: Http2Client presets
-		// chunked on a backend response and then adds the backend's content-length, and setBody or plain
-		// header edits leave the framing fields to the caller.
-		if (writeBody && chunked)
-			header.removeFields(CONTENT_LENGTH);
+		if (writeBody)
+			removeContentLengthIfChunked();
 
-		writeStartLine(out);
-		header.write(out);
-		out.write(CRLF_BYTES);
+		writeHead(out);
 
 		if (header.is100ContinueExpected()) {
 			out.flush();
@@ -403,7 +396,41 @@ public abstract class Message {
 	}
 
 	/**
-	 * Called by {@link #write(OutputStream, boolean)} before the header is written.
+	 * Writes the start line and the header fields, but not the body: for a response to a HEAD request, which the
+	 * client ends after the header fields, whatever they announce (RFC 9110 §9.3.2, RFC 9112 §6.3). The framing
+	 * fields stay, because they describe the content a GET gets. The body is still consumed, as in
+	 * {@link #write(OutputStream, boolean)} for a message that must not have one.
+	 */
+	public final void writeWithoutBody(OutputStream out) throws IOException {
+		if (prepareBodyForWrite())
+			removeContentLengthIfChunked();
+
+		writeHead(out);
+		out.flush();
+		discardBody();
+	}
+
+	/**
+	 * RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding, and a
+	 * receiver - Membrane included, see rejectIfChunkedWithContentLength - may reject one that has both.
+	 * setBodyContent keeps the two consistent, but not every path goes through it: Http2Client presets
+	 * chunked on a backend response and then adds the backend's content-length, and setBody or plain
+	 * header edits leave the framing fields to the caller.
+	 */
+	private void removeContentLengthIfChunked() {
+		if (header.isChunked())
+			header.removeFields(CONTENT_LENGTH);
+	}
+
+	private void writeHead(OutputStream out) throws IOException {
+		writeStartLine(out);
+		header.write(out);
+		out.write(CRLF_BYTES);
+	}
+
+	/**
+	 * Called by {@link #write(OutputStream, boolean)} and {@link #writeWithoutBody(OutputStream)} before the header
+	 * is written.
 	 *
 	 * @return false if the body must not go on the wire. The implementation then adjusts the framing
 	 *         header fields to match; the body is still consumed.
