@@ -23,15 +23,15 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LazyRateLimitTest {
+class MemoryRateLimitStoreTest {
 
     final int requestLimit = 100;
     final Duration period = Duration.ofSeconds(10);
-    LazyRateLimit limiter;
+    MemoryRateLimitStore limiter;
 
     @BeforeEach
     void setup() {
-        limiter = new LazyRateLimit();
+        limiter = new MemoryRateLimitStore();
     }
 
     @Test

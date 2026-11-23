@@ -56,8 +56,8 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
  * request also gets <code>Retry-After</code>. When several limiters apply to a request, the headers describe the one
  * with the fewest requests left.</p>
  * <p>By default, the counts are kept in memory, so every Membrane instance counts on its own, and the counts of all
- * clients are reset together. With <code>redisRateLimitStore</code>, all instances using the same Redis share the
- * counts.</p>
+ * clients are reset together. With another store, e.g. <code>redisRateLimitStore</code>, the counts are kept centrally
+ * and shared by all instances using it.</p>
  * <p>Behind a load balancer or reverse proxy, the client address can be taken from the <code>X-Forwarded-For</code>
  * header. Trust it only if Membrane cannot be reached directly; otherwise a client can choose its own address.</p>
  * <p>See tutorials/rate-limiting/10-Rate-Limit-by-Client-IP.yaml.</p>
@@ -134,7 +134,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         if (requestLimitDuration.compareTo(Duration.ofMillis(1)) < 0)
             throw new ConfigurationException("requestLimitDuration must be at least 1 millisecond, but is %s.".formatted(requestLimitDuration));
         if (store == null)
-            store = new LazyRateLimit();
+            store = new MemoryRateLimitStore();
         store.init(router);
     }
 

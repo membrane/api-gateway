@@ -112,10 +112,10 @@ public class RateLimitInterceptorTest {
 		interceptor.setKeyExpression("headers['X-Api-Key']");
 		interceptor.init(new DummyTestRouter());
 
-		// LazyRateLimit currently shares one reset time across all keys, masking issue #3387.
+		// MemoryRateLimitStore currently shares one reset time across all keys, masking issue #3387.
 		// Keep its real request counting, but distinguish the API-key and remote-IP reset times.
 		final var keyDeadline = Instant.now().plusSeconds(42);
-		interceptor.setStore(new LazyRateLimit() {
+		interceptor.setStore(new MemoryRateLimitStore() {
 			@Override
 			public RequestCount countRequest(String key, Duration period) {
 				return new RequestCount(super.countRequest(key, period).count(), "key:customer-a".equals(key) ? keyDeadline : Instant.now());
@@ -238,7 +238,7 @@ public class RateLimitInterceptorTest {
 		final var router = new DummyTestRouter();
 		final var limiter = limiter(router, 3);
 		final var deadline = Instant.now().plusSeconds(10);
-		limiter.setStore(new LazyRateLimit() {
+		limiter.setStore(new MemoryRateLimitStore() {
 			@Override
 			public RequestCount countRequest(String key, Duration period) {
 				return new RequestCount(super.countRequest(key, period).count(), deadline);
@@ -352,7 +352,7 @@ public class RateLimitInterceptorTest {
 
 	@Test
 	void limitersSharingAStoreShareTheLimit() {
-		final var store = new LazyRateLimit();
+		final var store = new MemoryRateLimitStore();
 		final var instanceA = new RateLimitInterceptor(ofMinutes(1), 3);
 		final var instanceB = new RateLimitInterceptor(ofMinutes(1), 3);
 		instanceA.setStore(store);
@@ -402,7 +402,7 @@ public class RateLimitInterceptorTest {
 		final var limiter = new RateLimitInterceptor();
 		limiter.init(new DummyTestRouter());
 
-		assertInstanceOf(LazyRateLimit.class, limiter.getStore());
+		assertInstanceOf(MemoryRateLimitStore.class, limiter.getStore());
 	}
 
 	private static RateLimitStore unreachableStore() {

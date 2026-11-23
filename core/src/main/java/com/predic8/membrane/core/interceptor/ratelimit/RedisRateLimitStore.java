@@ -51,6 +51,12 @@ import static org.apache.commons.codec.digest.DigestUtils.sha256Hex;
 @MCElement(name = "redisRateLimitStore")
 public class RedisRateLimitStore implements RateLimitStore {
 
+	/**
+	 * Keeps a key a while after its period, so that requests reaching Redis late, e.g. after waiting for a connection
+	 * or from an instance whose clock is slightly behind, are still counted in it instead of in a new, deleted key.
+	 */
+	private static final long EXPIRY_GRACE_MILLIS = 60_000;
+
 	private final Clock clock;
 
 	private RedisConnector connector;
@@ -72,7 +78,7 @@ public class RedisRateLimitStore implements RateLimitStore {
 		final var periodEnd = periodStart + periodMillis;
 		try {
 			// The key may be a credential, e.g. an API key, which must not be readable in Redis
-			final var count = increment(String.format(Locale.ROOT, "%s:%d:%d:%s", prefix, periodMillis, periodStart, sha256Hex(key)), periodEnd);
+			final var count = increment(String.format(Locale.ROOT, "%s:%d:%d:%s", prefix, periodMillis, periodStart, sha256Hex(key)), periodEnd + EXPIRY_GRACE_MILLIS);
 			return new RequestCount((int) Math.min(count, Integer.MAX_VALUE), ofEpochMilli(periodEnd));
 		} catch (JedisException e) {
 			throw new RateLimitStoreException("Cannot count request in Redis.", e);

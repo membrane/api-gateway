@@ -21,9 +21,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Counts in memory, so every Membrane instance counts on its own. All keys share one period.
+ * Counts in memory, so every Membrane instance counts on its own. All keys share one period, so an instance serves a
+ * single limiter or limiters with the same duration.
  */
-public class LazyRateLimit implements RateLimitStore {
+public class MemoryRateLimitStore implements RateLimitStore {
 
 	private final Object lock = new Object();
 	// The first request starts the first period

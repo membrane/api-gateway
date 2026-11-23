@@ -61,7 +61,7 @@ class RedisRateLimitStoreTest {
 		assertEquals(Instant.ofEpochMilli(PERIOD_END), requestCount.resetAt());
 		final var inOrder = inOrder(transaction, jedis);
 		inOrder.verify(transaction).incr(key);
-		inOrder.verify(transaction).pexpireAt(key, PERIOD_END);
+		inOrder.verify(transaction).pexpireAt(key, PERIOD_END + 60_000);
 		inOrder.verify(transaction).exec();
 		inOrder.verify(jedis).close();
 	}
@@ -89,6 +89,26 @@ class RedisRateLimitStoreTest {
 		} finally {
 			Locale.setDefault(Locale.Category.FORMAT, defaultLocale);
 		}
+	}
+
+	@Test
+	void requestsReachingRedisAfterTheirPeriodAreStillCounted() {
+		// The requests are counted in their period, but reach Redis only after it has ended
+		final var redisNow = PERIOD_END + 100;
+		final var counts = new HashMap<String, Long>();
+		final var lateStore = new RedisRateLimitStore(Clock.fixed(Instant.ofEpochMilli(NOW), ZoneOffset.UTC)) {
+			@Override
+			long increment(String redisKey, long expireAtMillis) {
+				final var count = counts.merge(redisKey, 1L, Long::sum);
+				// Like Redis, a key whose expiry has passed is deleted
+				if (expireAtMillis <= redisNow)
+					counts.remove(redisKey);
+				return count;
+			}
+		};
+
+		assertEquals(1, lateStore.countRequest("ip:192.0.2.1", ofMinutes(1)).count());
+		assertEquals(2, lateStore.countRequest("ip:192.0.2.1", ofMinutes(1)).count());
 	}
 
 	@Test
