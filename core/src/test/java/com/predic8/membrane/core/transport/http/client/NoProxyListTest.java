@@ -19,13 +19,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class NoProxyListTest {
 
     @Test
     void exactHost() {
-        final var list = NoProxyList.parse("localhost");
+        final var list = NoProxyList.parse(List.of("localhost"));
         assertTrue(list.matches("localhost"));
         assertTrue(list.matches("LOCALHOST"));
         assertFalse(list.matches("localhost2"));
@@ -35,7 +37,7 @@ class NoProxyListTest {
     @ParameterizedTest
     @ValueSource(strings = {"example.com", ".example.com", "*.example.com", " Example.COM. "})
     void domainMatchesItselfAndSubdomains(String entry) {
-        final var list = NoProxyList.parse(entry);
+        final var list = NoProxyList.parse(List.of(entry));
         assertTrue(list.matches("example.com"));
         assertTrue(list.matches("api.example.com"));
         assertTrue(list.matches("a.b.example.com"));
@@ -46,7 +48,7 @@ class NoProxyListTest {
 
     @Test
     void severalEntries() {
-        final var list = NoProxyList.parse("localhost, ,.internal.example.com,10.0.0.0/8");
+        final var list = NoProxyList.parse(List.of("localhost", " ", " .internal.example.com ", "10.0.0.0/8"));
         assertTrue(list.matches("localhost"));
         assertTrue(list.matches("orders.internal.example.com"));
         assertTrue(list.matches("10.1.2.3"));
@@ -56,19 +58,19 @@ class NoProxyListTest {
 
     @Test
     void wildcardMatchesEverything() {
-        final var list = NoProxyList.parse("*");
+        final var list = NoProxyList.parse(List.of("*"));
         assertTrue(list.matches("example.com"));
         assertTrue(list.matches("10.0.0.1"));
     }
 
     @Test
     void emptyListMatchesNothing() {
-        assertFalse(NoProxyList.parse("").matches("localhost"));
+        assertFalse(NoProxyList.parse(List.of()).matches("localhost"));
     }
 
     @Test
     void ipv4() {
-        final var list = NoProxyList.parse("127.0.0.1, 192.168.0.0/16");
+        final var list = NoProxyList.parse(List.of("127.0.0.1", "192.168.0.0/16"));
         assertTrue(list.matches("127.0.0.1"));
         assertTrue(list.matches("192.168.10.20"));
         assertFalse(list.matches("127.0.0.2"));
@@ -77,7 +79,7 @@ class NoProxyListTest {
 
     @Test
     void ipv6() {
-        final var list = NoProxyList.parse("::1, 2001:db8::/32");
+        final var list = NoProxyList.parse(List.of("::1", "2001:db8::/32"));
         assertTrue(list.matches("::1"));
         assertTrue(list.matches("[::1]"));
         assertTrue(list.matches("2001:db8:1::5"));
@@ -88,7 +90,7 @@ class NoProxyListTest {
     @ParameterizedTest
     @ValueSource(strings = {"::ffff:10.0.0.1", "[::ffff:10.0.0.1]", "::ffff:a00:1", "::ffff:10.0.0.1/128"})
     void ipv4MappedIpv6Entry(String entry) {
-        final var list = NoProxyList.parse(entry);
+        final var list = NoProxyList.parse(List.of(entry));
         assertTrue(list.matches("::ffff:10.0.0.1"));
         assertTrue(list.matches("[::ffff:10.0.0.1]"));
         assertFalse(list.matches("::ffff:10.0.0.2"));
@@ -97,7 +99,7 @@ class NoProxyListTest {
 
     @Test
     void ipv4MappedIpv6Range() {
-        final var list = NoProxyList.parse("::ffff:10.0.0.0/104");
+        final var list = NoProxyList.parse(List.of("::ffff:10.0.0.0/104"));
         assertTrue(list.matches("::ffff:10.1.2.3"));
         assertFalse(list.matches("::ffff:11.0.0.1"));
         assertFalse(list.matches("10.1.2.3"));
@@ -105,19 +107,20 @@ class NoProxyListTest {
 
     @Test
     void ipv4EntryWithTrailingDot() {
-        final var list = NoProxyList.parse("127.0.0.1.");
+        final var list = NoProxyList.parse(List.of("127.0.0.1."));
         assertTrue(list.matches("127.0.0.1"));
         assertTrue(list.matches("127.0.0.1."));
     }
 
     @Test
     void ipEntryDoesNotMatchHostNames() {
-        assertFalse(NoProxyList.parse("127.0.0.1").matches("localhost"));
+        assertFalse(NoProxyList.parse(List.of("127.0.0.1")).matches("localhost"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"300.1.1.1", "10.0.0.0/33", "host:8080", "::ffff:10.0.0.0/64", "::ffff:10.0.0.0/129", "api.*.example.com", "*foo", ".", "*."})
+    @ValueSource(strings = {"300.1.1.1", "10.0.0.0/33", "host:8080", "::ffff:10.0.0.0/64", "::ffff:10.0.0.0/129", "api.*.example.com", "*foo", ".", "*.",
+            "localhost, .example.com", "localhost .example.com"})
     void invalidEntriesAreRejected(String entry) {
-        assertThrows(ConfigurationException.class, () -> NoProxyList.parse(entry));
+        assertThrows(ConfigurationException.class, () -> NoProxyList.parse(List.of(entry)));
     }
 }

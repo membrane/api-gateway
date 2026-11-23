@@ -332,7 +332,7 @@ class HttpClientTest {
             pc.setAuthentication(true);
             pc.setUsername("alice");
             pc.setPassword("secret");
-            pc.setNoProxy(noProxy);
+            pc.setNoProxy(List.of(noProxy));
             final var hcc = new HttpClientConfiguration();
             hcc.setProxy(pc);
             return new HttpClient(hcc);

@@ -52,16 +52,16 @@ public final class NoProxyList {
     }
 
     /**
-     * @param list comma separated entries, e.g. <code>localhost, .example.com, 10.0.0.0/8</code>
+     * @param entries e.g. <code>localhost</code>, <code>.example.com</code>, <code>10.0.0.0/8</code>
      * @throws ConfigurationException if an entry is neither a domain nor an IP address or range
      */
-    public static NoProxyList parse(String list) {
+    public static NoProxyList parse(List<String> entries) {
         var matchAll = false;
         final var domains = new ArrayList<String>();
         final var ipRanges = new ArrayList<Target>();
         final var ipv4MappedRanges = new ArrayList<Target>();
 
-        for (var entry : list.split(",")) {
+        for (var entry : entries) {
             entry = entry.trim().toLowerCase(ROOT);
             if (entry.isEmpty())
                 continue;
@@ -139,7 +139,8 @@ public final class NoProxyList {
         // "*.example.com" is the http.nonProxyHosts spelling, ".example.com" the NO_PROXY one. Both mean the same here.
         var domain = entry.startsWith("*.") ? entry.substring(2) : entry;
         domain = normalize(domain.startsWith(".") ? domain.substring(1) : domain);
-        if (domain.isEmpty() || domain.contains("*") || domain.contains("/"))
+        // A comma or a space means several hosts were put into one entry, e.g. "localhost, .example.com".
+        if (domain.isEmpty() || domain.contains("*") || domain.contains("/") || domain.contains(",") || domain.contains(" "))
             throw invalidEntry(entry);
         return domain;
     }

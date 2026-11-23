@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.util.ConfigurationException;
 
+import java.util.List;
 import java.util.Objects;
 
 import static com.predic8.membrane.core.transport.http.client.NoProxyList.parse;
@@ -45,7 +46,10 @@ import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.cr
  *       authentication: true
  *       username: alice
  *       password: secret
- *       noProxy: localhost, .internal.example.com, 10.0.0.0/8
+ *       noProxy:
+ *         - localhost
+ *         - .internal.example.com
+ *         - 10.0.0.0/8
  * </code></pre>
  */
 @MCElement(name="proxy", component =false, id="proxy-configuration")
@@ -63,7 +67,7 @@ public class ProxyConfiguration {
 
 	private SSLParser sslParser;
 
-	private String noProxy;
+	private List<String> noProxy;
 
 	private NoProxyList noProxyList;
 
@@ -180,24 +184,24 @@ public class ProxyConfiguration {
 		this.sslParser = sslParser;
 	}
 
-	public String getNoProxy() {
+	public List<String> getNoProxy() {
 		return noProxy;
 	}
 
 	/**
-	 * @description Comma-separated list of hosts that are connected to directly instead of through the proxy,
+	 * @description Hosts that are connected to directly instead of through the proxy,
 	 *              with the semantics of the <code>NO_PROXY</code> environment variable. A host name such as
 	 *              <code>example.com</code>, <code>.example.com</code> or <code>*.example.com</code> matches
 	 *              the domain and all of its subdomains. An IPv4 or IPv6 address, optionally with a CIDR prefix,
 	 *              matches targets given as an IP address. Host names are not resolved for this check.
 	 *              <code>*</code> bypasses the proxy for every host. Ports are not supported.
 	 * @default (not set)
-	 * @example localhost, .internal.example.com, 10.0.0.0/8
+	 * @example [localhost, .internal.example.com, 10.0.0.0/8]
 	 */
-	@MCAttribute
-	public void setNoProxy(String noProxy) {
+	@MCChildElement(allowForeign = true, order = 1)
+	public void setNoProxy(List<String> noProxy) {
 		final var parsed = noProxy != null ? parse(noProxy) : null;
-		this.noProxy = noProxy;
+		this.noProxy = noProxy != null ? List.copyOf(noProxy) : null;
 		this.noProxyList = parsed;
 	}
 
