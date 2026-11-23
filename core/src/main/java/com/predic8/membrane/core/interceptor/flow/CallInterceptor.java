@@ -61,11 +61,13 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  * fields it names, <code>Keep-Alive</code>, <code>Proxy-Connection</code>, <code>TE</code>,
  * <code>Trailer</code> and <code>Upgrade</code>. <code>Server</code>, <code>Content-Length</code>,
  * <code>Content-Encoding</code> and <code>Transfer-Encoding</code> are not copied either; the message
- * gets a <code>Content-Length</code> for its new body. Placed directly in a flow, it runs in both the
- * request and the response flow. The <code>url</code> may contain <code>${...}</code> expressions that
- * are evaluated against the current message before each call; a URL without a template marker is used
- * verbatim. On an unknown host or a failed call the exchange is aborted with a Problem Details
- * response. See the tutorials under tutorials/orchestration.
+ * gets a <code>Content-Length</code> for its new body. A body with a content coding the gateway does
+ * not decode, such as stacked codings, is sent or set unchanged, together with its
+ * <code>Content-Encoding</code>. Placed directly in a flow, it runs in both the request and the
+ * response flow. The <code>url</code> may contain <code>${...}</code> expressions that are evaluated
+ * against the current message before each call; a URL without a template marker is used verbatim. On
+ * an unknown host or a failed call the exchange is aborted with a Problem Details response. See the
+ * tutorials under tutorials/orchestration.
  * @topic 1. Proxies and Flow
  * @yaml <pre><code>
  * api:
@@ -184,6 +186,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                 message.setBodyContent(body.readAllBytes());
             }
             copyHeaders(newExc.getResponse(), message);
+            keepUndecodedContentCodings(newExc.getResponse(), message);
             return CONTINUE;
         } catch (Exception e) {
             log.error("Error processing response from {}: {}", dest, e.getMessage(), e);
@@ -215,7 +218,10 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                 .method(method)
                 .header(getFilteredRequestHeader(message));
         setRequestBody(builder, message);
-        return builder.build();
+        final var request = builder.build();
+        if (methodShouldHaveBody(method))
+            keepUndecodedContentCodings(message, request);
+        return request;
     }
 
     private static Exchange createNewExchange(String dest, Request request) {
@@ -227,6 +233,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     /**
      * Sends the body decoded: <code>Request.Builder.body()</code> removes <code>Content-Encoding</code>.
+     * A coding Membrane does not decode stays applied; see {@link #keepUndecodedContentCodings}.
      */
     private void setRequestBody(Request.Builder builder, Message message) {
         if (!methodShouldHaveBody(method)) {
@@ -256,6 +263,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         // Removes body-related headers when no body is present
         if (!methodShouldHaveBody(method)) {
             requestHeader.removeFields(CONTENT_TYPE);
+            requestHeader.removeFields(CONTENT_ENCODING);
             requestHeader.removeFields(CONTENT_LENGTH);
             requestHeader.removeFields(TRANSFER_ENCODING);
             requestHeader.removeFields(CONTENT_LENGTH);
@@ -278,6 +286,18 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                 return;
             target.getHeader().setValue(headerField.getHeaderName().getName(), headerField.getValue());
         });
+    }
+
+    /**
+     * Labels the target's body with the source's content codings if Membrane did not decode them, e.g. stacked
+     * codings or <code>compress</code>: the body then still carries them, but <code>setBodyContent()</code> has
+     * removed <code>Content-Encoding</code>.
+     */
+    private static void keepUndecodedContentCodings(final Message source, final Message target) {
+        final var codings = source.getHeader().getContentCodings();
+        if (codings.isEmpty() || source.isContentEncodingDecoded())
+            return;
+        target.getHeader().setValue(CONTENT_ENCODING, String.join(", ", codings));
     }
 
     /**

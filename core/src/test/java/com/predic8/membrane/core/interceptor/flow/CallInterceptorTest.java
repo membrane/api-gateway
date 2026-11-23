@@ -229,6 +229,66 @@ class CallInterceptorTest {
         assertEquals("{\"name\":\"Apricot\"}", received.get().body());
     }
 
+    /**
+     * Membrane does not decode <code>compress</code>, so the body is sent as it is, together with its coding.
+     */
+    @Test
+    void calloutReceivesUndecodedBodyWithItsCoding() throws Exception {
+        final var received = new AtomicReference<ReceivedRequest>();
+        final var port = freePort();
+        router.add(recordingCallout(port, received));
+        router.start();
+        // body() removes Content-Encoding, so it has to come first
+        final var exchange = post("/foo")
+                .body("compressed")
+                .header(CONTENT_ENCODING, "compress")
+                .buildExchange();
+
+        call("POST", "http://localhost:" + port + "/").handleRequest(exchange);
+
+        assertEquals("compress", received.get().header().getFirstValue(CONTENT_ENCODING));
+        assertEquals("compressed", received.get().body());
+    }
+
+    /**
+     * A GET is sent without a body, so nothing may describe one.
+     */
+    @Test
+    void bodylessCalloutCarriesNoContentEncoding() throws Exception {
+        final var received = new AtomicReference<ReceivedRequest>();
+        final var port = freePort();
+        router.add(recordingCallout(port, received));
+        router.start();
+        // body() removes Content-Encoding, so it has to come first
+        final var exchange = post("/foo")
+                .body(gzip("{\"name\":\"Apricot\"}"))
+                .header(CONTENT_ENCODING, "gzip")
+                .buildExchange();
+
+        call("GET", "http://localhost:" + port + "/").handleRequest(exchange);
+
+        assertNull(received.get().header().getFirstValue(CONTENT_ENCODING));
+        assertEquals("", received.get().body());
+    }
+
+    /**
+     * Membrane does not decode <code>compress</code>, so the endpoint's body is set as it is, together with its coding.
+     */
+    @Test
+    void undecodedCalloutBodyKeepsItsCoding() throws Exception {
+        final var port = freePort();
+        // body() removes Content-Encoding, so it has to come first
+        router.add(calloutEndpoint(port, () -> Response.ok().body("compressed").header(CONTENT_ENCODING, "compress").build()));
+        router.start();
+
+        call("GET", "http://localhost:" + port + "/").handleRequest(exc);
+
+        final var request = exc.getRequest();
+        assertEquals("compress", request.getHeader().getFirstValue(CONTENT_ENCODING));
+        assertEquals("compressed", new String(request.getBody().getContent(), UTF_8));
+        assertEquals("compressed".length(), request.getHeader().getContentLength());
+    }
+
     @Test
     void responseFlowMergesCalloutIntoResponse() throws Exception {
         final var port = freePort();
