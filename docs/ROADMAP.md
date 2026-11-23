@@ -340,4 +340,33 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - Incremental forwarding: a body source that holds back its second chunk until the first chunk has reached the backend. `wasStreamed()` alone does not prove this, since it is set before anything is written.
   - `Expect: 100-continue` with a streamed body and default retries.
   - Idempotent request, tee write fails partway, `RetryHandler` retries: with the interim design the failure surfaces, with `Partial` the retry succeeds.
-  
+
+### Redesign of `call`
+
+- Story: `call` sends a request built from the current message (method from the `method` attribute, all header fields except the hop-by-hop ones, and the body for `POST`, `PUT` and `PATCH`) and merges the answer back into the current message: the response body replaces the message body, and the response header fields overwrite the message's fields of the same name. Since #3842 it works on the response in the response flow. The callout's status code is not kept anywhere.
+- Problems:
+  - **Everything is copied out.** `Authorization`, `Cookie`, API keys and any other field the client sent go to the callout endpoint, which the client never addressed and which may belong to someone else. In the response flow, the backend response's fields (`Set-Cookie` with session IDs, internal fields) go out too. The user has to know this and remove fields beforehand, which also removes them from the message that goes on to the backend.
+  - **Everything is merged back.** Fields of the callout response overwrite those of the message: a callout `Content-Type` replaces the request's, and a callout `Set-Cookie` lands on a request, where it means nothing (tutorial `orchestration/40-Authentication-Call.yaml` has to copy it to `Cookie` and then remove it). `setValue` keeps only the last of several fields with the same name, so the backend's `Set-Cookie` plus two from the callout leaves one.
+  - **The message body is lost.** The callout body replaces the message body, so the original body is gone unless it was saved before (e.g. with `setProperty`). Combining the original body with the callout result in a `template` needs that workaround.
+  - **Errors fail open.** A 401, 404 or 500 from the callout is merged like a 200 and the flow continues with the error body as message body. Only network errors abort with 500. The status code is not available to `if`, so the flow cannot react to it.
+  - **Request flow and response flow behave differently** (since #3842), which is hard to see in the configuration. A `call` directly under `flow`, next to a target, runs twice and the second run replaces the target's response.
+  - **No limits.** The outbound body is decoded with `MessageUtil.getContent` and the callout response is read with `readAllBytes`, both without the decompression and size limits that apply elsewhere (MEM-38).
+  - **The request can't be built freely.** The body is always the current body, the method is fixed per element, and header fields can only be changed on the current message before the call.
+- Options:
+  - **A. Keep the merge, copy no header fields by default.** The callout gets only fields that are listed, e.g. `forwardHeaders: [Authorization, X-Request-Id]`, plus framing fields for the body. The body and the merge back stay as today. Smallest change; fixes the leak, not the merge or the errors.
+  - **B. Keep the merge, but merge selectively.** Like A, plus a list of the callout response fields to copy back (default: none, or only `Content-Type` together with the body), `Set-Cookie` handled with `add` instead of `setValue`, and a status check: by default a callout status of 400 or above aborts with 502, with `failOnError: false` to opt out.
+  - **C. Separate the callout completely.** `call` builds its own request (method, URL, header fields and body, each with expressions; nothing copied unless written) and stores the answer under a name, e.g. `call: { name: user, url: ..., headers: {...}, body: ... }`. Expressions read `calls.user.status`, `calls.user.header['X']`, `calls.user.json.id`. The current message stays unchanged; `setBody`, `setHeader` or `template` take what they need. This also removes the request/response flow difference.
+  - **D. C with a convenience mode.** Like Azure APIM's `mode="new|copy"`: `new` (default) as C, `copy` starts from the current message's fields (without hop-by-hop fields and credentials). The result is always stored under the name; merging stays an explicit step.
+- Prior art:
+  - Azure APIM `send-request`: `mode="new"` (default) or `copy`, the answer is stored in `response-variable-name`, `ignore-error` controls failures.
+  - Apigee ServiceCallout: separate request and response variables; the request is built explicitly; `continueOnError` for failures.
+  - Kong `request-callout`: named callouts, `headers.forward` and `body.forward` default to `false`, results under `kong.ctx.shared.callouts.<name>`.
+  - Envoy `ext_authz`: allow lists for the fields sent to the authorization service and for the fields copied back.
+- To decide:
+  - A/B (compatible, keeps today's model) or C/D (new model, breaking).
+  - Default reaction to a callout error status: abort (which status for the client, 502?) or continue with the status exposed.
+  - Name and syntax for accessing results in expressions (SpEL, Groovy, JSONPath, templates), and how long they live (exchange property).
+  - Size limit for the callout response and for the decoded outbound body.
+  - Whether `call` in the response flow needs anything special once results no longer merge.
+  - Migration: the orchestration tutorials (`distribution/tutorials/orchestration/`) and the `call` reference docs.
+- **Breaking** with C/D, and with A/B for configurations that rely on header fields being sent or merged.
