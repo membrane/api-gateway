@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Tutorial: Shared Rate Limit with Redis
+#
+# Membrane instances behind a load balancer share one limit when they keep the
+# counts in Redis. This file and instance-b.yaml are the configurations of two
+# independent instances that share the same rate-limiter.
+#
+# 1.) Start Redis:
+#     docker run --rm -p 6379:6379 redis
+#
+# 2.) Start instance A:
+#     Linux/Mac:
+#       ./membrane.sh -c instance-a.yaml
+#     Windows:
+#       membrane.cmd -c instance-a.yaml
+#
+# 3.) Start instance B in a second terminal:
+#     Linux/Mac:
+#       ./membrane.sh -c instance-b.yaml
+#     Windows:
+#       membrane.cmd -c instance-b.yaml
+#
+# 4.) Call instance A twice:
+#       curl -i localhost:2000
+#       curl -i localhost:2000
+#
+#       HTTP/1.1 200 OK
+#       X-RateLimit-Limit: 3
+#       X-RateLimit-Remaining: 1
+#       ...
+#
+# 5.) Call instance B twice:
+#       curl -i localhost:2001
+#       curl -i localhost:2001
+#
+#       HTTP/1.1 429 Too Many Requests
+#       ...
+#       X-RateLimit-Remaining: 0
+#
+#     B counted the requests sent to A as well.
+
+components:
+  redis:
+    redis:
+      host: localhost
+      port: 6379
+
+---
+api:
+  name: Instance A
+  port: 2000
+  flow:
+    - rateLimiter:
+        requestLimit: 3
+        requestLimitDuration: PT1M
+        redisRateLimitStore:
+          connector: '#/components/redis'
+    - static:
+        src: Instance A
+    - return:
+        status: 200
