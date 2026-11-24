@@ -18,9 +18,11 @@ import com.predic8.membrane.core.http.DecodingException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -30,6 +32,7 @@ import java.util.Random;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
+import static com.predic8.membrane.core.util.MessageUtil.getContentAsStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -112,7 +115,7 @@ class MessageUtilTest {
         final var compressed = rawDeflate(content);
         final var truncated = Arrays.copyOf(compressed, compressed.length - 1);
 
-        try (final var decoded = MessageUtil.getContentAsStream(deflateRequest(truncated))) {
+        try (final var decoded = getContentAsStream(deflateRequest(truncated))) {
             assertEquals(content.substring(0, 100), new String(decoded.readNBytes(100), UTF_8));
         }
     }
@@ -125,7 +128,7 @@ class MessageUtilTest {
         final var compressed = gzip("payload");
         for (String encoding : new String[]{"gzip", "x-gzip", "X-GZIP"}) {
             assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, encoding)), encoding);
-            try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, encoding))) {
+            try (final var decoded = getContentAsStream(encodedRequest(compressed, encoding))) {
                 assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), encoding);
             }
         }
@@ -140,7 +143,7 @@ class MessageUtilTest {
     void codingsOnSeveralFieldLinesAreNotDecoded() throws Exception {
         final var encoded = "brotli bytes".getBytes(UTF_8);
         assertArrayEquals(encoded, MessageUtil.getContent(encodedRequest(encoded, "gzip", "br")));
-        try (final var content = MessageUtil.getContentAsStream(encodedRequest(encoded, "gzip", "br"))) {
+        try (final var content = getContentAsStream(encodedRequest(encoded, "gzip", "br"))) {
             assertArrayEquals(encoded, content.readAllBytes());
         }
     }
@@ -155,7 +158,7 @@ class MessageUtilTest {
         for (String[] fieldLines : new String[][]{{", gzip,"}, {"", "gzip"}}) {
             final var description = String.join(" | ", fieldLines);
             assertArrayEquals("payload".getBytes(UTF_8), MessageUtil.getContent(encodedRequest(compressed, fieldLines)), description);
-            try (final var decoded = MessageUtil.getContentAsStream(encodedRequest(compressed, fieldLines))) {
+            try (final var decoded = getContentAsStream(encodedRequest(compressed, fieldLines))) {
                 assertArrayEquals("payload".getBytes(UTF_8), decoded.readAllBytes(), description);
             }
         }
@@ -173,9 +176,28 @@ class MessageUtilTest {
         assertEquals("gzip", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
     }
 
+    /**
+     * #3839: a 304 may carry Content-Encoding as metadata without content (RFC 9110 8.4, 15.4.5).
+     */
+    @Test
+    void bodylessResponseWithContentEncodingHasEmptyContent() throws Exception {
+        for (String encoding : new String[]{"gzip", "deflate", "br"}) {
+            assertArrayEquals(new byte[0], MessageUtil.getContent(notModified(encoding)), encoding);
+            try (final var content = getContentAsStream(notModified(encoding))) {
+                assertArrayEquals(new byte[0], content.readAllBytes(), encoding);
+            }
+        }
+    }
+
+    @Test
+    void emptyContentLabelledGzipIsRejected() {
+        final var e = assertThrows(ReadingBodyException.class, () -> MessageUtil.getContent(encodedRequest(new byte[0], "gzip")));
+        assertEquals("gzip", assertInstanceOf(DecodingException.class, e.getCause()).getContentEncoding());
+    }
+
     private static void assertDecodesTo(String expected, byte[] compressed) throws Exception {
         assertArrayEquals(expected.getBytes(UTF_8), MessageUtil.getContent(deflateRequest(compressed)));
-        try (final var decoded = MessageUtil.getContentAsStream(deflateRequest(compressed))) {
+        try (final var decoded = getContentAsStream(deflateRequest(compressed))) {
             assertArrayEquals(expected.getBytes(UTF_8), decoded.readAllBytes());
         }
     }
@@ -183,7 +205,7 @@ class MessageUtilTest {
     private static void assertDecodingFails(String reason, byte[] compressed) throws Exception {
         for (Executable decode : new Executable[]{
                 () -> MessageUtil.getContent(deflateRequest(compressed)),
-                () -> MessageUtil.getContentAsStream(deflateRequest(compressed)).readAllBytes()}) {
+                () -> getContentAsStream(deflateRequest(compressed)).readAllBytes()}) {
             final var e = assertThrows(ReadingBodyException.class, decode);
             final var decoding = assertInstanceOf(DecodingException.class, e.getCause());
             assertEquals("deflate", decoding.getContentEncoding());
@@ -200,6 +222,16 @@ class MessageUtilTest {
         for (final var fieldLine : contentEncodingFieldLines)
             builder.header("Content-Encoding", fieldLine);
         return builder.build();
+    }
+
+    private static Message notModified(String contentEncoding) throws Exception {
+        final var response = new Response();
+        response.read(new ByteArrayInputStream("""
+                HTTP/1.1 304 Not Modified\r
+                Content-Encoding: %s\r
+                \r
+                """.formatted(contentEncoding).getBytes(UTF_8)), true);
+        return response;
     }
 
     private static byte[] gzip(String value) throws IOException {
