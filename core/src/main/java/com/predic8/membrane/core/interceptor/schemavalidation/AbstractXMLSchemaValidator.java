@@ -58,7 +58,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     /** Xerces feature: load every {@code <xs:import>} of a namespace, not only the first. */
     private static final String HONOUR_ALL_SCHEMA_LOCATIONS = "http://apache.org/xml/features/honour-all-schemaLocations";
 
-    /** Xerces feature: accept a global declaration repeated in another schema document; the first one wins. */
+    /** Xerces feature: accept a global declaration repeated in another schema document. */
     private static final String TOLERATE_DUPLICATES = "http://apache.org/xml/features/internal/tolerate-duplicates";
 
     protected final XOPReconstitutor xopr;
@@ -325,8 +325,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * a later {@code <xs:import>} of a namespace it has already loaded, so a schema that imports
      * one namespace from several documents (e.g. request and response types in separate files)
      * would lose the declarations of all but the first. Declarations repeated across those
-     * documents (e.g. a local copy of a shared schema) are tolerated; the first one wins. A
-     * declaration repeated within one document is still an error.
+     * documents (e.g. a local copy of a shared schema) are tolerated, as a best effort for
+     * schema sets that are invalid XSD; which copy is used is not specified, so the copies
+     * should be identical. A declaration repeated within one document is still an error.
      * <p>
      * If the JAXP implementation does not support both Xerces features, falls back to a factory
      * with neither and logs a warning: with only the first, schema sets that repeat declarations

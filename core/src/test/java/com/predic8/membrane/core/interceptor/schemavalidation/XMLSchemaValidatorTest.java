@@ -128,7 +128,7 @@ class XMLSchemaValidatorTest {
     }
 
     @Test
-    void sameNamespaceImportsWithDuplicateDeclarationsUseFirstImport() throws Exception {
+    void sameNamespaceImportsWithDuplicateDeclarations() throws Exception {
         final var exc = post("/foo").body("""
                 <t:findRequest xmlns:t="https://example.com/same-namespace/types">
                     <t:category>Boat</t:category>
