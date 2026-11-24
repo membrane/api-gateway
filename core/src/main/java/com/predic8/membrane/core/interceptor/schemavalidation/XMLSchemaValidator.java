@@ -19,10 +19,8 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
-import com.predic8.membrane.core.util.xml.parser.HardenedSchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -34,12 +32,11 @@ import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
-import static com.predic8.membrane.annot.Constants.XSD_NS;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
@@ -65,18 +62,19 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected List<Schema> compileSchemas() {
-        SchemaFactory sf = HardenedSchemaFactory.newInstance(XSD_NS);
-        sf.setResourceResolver(resolver.toLSResourceResolver());
         log.debug("Compiling schema: {}", location);
-        StreamSource ss;
-        try {
-            ss = new StreamSource(resolver.resolve(location));
-        } catch (ResourceRetrievalException e) {
+        final byte[] xsd;
+        try (var in = resolver.resolve(location)) {
+            xsd = in.readAllBytes();
+        } catch (IOException e) {
             throw new ConfigurationException("Cannot resolve schema from %s.".formatted(location), e);
         }
-        ss.setSystemId(location);
         try {
-            return List.of(sf.newSchema(ss));
+            return List.of(newSchema(() -> {
+                final var ss = new StreamSource(new ByteArrayInputStream(xsd));
+                ss.setSystemId(location);
+                return ss;
+            }));
         } catch (SAXException e) {
             throw new ConfigurationException("Cannot parse schema from %s.".formatted(location), e);
         }

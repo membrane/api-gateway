@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Imports one namespace from two schema documents that both declare CategoryType (the second is a
+     local copy). The set only compiles when the second import is ignored. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-request.xsd"/>
+    <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-common-copy.xsd"/>
+</xs:schema>

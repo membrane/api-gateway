@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A copy of same-namespace-common.xsd: declares the same CategoryType under a different location. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://example.com/same-namespace/types"
+           elementFormDefault="qualified">
+    <xs:simpleType name="CategoryType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Boat"/>
+            <xs:enumeration value="Car"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

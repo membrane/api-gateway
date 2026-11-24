@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The embedded schema imports one namespace from two schema documents: the request elements
+     from one, the response elements from the other. Both include the same common types. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="https://example.com/same-namespace/service"
+                  xmlns:t="https://example.com/same-namespace/types"
+                  targetNamespace="https://example.com/same-namespace/service">
+    <wsdl:types>
+        <xs:schema>
+            <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-request.xsd"/>
+            <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-response.xsd"/>
+        </xs:schema>
+    </wsdl:types>
+    <wsdl:message name="FindRequest">
+        <wsdl:part name="parameter" element="t:findRequest"/>
+    </wsdl:message>
+    <wsdl:message name="FindResponse">
+        <wsdl:part name="parameter" element="t:findResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="FindPort">
+        <wsdl:operation name="find">
+            <wsdl:input message="tns:FindRequest"/>
+            <wsdl:output message="tns:FindResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="FindBinding" type="tns:FindPort">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="find">
+            <soap:operation soapAction="find"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="FindService">
+        <wsdl:port name="FindPort" binding="tns:FindBinding">
+            <soap:address location="http://localhost:8080/find"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

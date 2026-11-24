@@ -42,6 +42,9 @@ class XMLSchemaValidatorTest {
 
     private static final ObjectMapper om = new ObjectMapper();
 
+    private static final String SAME_NAMESPACE_IMPORTS_XSD = "src/test/resources/ws/import/same-namespace-imports.xsd";
+    private static final String SAME_NAMESPACE_DUPLICATES_XSD = "src/test/resources/ws/import/same-namespace-duplicates.xsd";
+
     XMLSchemaValidator validator;
 
     @BeforeEach
@@ -95,6 +98,50 @@ class XMLSchemaValidatorTest {
         assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
         final var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void sameNamespaceImportsSecondSchemaElement() throws Exception {
+        final var exc = post("/foo").body("""
+                <t:findResponse xmlns:t="https://example.com/same-namespace/types">
+                    <t:category>Boat</t:category>
+                    <t:category>Car</t:category>
+                </t:findResponse>
+                """).buildExchange();
+
+        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_IMPORTS_XSD).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void sameNamespaceImportsSecondSchemaElementInvalid() throws Exception {
+        final var exc = post("/foo").body("""
+                <t:findResponse xmlns:t="https://example.com/same-namespace/types">
+                    <t:category>Plane</t:category>
+                </t:findResponse>
+                """).buildExchange();
+
+        assertEquals(ABORT, createValidator(SAME_NAMESPACE_IMPORTS_XSD).validateMessage(exc, REQUEST));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("Plane"), body);
+        assertFalse(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void sameNamespaceImportsWithDuplicateDeclarationsUseFirstImport() throws Exception {
+        final var exc = post("/foo").body("""
+                <t:findRequest xmlns:t="https://example.com/same-namespace/types">
+                    <t:category>Boat</t:category>
+                </t:findRequest>
+                """).buildExchange();
+
+        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_DUPLICATES_XSD).validateMessage(exc, REQUEST));
+    }
+
+    private static XMLSchemaValidator createValidator(String location) {
+        final var v = new XMLSchemaValidator(new ResolverMap(), location,
+                (message, exc) -> log.info("Validation failure: {}", message));
+        v.init();
+        return v;
     }
 
     @Test

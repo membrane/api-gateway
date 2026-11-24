@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.transform.Source;
@@ -52,6 +54,14 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidator {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
+
+    /**
+     * Xerces feature: load every {@code <xs:import>} of a namespace, not only the first. Without
+     * it, a schema importing one namespace from several documents (e.g. request and response
+     * types in separate files) silently loses the declarations of all but the first document.
+     */
+    private static final String HONOUR_ALL_SCHEMA_LOCATIONS = "http://apache.org/xml/features/honour-all-schemaLocations";
+
     protected final XOPReconstitutor xopr;
     protected final String location;
     protected final ResolverMap resolver;
@@ -299,15 +309,43 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * Compiles the schemas validated against. Runs once, during {@link #init()}.
      */
     protected List<Schema> compileSchemas() {
-        var sf = HardenedSchemaFactory.newInstance(XSD_NS);
-        sf.setResourceResolver(getResourceResolver());
         var compiled = new ArrayList<Schema>();
         var schemas = getSchemas();
         for (int i = 0; i < schemas.size(); i++) {
             log.debug("Compiling schema {}/{} at: {}", i + 1, schemas.size(), location);
-            compiled.add(compileSchema(schemas.get(i), sf));
+            compiled.add(compileSchema(schemas.get(i)));
         }
         return List.copyOf(compiled);
+    }
+
+    /**
+     * Compiles a schema with every same-namespace {@code <xs:import>} loaded. Some schema sets
+     * only compile when the later imports are ignored: they import a namespace from several
+     * documents that declare the same components (e.g. a local copy of a shared schema). For
+     * those, falls back to loading only the first document per namespace.
+     *
+     * @param source supplies a fresh {@link Source} of the schema for each compile attempt
+     * @throws SAXException if the schema does not compile in either mode; the exception is the
+     *                      one from the fallback attempt
+     */
+    protected Schema newSchema(Supplier<Source> source) throws SAXException {
+        try {
+            return newSchemaFactory(true).newSchema(source.get());
+        } catch (SAXException e) {
+            log.debug("Schema at {} does not compile with all imports loaded; retrying with the first import per namespace only.", location, e);
+        }
+        return newSchemaFactory(false).newSchema(source.get());
+    }
+
+    private SchemaFactory newSchemaFactory(boolean honourAllSchemaLocations) {
+        final var sf = HardenedSchemaFactory.newInstance(XSD_NS);
+        sf.setResourceResolver(getResourceResolver());
+        try {
+            sf.setFeature(HONOUR_ALL_SCHEMA_LOCATIONS, honourAllSchemaLocations);
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+            throw new IllegalStateException("Schema factory does not support %s".formatted(HONOUR_ALL_SCHEMA_LOCATIONS), e);
+        }
+        return sf;
     }
 
     /**
@@ -329,14 +367,18 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         return resolver.toLSResourceResolver();
     }
 
-    private @NotNull Schema compileSchema(Element schema, SchemaFactory sf) {
+    private @NotNull Schema compileSchema(Element schema) {
         try {
-            var source = new DOMSource(schema);
-            source.setSystemId(location);
-            return sf.newSchema(source);
+            return newSchema(() -> newSource(schema));
         } catch (SAXException e) {
             throw new ConfigurationException("Cannot read schema %s".formatted(location), e);
         }
+    }
+
+    private DOMSource newSource(Element schema) {
+        final var source = new DOMSource(schema);
+        source.setSystemId(location);
+        return source;
     }
 
     private String getErrorMsg(List<Exception> excs) {
