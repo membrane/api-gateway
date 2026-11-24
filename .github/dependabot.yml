@@ -14,10 +14,14 @@ updates:
     schedule:
       interval: "daily"
 
-  # Security updates for the actions, which are pinned to commit SHAs. Version updates are off, as for Maven.
+  # Third-party actions are pinned to commit SHAs, for which GitHub raises no security alerts. Version updates
+  # keep the pins current instead, all actions in one pull request per month.
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "master"
-    open-pull-requests-limit: 0
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    groups:
+      actions:
+        patterns:
+          - "*"
