@@ -31,9 +31,9 @@ import org.xml.sax.XMLReader;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -63,11 +63,16 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
     protected List<Schema> compileSchemas() {
         final var sf = newSchemaFactory();
         log.debug("Compiling schema: {}", location);
-        try (var stream = resolver.resolve(location)) {
-            return List.of(compileSchema(stream, sf));
+        StreamSource ss;
+        try {
+            ss = new StreamSource(resolver.resolve(location));
         } catch (ResourceRetrievalException e) {
             throw new ConfigurationException("Cannot resolve schema from %s.".formatted(location), e);
-        } catch (SAXException | IOException e) {
+        }
+        ss.setSystemId(location);
+        try {
+            return List.of(sf.newSchema(ss));
+        } catch (SAXException e) {
             throw new ConfigurationException("Cannot parse schema from %s.".formatted(location), e);
         }
     }

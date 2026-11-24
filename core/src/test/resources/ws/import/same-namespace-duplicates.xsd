@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Imports one namespace from two schema documents that declare conflicting versions of CategoryType.
-     The first definition takes precedence; the second document also declares an element
+<!-- Imports one namespace from two schema documents that both declare CategoryType (the second is a
+     local copy). The repeated declaration is tolerated; the second document also declares an element
      the first does not. -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-request.xsd"/>

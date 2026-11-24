@@ -21,34 +21,24 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedSchemaFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.ls.DOMImplementationLS;
-import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,8 +50,6 @@ import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD;
-import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
 
 public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidator {
 
@@ -70,7 +58,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     /** Xerces feature: load every {@code <xs:import>} of a namespace, not only the first. */
     private static final String HONOUR_ALL_SCHEMA_LOCATIONS = "http://apache.org/xml/features/honour-all-schemaLocations";
 
-    /** Xerces feature: accept a global declaration repeated in another schema document. */
+    /** Xerces feature: accept a global declaration repeated in another schema document; the first one wins. */
     private static final String TOLERATE_DUPLICATES = "http://apache.org/xml/features/internal/tolerate-duplicates";
 
     protected final XOPReconstitutor xopr;
@@ -349,11 +337,6 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         try {
             sf.setFeature(HONOUR_ALL_SCHEMA_LOCATIONS, true);
             sf.setFeature(TOLERATE_DUPLICATES, true);
-            final var delegate = sf.getResourceResolver();
-            if (delegate != null) {
-                sf.setResourceResolver((type, namespace, publicId, systemId, baseUri) ->
-                        orderResolvedSchema(delegate.resolveResource(type, namespace, publicId, systemId, baseUri)));
-            }
             return sf;
         } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
             log.warn("Schema factory {} does not support loading every imported schema document; a namespace imported from several documents is validated against the first one only. Cause: {}",
@@ -387,112 +370,13 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         return resolver.toLSResourceResolver();
     }
 
-    private @NotNull Schema compileSchema(Element schema, SchemaFactory factory) {
+    private @NotNull Schema compileSchema(Element schema, SchemaFactory sf) {
         try {
-            return compileSchemaDocument(schema, factory);
+            var source = new DOMSource(schema);
+            source.setSystemId(location);
+            return sf.newSchema(source);
         } catch (SAXException e) {
             throw new ConfigurationException("Cannot read schema %s".formatted(location), e);
-        }
-    }
-
-    private Schema compileSchemaDocument(Element schema, SchemaFactory factory) throws SAXException {
-        final var source = new DOMSource(schema, location);
-        if (!supportsOrderedImports(factory))
-            return factory.newSchema(source);
-
-        orderImports(schema);
-        try {
-            return factory.newSchema(source);
-        } finally {
-            // A later WSDL schema may resolve this same embedded schema again.
-            orderImports(schema);
-        }
-    }
-
-    protected Schema compileSchema(InputStream stream, SchemaFactory factory) throws SAXException, IOException {
-        if (!supportsOrderedImports(factory))
-            return factory.newSchema(new StreamSource(stream, location));
-
-        final var source = new InputSource(stream);
-        source.setSystemId(location);
-        final var schema = parseSchemaDocument(source).getDocumentElement();
-        orderImports(schema);
-        return factory.newSchema(new DOMSource(schema, location));
-    }
-
-    private static boolean supportsOrderedImports(SchemaFactory factory) {
-        try {
-            return factory.getFeature(TOLERATE_DUPLICATES);
-        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
-            return false;
-        }
-    }
-
-    private static LSInput orderResolvedSchema(LSInput resolved) {
-        if (resolved == null)
-            return null;
-        final var source = new InputSource();
-        source.setPublicId(resolved.getPublicId());
-        source.setSystemId(resolved.getSystemId());
-        source.setEncoding(resolved.getEncoding());
-        source.setCharacterStream(resolved.getCharacterStream());
-        if (source.getCharacterStream() == null) {
-            source.setByteStream(resolved.getByteStream());
-            if (source.getByteStream() == null) {
-                final var data = resolved.getStringData();
-                if (data == null || data.isEmpty())
-                    return resolved;
-                source.setCharacterStream(new StringReader(data));
-            }
-        }
-
-        try {
-            final var document = parseSchemaDocument(source);
-            orderImports(document.getDocumentElement());
-            final var implementation = (DOMImplementationLS) document.getImplementation().getFeature("LS", "3.0");
-            final var ordered = implementation.createLSInput();
-            ordered.setPublicId(resolved.getPublicId());
-            ordered.setSystemId(resolved.getSystemId());
-            ordered.setBaseURI(resolved.getBaseURI());
-            ordered.setStringData(XMLUtil.xmlNode2String(document.getDocumentElement()));
-            return ordered;
-        } catch (IOException | SAXException | TransformerException e) {
-            throw new ConfigurationException("Cannot parse imported schema %s".formatted(source.getSystemId()), e);
-        }
-    }
-
-    private static Document parseSchemaDocument(InputSource source) throws IOException, SAXException {
-        try {
-            final var factory = DocumentBuilderFactory.newDefaultNSInstance();
-            factory.setFeature(FEATURE_SECURE_PROCESSING, true);
-            factory.setAttribute(ACCESS_EXTERNAL_DTD, "");
-            return factory.newDocumentBuilder().parse(source);
-        } catch (ParserConfigurationException e) {
-            throw new IllegalStateException("Cannot configure schema document parser", e);
-        }
-    }
-
-    /**
-     * Xerces pushes dependencies onto a stack in document order, so it registers the last
-     * import's declarations first. Reverse the imports of each namespace in place to give
-     * the original first import precedence without dropping any documents.
-     */
-    private static void orderImports(Element schema) {
-        final var importsByNamespace = new LinkedHashMap<String, List<Element>>();
-        for (var child = schema.getFirstChild(); child != null; child = child.getNextSibling()) {
-            if (child instanceof Element element && XSD_NS.equals(element.getNamespaceURI())
-                    && "import".equals(element.getLocalName())) {
-                importsByNamespace.computeIfAbsent(element.getAttribute("namespace"), key -> new ArrayList<>()).add(element);
-            }
-        }
-        for (var imports : importsByNamespace.values()) {
-            for (int first = 0, last = imports.size() - 1; first < last; first++, last--) {
-                final var earlier = imports.get(first);
-                final var later = imports.get(last);
-                final var next = later.getNextSibling();
-                schema.replaceChild(later, earlier);
-                schema.insertBefore(earlier, next);
-            }
         }
     }
 
