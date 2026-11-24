@@ -13,3 +13,11 @@ updates:
     open-pull-requests-limit: 0
     schedule:
       interval: "daily"
+
+  # Security updates for the actions, which are pinned to commit SHAs. Version updates are off, as for Maven.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "master"
+    open-pull-requests-limit: 0
+    schedule:
+      interval: "weekly"
