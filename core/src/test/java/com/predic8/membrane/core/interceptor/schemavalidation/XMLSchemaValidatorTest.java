@@ -44,6 +44,7 @@ class XMLSchemaValidatorTest {
 
     private static final String SAME_NAMESPACE_IMPORTS_XSD = "src/test/resources/ws/import/same-namespace-imports.xsd";
     private static final String SAME_NAMESPACE_DUPLICATES_XSD = "src/test/resources/ws/import/same-namespace-duplicates.xsd";
+    private static final String SAME_NAMESPACE_MISSING_XSD = "src/test/resources/ws/import/same-namespace-missing.xsd";
 
     XMLSchemaValidator validator;
 
@@ -135,6 +136,21 @@ class XMLSchemaValidatorTest {
                 """).buildExchange();
 
         assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_DUPLICATES_XSD).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void sameNamespaceImportsWithDuplicateDeclarationsLoadSecondDocument() throws Exception {
+        final var exc = post("/foo").body("""
+                <t:category xmlns:t="https://example.com/same-namespace/types">Car</t:category>
+                """).buildExchange();
+
+        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_DUPLICATES_XSD).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void sameNamespaceImportsWithMissingSecondDocumentFailAtStartup() {
+        final var e = assertThrows(RuntimeException.class, () -> createValidator(SAME_NAMESPACE_MISSING_XSD));
+        assertTrue(e.getMessage().contains("does-not-exist.xsd"), e.getMessage());
     }
 
     private static XMLSchemaValidator createValidator(String location) {

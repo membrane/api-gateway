@@ -55,12 +55,11 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     private static final Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
 
-    /**
-     * Xerces feature: load every {@code <xs:import>} of a namespace, not only the first. Without
-     * it, a schema importing one namespace from several documents (e.g. request and response
-     * types in separate files) silently loses the declarations of all but the first document.
-     */
+    /** Xerces feature: load every {@code <xs:import>} of a namespace, not only the first. */
     private static final String HONOUR_ALL_SCHEMA_LOCATIONS = "http://apache.org/xml/features/honour-all-schemaLocations";
+
+    /** Xerces feature: accept a global declaration repeated in another schema document; the first one wins. */
+    private static final String TOLERATE_DUPLICATES = "http://apache.org/xml/features/internal/tolerate-duplicates";
 
     protected final XOPReconstitutor xopr;
     protected final String location;
@@ -309,42 +308,46 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * Compiles the schemas validated against. Runs once, during {@link #init()}.
      */
     protected List<Schema> compileSchemas() {
+        final var sf = newSchemaFactory();
         var compiled = new ArrayList<Schema>();
         var schemas = getSchemas();
         for (int i = 0; i < schemas.size(); i++) {
             log.debug("Compiling schema {}/{} at: {}", i + 1, schemas.size(), location);
-            compiled.add(compileSchema(schemas.get(i)));
+            compiled.add(compileSchema(schemas.get(i), sf));
         }
         return List.copyOf(compiled);
     }
 
     /**
-     * Compiles a schema with every same-namespace {@code <xs:import>} loaded. Some schema sets
-     * only compile when the later imports are ignored: they import a namespace from several
-     * documents that declare the same components (e.g. a local copy of a shared schema). For
-     * those, falls back to loading only the first document per namespace.
-     *
-     * @param source supplies a fresh {@link Source} of the schema for each compile attempt
-     * @throws SAXException if the schema does not compile in either mode; the exception is the
-     *                      one from the fallback attempt
+     * Creates the hardened factory the schemas are compiled with, using {@link #getResourceResolver()}.
+     * <p>
+     * It loads every document a schema imports for a namespace, not only the first: Xerces ignores
+     * a later {@code <xs:import>} of a namespace it has already loaded, so a schema that imports
+     * one namespace from several documents (e.g. request and response types in separate files)
+     * would lose the declarations of all but the first. Declarations repeated across those
+     * documents (e.g. a local copy of a shared schema) are tolerated; the first one wins. A
+     * declaration repeated within one document is still an error.
+     * <p>
+     * If the JAXP implementation does not support both Xerces features, falls back to a factory
+     * with neither and logs a warning: with only the first, schema sets that repeat declarations
+     * across documents would no longer compile.
      */
-    protected Schema newSchema(Supplier<Source> source) throws SAXException {
+    protected SchemaFactory newSchemaFactory() {
+        final var sf = newHardenedSchemaFactory();
         try {
-            return newSchemaFactory(true).newSchema(source.get());
-        } catch (SAXException e) {
-            log.debug("Schema at {} does not compile with all imports loaded; retrying with the first import per namespace only.", location, e);
+            sf.setFeature(HONOUR_ALL_SCHEMA_LOCATIONS, true);
+            sf.setFeature(TOLERATE_DUPLICATES, true);
+            return sf;
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+            log.warn("Schema factory {} does not support loading every imported schema document; a namespace imported from several documents is validated against the first one only. Cause: {}",
+                    sf.getClass().getName(), e.getMessage());
+            return newHardenedSchemaFactory();
         }
-        return newSchemaFactory(false).newSchema(source.get());
     }
 
-    private SchemaFactory newSchemaFactory(boolean honourAllSchemaLocations) {
+    private SchemaFactory newHardenedSchemaFactory() {
         final var sf = HardenedSchemaFactory.newInstance(XSD_NS);
         sf.setResourceResolver(getResourceResolver());
-        try {
-            sf.setFeature(HONOUR_ALL_SCHEMA_LOCATIONS, honourAllSchemaLocations);
-        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
-            throw new IllegalStateException("Schema factory does not support %s".formatted(HONOUR_ALL_SCHEMA_LOCATIONS), e);
-        }
         return sf;
     }
 
@@ -367,18 +370,14 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         return resolver.toLSResourceResolver();
     }
 
-    private @NotNull Schema compileSchema(Element schema) {
+    private @NotNull Schema compileSchema(Element schema, SchemaFactory sf) {
         try {
-            return newSchema(() -> newSource(schema));
+            var source = new DOMSource(schema);
+            source.setSystemId(location);
+            return sf.newSchema(source);
         } catch (SAXException e) {
             throw new ConfigurationException("Cannot read schema %s".formatted(location), e);
         }
-    }
-
-    private DOMSource newSource(Element schema) {
-        final var source = new DOMSource(schema);
-        source.setSystemId(location);
-        return source;
     }
 
     private String getErrorMsg(List<Exception> excs) {

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The embedded schema redefines a type and imports one namespace from two documents that both
+     declare CategoryType. The prefixes used in the embedded schema are declared on wsdl:definitions. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="https://example.com/redefine/service"
+                  xmlns:r="https://example.com/redefine"
+                  targetNamespace="https://example.com/redefine/service">
+    <wsdl:types>
+        <xs:schema targetNamespace="https://example.com/redefine" elementFormDefault="qualified">
+            <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-request.xsd"/>
+            <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-common-copy.xsd"/>
+            <xs:redefine schemaLocation="redefine-base.xsd">
+                <xs:complexType name="ItemType">
+                    <xs:complexContent>
+                        <xs:extension base="r:ItemType">
+                            <xs:sequence>
+                                <xs:element name="note" type="xs:string" minOccurs="0"/>
+                            </xs:sequence>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:redefine>
+            <xs:element name="item" type="r:ItemType"/>
+        </xs:schema>
+    </wsdl:types>
+    <wsdl:message name="AddRequest">
+        <wsdl:part name="parameter" element="r:item"/>
+    </wsdl:message>
+    <wsdl:message name="AddResponse">
+        <wsdl:part name="parameter" element="r:item"/>
+    </wsdl:message>
+    <wsdl:portType name="AddPort">
+        <wsdl:operation name="add">
+            <wsdl:input message="tns:AddRequest"/>
+            <wsdl:output message="tns:AddResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="AddBinding" type="tns:AddPort">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="add">
+            <soap:operation soapAction="add"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="AddService">
+        <wsdl:port name="AddPort" binding="tns:AddBinding">
+            <soap:address location="http://localhost:8080/add"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

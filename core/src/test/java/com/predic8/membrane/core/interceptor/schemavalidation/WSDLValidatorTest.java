@@ -71,6 +71,7 @@ public class WSDLValidatorTest {
     public static final String MESSAGE_WITHOUT_PART_WSDL = "src/test/resources/ws/message-without-part.wsdl";
     public static final String HEADER_ONLY_REQUEST_WSDL = "src/test/resources/ws/header-only-request.wsdl";
     public static final String SAME_NAMESPACE_IMPORTS_WSDL = "src/test/resources/ws/import/same-namespace-imports.wsdl";
+    public static final String SAME_NAMESPACE_DUPLICATES_WITH_REDEFINE_WSDL = "src/test/resources/ws/import/same-namespace-duplicates-with-redefine.wsdl";
 
     private static final String PING_HEADER = """
             <p:PingHeader xmlns:p="https://example.com/ping">42</p:PingHeader>
@@ -240,6 +241,18 @@ public class WSDLValidatorTest {
         final var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("Plane"), body);
         assertFalse(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void sameNamespaceImportsWithDuplicateDeclarationsAndRedefine() throws Exception {
+        final var exc = getRequestExchange(soap11("""
+                <r:item xmlns:r="https://example.com/redefine">
+                    <r:name>Anchor</r:name>
+                    <r:note>redefined</r:note>
+                </r:item>
+                """));
+
+        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_DUPLICATES_WITH_REDEFINE_WSDL, null, false).validateMessage(exc, REQUEST));
     }
 
     @Test

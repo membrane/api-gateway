@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The second import of the namespace points to a document that does not exist. Every import is
+     loaded, so this is a configuration error like any missing import. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="same-namespace-request.xsd"/>
+    <xs:import namespace="https://example.com/same-namespace/types" schemaLocation="does-not-exist.xsd"/>
+</xs:schema>
