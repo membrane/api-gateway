@@ -21,6 +21,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +45,6 @@ class XMLSchemaValidatorTest {
     private static final ObjectMapper om = new ObjectMapper();
 
     private static final String SAME_NAMESPACE_IMPORTS_XSD = "src/test/resources/ws/import/same-namespace-imports.xsd";
-    private static final String SAME_NAMESPACE_DUPLICATES_XSD = "src/test/resources/ws/import/same-namespace-duplicates.xsd";
     private static final String SAME_NAMESPACE_MISSING_XSD = "src/test/resources/ws/import/same-namespace-missing.xsd";
 
     XMLSchemaValidator validator;
@@ -127,24 +128,25 @@ class XMLSchemaValidatorTest {
         assertFalse(body.contains("cvc-elt.1.a"), body);
     }
 
-    @Test
-    void sameNamespaceImportsWithDuplicateDeclarationsUseFirstImport() throws Exception {
-        final var exc = post("/foo").body("""
+    @ParameterizedTest
+    @ValueSource(strings = {"same-namespace-duplicates.xsd", "same-namespace-duplicates-wrapper.xsd"})
+    void sameNamespaceImportsWithConflictingDeclarationsUseFirstImport(String schema) throws Exception {
+        final var validator = createValidator("src/test/resources/ws/import/" + schema);
+        final var request = post("/foo").body("""
                 <t:findRequest xmlns:t="https://example.com/same-namespace/types">
                     <t:category>Boat</t:category>
                 </t:findRequest>
                 """).buildExchange();
 
-        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_DUPLICATES_XSD).validateMessage(exc, REQUEST));
-    }
+        assertEquals(CONTINUE, validator.validateMessage(request, REQUEST));
 
-    @Test
-    void sameNamespaceImportsWithDuplicateDeclarationsLoadSecondDocument() throws Exception {
-        final var exc = post("/foo").body("""
-                <t:category xmlns:t="https://example.com/same-namespace/types">Car</t:category>
-                """).buildExchange();
-
-        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_DUPLICATES_XSD).validateMessage(exc, REQUEST));
+        // The global element is unique to the second import, but uses the first import's type.
+        final var laterElement = "<t:category xmlns:t='https://example.com/same-namespace/types'>%s</t:category>";
+        final var firstValue = post("/foo").body(laterElement.formatted("Car")).buildExchange();
+        final var secondValue = post("/foo").body(laterElement.formatted("Plane")).buildExchange();
+        assertEquals(CONTINUE, validator.validateMessage(firstValue, REQUEST));
+        assertEquals(ABORT, validator.validateMessage(secondValue, REQUEST));
+        assertTrue(secondValue.getResponse().getBodyAsStringDecoded().contains("cvc-enumeration-valid"));
     }
 
     @Test

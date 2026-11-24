@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- A copy of same-namespace-common.xsd: declares the same CategoryType under a different location,
-     plus a global element of its own. -->
+<!-- Conflicts with same-namespace-common.xsd and also declares a global element of its own. -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:t="https://example.com/same-namespace/types"
            targetNamespace="https://example.com/same-namespace/types"
            elementFormDefault="qualified">
     <xs:simpleType name="CategoryType">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="Boat"/>
-            <xs:enumeration value="Car"/>
+            <xs:enumeration value="Plane"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:element name="category" type="t:CategoryType"/>
