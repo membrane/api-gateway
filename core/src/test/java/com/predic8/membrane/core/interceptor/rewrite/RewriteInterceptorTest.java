@@ -36,6 +36,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REDIRECT_TEMPORARY;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.REWRITE;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.URL_NOT_PROCESSABLE;
+import static com.predic8.membrane.test.TestAppender.captureLog;
+import static org.apache.logging.log4j.Level.INFO;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RewriteInterceptorTest {
@@ -190,6 +192,23 @@ public class RewriteInterceptorTest {
 		assertTrue(json.get("detail").asText().startsWith(URL_NOT_PROCESSABLE), json.get("detail").asText());
 		assertFalse(json.toString().contains("backend.example.com"), json.toString());
 		assertFalse(json.toString().toLowerCase().contains("rewrit"), json.toString());
+	}
+
+	@Test
+	void invalidURIInProductionIsLoggedOnce() throws Exception {
+		final var prodRewriter = new RewriteInterceptor();
+		prodRewriter.setMappings(new ArrayList<>(List.of(new Mapping("^/store/(.*)", "/shop/$1", null))));
+		prodRewriter.init(DummyTestRouter.productionRouter());
+
+		exc.setProxy(sp);
+		exc.getDestinations().add("http://backend.example.com/buy/banana/%");
+		exc.setRequest(get("/store/x").build());
+
+		final var log = captureLog(() -> prodRewriter.handleRequest(exc));
+		final var logged = log.eventsContaining("/buy/banana/%").stream()
+				.filter(event -> event.getLevel().isMoreSpecificThan(INFO))
+				.toList();
+		assertEquals(1, logged.size(), log.getMessages().toString());
 	}
 
 

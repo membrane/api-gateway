@@ -330,7 +330,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         try {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException | IllegalArgumentException e) {
-            log.info("Can't parse query: {}", destination);
+            log.debug("Can't parse query: {}", destination); // In production, the ProblemDetails already logs it with a log key
             setError(exc, destination, e.getMessage());
             return null;
         }
