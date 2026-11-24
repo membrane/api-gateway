@@ -44,6 +44,7 @@ import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.T
 import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
 import static com.predic8.membrane.core.util.URLUtil.getSchemeAndAuthority;
 import static com.predic8.membrane.core.util.text.TextUtil.capitalizeFirstCharacter;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeControlCharsForLog;
 import static com.predic8.membrane.core.util.text.TextUtil.toEnglishList;
 import static java.util.Locale.US;
 
@@ -330,7 +331,9 @@ public class RewriteInterceptor extends AbstractInterceptor {
         try {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException | IllegalArgumentException e) {
-            log.debug("Can't parse query: {}", destination); // In production, the ProblemDetails already logs it with a log key
+            // In production, the ProblemDetails logs it together with the log key it sends to the client
+            if (!router.getConfiguration().isProduction())
+                log.info("Can't parse query: {}", escapeControlCharsForLog(destination));
             setError(exc, destination, e.getMessage());
             return null;
         }

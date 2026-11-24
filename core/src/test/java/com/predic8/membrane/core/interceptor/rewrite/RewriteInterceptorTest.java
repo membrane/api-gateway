@@ -200,11 +200,20 @@ public class RewriteInterceptorTest {
 		prodRewriter.setMappings(new ArrayList<>(List.of(new Mapping("^/store/(.*)", "/shop/$1", null))));
 		prodRewriter.init(DummyTestRouter.productionRouter());
 
+		assertInvalidURILoggedOnce(prodRewriter);
+	}
+
+	@Test
+	void invalidURIIsLoggedOnce() throws Exception {
+		assertInvalidURILoggedOnce(rewriter);
+	}
+
+	private void assertInvalidURILoggedOnce(RewriteInterceptor rewriter) throws Exception {
 		exc.setProxy(sp);
 		exc.getDestinations().add("http://backend.example.com/buy/banana/%");
 		exc.setRequest(get("/store/x").build());
 
-		final var log = captureLog(() -> prodRewriter.handleRequest(exc));
+		final var log = captureLog(() -> rewriter.handleRequest(exc));
 		final var logged = log.eventsContaining("/buy/banana/%").stream()
 				.filter(event -> event.getLevel().isMoreSpecificThan(INFO))
 				.toList();
