@@ -44,6 +44,7 @@ import static com.predic8.membrane.core.http.Response.notImplemented;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.*;
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.*;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
+import static com.predic8.membrane.core.util.HttpUtil.MAX_LINE_LENGTH;
 import static com.predic8.membrane.core.util.StompUtil.isSTOMPConnectFrame;
 import static com.predic8.membrane.core.util.StompUtil.isTunneledWithoutResponse;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
@@ -190,9 +191,17 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         } catch (NoResponseException e) {
             log.debug("No response received. Maybe increase the keep-alive timeout on the server.");
         } catch (EOFWhileReadingFirstLineException e) {
-            log.debug("Client connection terminated before first line was read. Line so far: {}", getLineMaskedAndTruncated(e));
+            log.debug("Client connection terminated before first line was read. Line so far: {}", getLineMaskedAndTruncated(e.getLineSoFar()));
         } catch (EOFWhileReadingLineException e) {
-            log.debug("Client connection terminated while reading header line: {}", getLineMaskedAndTruncated(e));
+            log.debug("Client connection terminated while reading header line: {}", getLineMaskedAndTruncated(e.getLineSoFar()));
+        } catch (RequestLineTooLongException e) {
+            // RFC 9112 §3
+            log.debug("Rejecting request with a too long request line: {}", getLineMaskedAndTruncated(e.getMessage()));
+            respondWithLineTooLongAndClose(414, "URI Too Long", "uri-too-long");
+        } catch (LineTooLongException e) {
+            // RFC 6585 §5
+            log.debug("Rejecting request with a too long header line: {}", getLineMaskedAndTruncated(e.getMessage()));
+            respondWithLineTooLongAndClose(431, "Request Header Fields Too Large", "header-fields-too-large");
         } catch (UnsupportedTransferCodingException e) {
             // RFC 9112 §6.1: a transfer coding the server does not understand SHOULD be answered with 501.
             log.debug("Rejecting request with unsupported transfer coding: {}", e.getMessage());
@@ -233,8 +242,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
-    private static @NotNull String getLineMaskedAndTruncated(EOFWhileReadingLineException e) {
-        return maskNonPrintableCharacters(truncateAfter(e.getLineSoFar(), 80));
+    private static @NotNull String getLineMaskedAndTruncated(String line) {
+        return maskNonPrintableCharacters(truncateAfter(line, 80));
     }
 
     record RequestProcessingResult(boolean shouldTerminate, Connection boundConnection) {
@@ -450,6 +459,22 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             srcOut.flush();
         } catch (Exception e) {
             log.debug("Could not send 400 response for request with invalid framing.", e);
+        }
+    }
+
+    private void respondWithLineTooLongAndClose(int status, String title, String subSee) {
+        try {
+            final var response = user(getTransport().getRouter().getConfiguration().isProduction(), "http-server-handler")
+                    .status(status)
+                    .title(title)
+                    .addSubSee(subSee)
+                    .detail("A line is longer than %d characters.".formatted(MAX_LINE_LENGTH))
+                    .build();
+            response.getHeader().setConnection(Header.CLOSE);
+            response.write(srcOut, false);
+            srcOut.flush();
+        } catch (Exception e) {
+            log.debug("Could not send {} response for request with a too long line.", status, e);
         }
     }
 

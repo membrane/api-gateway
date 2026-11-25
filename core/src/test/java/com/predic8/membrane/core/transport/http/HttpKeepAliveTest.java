@@ -387,6 +387,24 @@ public class HttpKeepAliveTest {
 	}
 
 	/**
+	 * RFC 9112 3: a request line longer than the server wishes to parse is answered with 414 (#3382).
+	 */
+	@Test
+	void tooLongRequestLineIsRejected() throws Exception {
+		final var response = sendRaw("GET /" + "a".repeat(9_000) + " HTTP/1.1\r\nHost: localhost:2003\r\nConnection: close\r\n\r\n");
+		assertTrue(response.startsWith("HTTP/1.1 414 "), response);
+	}
+
+	/**
+	 * RFC 6585 5: a header field line that is too long is answered with 431 (#3382).
+	 */
+	@Test
+	void tooLongHeaderLineIsRejected() throws Exception {
+		final var response = sendRaw("GET /foo HTTP/1.1\r\nHost: localhost:2003\r\nX-Big: " + "b".repeat(9_000) + "\r\nConnection: close\r\n\r\n");
+		assertTrue(response.startsWith("HTTP/1.1 431 "), response);
+	}
+
+	/**
 	 * Sends the bytes without closing the output, so a server that waits for more input times out the read.
 	 */
 	private static String sendRaw(String request) throws IOException {

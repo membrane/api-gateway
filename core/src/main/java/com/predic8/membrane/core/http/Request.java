@@ -19,7 +19,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.LineTooLongException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
+import com.predic8.membrane.core.transport.http.RequestLineTooLongException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.StompUtil;
@@ -106,6 +108,8 @@ public class Request extends Message {
             if (e.getLineSoFar().isEmpty())
                 throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
             throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
+        } catch (LineTooLongException e) {
+            throw new RequestLineTooLongException(e.getMessage());
         }
     }
 
