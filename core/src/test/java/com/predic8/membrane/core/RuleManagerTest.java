@@ -14,6 +14,7 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.Router;
@@ -143,6 +144,31 @@ public class RuleManagerTest {
 		} finally {
 			yamlRouter.stop();
 		}
+	}
+
+	@Test
+	void removeRuleWithFileExchangeStore(@TempDir Path dir) {
+		useFileExchangeStore(dir);
+
+		manager.removeRule(forwardBlz);
+
+		assertFalse(manager.getRules().contains(forwardBlz));
+	}
+
+	@Test
+	void replaceRuleWithFileExchangeStore(@TempDir Path dir) {
+		useFileExchangeStore(dir);
+		final var replacement = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3014), "thomas-bayer.com", 80);
+
+		manager.replaceRule(forwardBlz, replacement);
+
+		assertSame(replacement, manager.getRules().get(1));
+	}
+
+	private void useFileExchangeStore(Path dir) {
+		final var store = new FileExchangeStore();
+		store.setDir(dir.toString());
+		((TestRouter) router).setExchangeStore(store);
 	}
 
 	@Test

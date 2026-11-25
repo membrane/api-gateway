@@ -54,6 +54,13 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+    public MongoDBExchangeStore() {
+    }
+
+    MongoDBExchangeStore(MongoCollection<Document> collection) {
+        this.collection = collection;
+    }
+
     @Override
     public void init(Router router) {
         super.init(router);
@@ -97,7 +104,9 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public void removeAllExchanges(Proxy proxy) {
-        collection.deleteMany(new Document());
+        // Matches the "rule" field that FakeProxy writes into every stored exchange.
+        collection.deleteMany(new Document("rule.name", proxy.getName())
+                .append("rule.port", proxy.getKey().getPort()));
     }
 
     @Override
