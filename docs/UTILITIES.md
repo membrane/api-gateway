@@ -20,7 +20,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 
 | Class | Purpose |
 |---|---|
-| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, cross-origin (CSRF) check, token/whitespace char classes |
+| `HttpUtil` | Line reading, `X-Forwarded-For`, GMT date format, header creation, HTML error responses, status code messages, idempotent-method check, cross-origin (CSRF) check, token/whitespace char classes, `isToken`, `containsWhitespace` (incl. NEL) |
 | `MediaTypeUtil` | Most specific matching media type from a set |
 | `ContentTypeDetector` | Effective content type of a `Message` |
 | `http/SSEParser` | Incremental Server-Sent Events parser (`SSEEvent` with `json()`) |
@@ -44,7 +44,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/SOAPEnvelopeReader` | Package-private; reads a message event by event for `SOAPUtil.analyseSOAPMessage` and `validateSOAPEnvelope` (envelope structure and well-formedness checks) |
 | `util/soap/SoapVersion`, `util/soap/WSDLUtil` | SOAP version constants; rewrite relative WSDL paths |
 | `util/wsdl/parser/*` | Lightweight WSDL model (`Definitions`, `Binding`, `Operation`, `Port`, ...) |
-| `util/json/JsonUtil` | Parse body to `ObjectNode`, set JSON body, scalar → `JsonNode`, escape JSON Pointer segment (RFC 6901) |
+| `util/json/JsonUtil` | Parse body to `ObjectNode`, read exactly one JSON value (`readSingleValue`, errors with line/column as `InvalidJsonException`), set JSON body, scalar → `JsonNode`, escape JSON Pointer segment (RFC 6901) |
 | `util/json/JsonToXml` | JSON → XML conversion |
 | `util/xml/XMLUtil` | XML operations (parsing, namespaces, XPath); `newSerializer()` for DOM → text/bytes (JDK serializer, use instead of `TransformerFactory.newInstance()`) |
 | `util/xml/XMLEncodingUtil` | XML character encoding |
@@ -82,6 +82,7 @@ Keep this file in sync when adding, renaming or removing a util class.
 | `util/security/BasicAuthenticationUtil` | Parse/create `Authorization: Basic` headers |
 | `util/DateAndTimeUtil` | Pretty-print time spans, parse configured ISO dates |
 | `util/Util` | Grab bag: line count, socket shutdown, thread pool, split by comma |
+| `util/SystemPropertyUtil` | Tuning settings from JVM system properties; positive integer with default, invalid value names the property |
 | `util/ClassFinder` | Classpath scanning |
 | `util/ExtensionLoader` | Create the implementation of an optional Membrane extension (Kafka, JMS) by class name; `ConfigurationException` if missing |
 | `util/ComparatorFactory` | Comparators for admin-console statistics tables |

@@ -22,6 +22,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -264,6 +266,82 @@ public class RequestTest {
         assertFalse(written.getHeader().hasContentLength(), out.toString(UTF_8));
         assertInstanceOf(ChunkedBody.class, written.getBody());
         assertEquals("hello", written.getBodyAsStringDecoded());
+    }
+
+    /**
+     * A request whose Content-Length and Transfer-Encoding were removed, e.g. by a headerFilter, or that never had
+     * them, e.g. an HTTP/2 request without content-length, must still tell the next hop where its body ends.
+     * Otherwise the body is read as the next request on the connection.
+     */
+    @Nested
+    class FramingIsAddedOnWrite {
+
+        private static final String SMUGGLED = "GET /admin HTTP/1.1\r\nHost: backend\r\n\r\n";
+
+        @Test
+        void streamedBodyIsSentChunked() throws Exception {
+            final var request = post("http://example.com/products")
+                    .body(new ByteArrayInputStream(SMUGGLED.getBytes(UTF_8)))
+                    .build();
+
+            final var written = writeAndReadBack(request);
+
+            assertTrue(written.getHeader().isChunked());
+            assertEquals(SMUGGLED, written.getBodyAsStringDecoded());
+        }
+
+        @Test
+        void bodyThatWasReadGetsContentLength() throws Exception {
+            final var request = post("http://example.com/products").body(SMUGGLED).build();
+            request.getHeader().removeFields(Header.CONTENT_LENGTH);
+
+            final var written = writeAndReadBack(request);
+
+            assertEquals(SMUGGLED.length(), written.getHeader().getContentLength());
+            assertEquals(SMUGGLED, written.getBodyAsStringDecoded());
+        }
+
+        @Test
+        void http10RequestGetsContentLength() throws Exception {
+            final var request = post("http://example.com/products")
+                    .version("1.0")
+                    .body(new ByteArrayInputStream(SMUGGLED.getBytes(UTF_8)))
+                    .build();
+
+            final var written = writeAndReadBack(request);
+
+            assertFalse(written.getHeader().isChunked());
+            assertEquals(SMUGGLED.length(), written.getHeader().getContentLength());
+        }
+
+        /**
+         * A servlet container hands over every request with a body stream, even a GET without a body.
+         */
+        @Test
+        void getWithEmptyStreamGetsNoFraming() throws Exception {
+            final var request = Request.get("http://example.com/products")
+                    .body(new ByteArrayInputStream(new byte[0]))
+                    .build();
+
+            final var out = new ByteArrayOutputStream();
+            request.write(out, true);
+
+            assertFalse(request.getHeader().isChunked(), out.toString(UTF_8));
+            assertFalse(request.getHeader().hasContentLength(), out.toString(UTF_8));
+            assertTrue(out.toString(UTF_8).endsWith("\r\n\r\n"));
+        }
+
+        private static Request writeAndReadBack(Request request) throws Exception {
+            final var out = new ByteArrayOutputStream();
+            request.write(out, true);
+
+            final var in = new ByteArrayInputStream(out.toByteArray());
+            final var written = new Request();
+            written.read(in, true);
+            written.getBody().getContent();
+            assertEquals(0, in.available(), () -> "Bytes after the request: " + out.toString(UTF_8));
+            return written;
+        }
     }
 
     @Test
@@ -716,34 +794,86 @@ public class RequestTest {
             assertStartLine("get /foo HTTP/1.1", "get", "/foo", "1.1");
         }
 
+        /**
+         * RFC 9110 2.5: a higher minor version of a supported major version is accepted.
+         */
         @Test
-        void versionIsNotValidated() throws IOException {
-            assertStartLine("GET /foo HTTP/abc", "GET", "/foo", "abc");
+        void higherMinorVersion() throws IOException {
+            assertStartLine("GET /foo HTTP/1.2", "GET", "/foo", "1.2");
+        }
+
+        /**
+         * RFC 9112 3: request-line = method SP request-target SP HTTP-version, the request-target contains no
+         * whitespace, and RFC 9112 2.3: HTTP-version = HTTP-name "/" DIGIT "." DIGIT.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "GET /foo HTTP/abc",
+                "GET /foo HTTP/1",
+                "GET /foo HTTP/1.",
+                "GET /foo HTTP/1.10",
+                "GET /foo HTTP/11.1",
+                "GET /foo HTTP/1.a",
+                "GET /foo HTTP/1.1 ",
+                "GET /foo HTTP/1.1\t",
+                "GET /foo HTTP/1.1 HTTP/2",
+                "GET /foo http/1.1",
+                "GET /foo HTTPS/1.1",
+                "GET /foo HTTP/",
+                "GET /foo",
+                "GET",
+                "GET /a b HTTP/1.1",
+                "GET /a\tb HTTP/1.1",
+                "GET  /foo HTTP/1.1",
+                "GET /foo  HTTP/1.1",
+                "X GET /foo HTTP/1.1",
+                " GET /foo HTTP/1.1",
+                "GET\t/foo HTTP/1.1",
+                "GET /foo\tHTTP/1.1",
+                "GET  HTTP/1.1",
+                "/foo HTTP/1.1",
+                "SEND",
+                "connect",
+                "CONNECT ",
+        })
+        void invalidLineIsRejected(String line) {
+            assertRejected(line);
+        }
+
+        /**
+         * RFC 9110 9.1: method = token. A method that is not a token makes the request line invalid (400); whether a
+         * valid token is a supported method is decided later by the MethodValidator (501).
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "G@T /foo HTTP/1.1",
+                "G(T) /foo HTTP/1.1",
+                "\"GET\" /foo HTTP/1.1",
+                "GÄT /foo HTTP/1.1",
+                "G\u0001T /foo HTTP/1.1",
+        })
+        void methodThatIsNotATokenIsRejected(String line) {
+            assertRejected(line);
         }
 
         @Test
-        void trailingWhitespaceIsPartOfVersion() throws IOException {
-            assertStartLine("GET /foo HTTP/1.1 ", "GET", "/foo", "1.1 ");
+        void extensionMethodTokenIsAccepted() throws IOException {
+            assertStartLine("M-SEARCH.v1!~ /foo HTTP/1.1", "M-SEARCH.v1!~", "/foo", "1.1");
         }
 
-        @Test
-        void spaceInUriIsPartOfUri() throws IOException {
-            assertStartLine("GET /a b HTTP/1.1", "GET", "/a b", "1.1");
-        }
-
-        @Test
-        void extraSpaceAfterMethodIsPartOfUri() throws IOException {
-            assertStartLine("GET  /foo HTTP/1.1", "GET", " /foo", "1.1");
-        }
-
-        @Test
-        void methodEndsAtFirstSpace() throws IOException {
-            assertStartLine("X GET /foo HTTP/1.1", "X", "GET /foo", "1.1");
-        }
-
-        @Test
-        void uriEndsAtFirstHttpVersion() throws IOException {
-            assertStartLine("GET /foo HTTP/1.1 HTTP/2", "GET", "/foo", "1.1 HTTP/2");
+        /**
+         * RFC 9110 15.6.6: 505 for a major version the server does not support. HTTP/2 is negotiated with TLS
+         * (ALPN) and never reaches parseStartLine; "PRI * HTTP/2.0" is the cleartext HTTP/2 connection preface.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "GET /foo HTTP/2.0",
+                "GET /foo HTTP/3.0",
+                "GET /foo HTTP/0.9",
+                "PRI * HTTP/2.0",
+        })
+        void unsupportedMajorVersionIsRejected(String line) {
+            assertThrowsExactly(UnsupportedHttpVersionException.class, () -> parse((line + "\r\n").getBytes(UTF_8)));
         }
 
         @Test
@@ -773,24 +903,13 @@ public class RequestTest {
         }
 
         @Test
-        void leadingSpaceIsPartOfMethod() throws IOException {
-            assertStartLine(" GET /foo HTTP/1.1", " GET", "/foo", "1.1");
-        }
-
-        @Test
         void manySpacesWithoutVersionDoNotBacktrack() {
-            assertTimeoutPreemptively(Duration.ofSeconds(1), () -> {
-                var line = "a ".repeat(4000);
-                assertStartLine(line, line, "", "STOMP");
-            });
+            assertTimeoutPreemptively(Duration.ofSeconds(1), () -> assertRejected("a ".repeat(4000)));
         }
 
         @Test
         void manySpacesWithEmptyVersionDoNotBacktrack() {
-            assertTimeoutPreemptively(Duration.ofSeconds(1), () -> {
-                var line = "a ".repeat(3990) + "HTTP/";
-                assertStartLine(line, line, "", "STOMP");
-            });
+            assertTimeoutPreemptively(Duration.ofSeconds(1), () -> assertRejected("a ".repeat(3990) + "HTTP/"));
         }
 
         /**
@@ -822,33 +941,14 @@ public class RequestTest {
             assertThrows(LineTooLongException.class, () -> parse(("GET /" + "a".repeat(9000) + " HTTP/1.1\r\n").getBytes(UTF_8)));
         }
 
-        @Nested
-        class StompFallback {
-
-            @Test
-            void stompCommand() throws IOException {
-                assertStartLine("CONNECT", "CONNECT", "", "STOMP");
-            }
-
-            @Test
-            void missingVersion() throws IOException {
-                assertStartLine("GET /foo", "GET /foo", "", "STOMP");
-            }
-
-            @Test
-            void emptyVersion() throws IOException {
-                assertStartLine("GET /foo HTTP/", "GET /foo HTTP/", "", "STOMP");
-            }
-
-            @Test
-            void lowercaseProtocol() throws IOException {
-                assertStartLine("GET /foo http/1.1", "GET /foo http/1.1", "", "STOMP");
-            }
-
-            @Test
-            void tabSeparator() throws IOException {
-                assertStartLine("GET\t/foo HTTP/1.1", "GET\t/foo HTTP/1.1", "", "STOMP");
-            }
+        /**
+         * A first line of CONNECT or STOMP opens a STOMP session (StompUtil.isSTOMPConnectFrame). Any other line
+         * that is not a request line is rejected.
+         */
+        @ParameterizedTest
+        @ValueSource(strings = {"CONNECT", "STOMP"})
+        void stompConnectFrame(String command) throws IOException {
+            assertStartLine(command, command, "", "STOMP");
         }
 
         /**
@@ -922,13 +1022,34 @@ public class RequestTest {
         }
 
         private static void assertRejected(String startLine) {
-            assertThrows(EOFWhileReadingFirstLineException.class, () -> parse((startLine + "\r\n").getBytes(ISO_8859_1)));
+            assertThrowsExactly(MalformedHeaderException.class, () -> parse((startLine + "\r\n").getBytes(ISO_8859_1)));
         }
 
         private static Request parse(byte[] startLine) throws IOException {
             Request req = new Request();
             req.parseStartLine(new ByteArrayInputStream(startLine));
             return req;
+        }
+    }
+
+    @Nested
+    class ReadSTOMP {
+
+        @Test
+        void anyCommandIsAccepted() throws Exception {
+            final var in = new ByteArrayInputStream("SEND\ndestination:/a\n\nhello".getBytes(UTF_8));
+            final var req = new Request();
+            req.readSTOMP(in);
+            assertEquals("SEND", req.getMethod());
+            assertEquals("", req.getUri());
+            assertEquals("STOMP", req.getVersion());
+            assertEquals("/a", req.getHeader().getFirstValue("destination"));
+            assertEquals("hello", new String(in.readAllBytes(), UTF_8));
+        }
+
+        @Test
+        void emptyCommandIsRejected() {
+            assertThrows(IOException.class, () -> new Request().readSTOMP(new ByteArrayInputStream("\ndestination:/a\n\n".getBytes(UTF_8))));
         }
     }
 

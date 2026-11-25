@@ -58,6 +58,14 @@ class SetBodyInterceptorTest {
     }
 
     @Test
+    void emptyValue() {
+        sbi.setValue("");
+        sbi.init(new DefaultRouter());
+        sbi.handleRequest(exc);
+        assertEquals("", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
     void evalOfSimpleExpression() {
         sbi.setValue("${path}");
         sbi.init(new DefaultRouter());

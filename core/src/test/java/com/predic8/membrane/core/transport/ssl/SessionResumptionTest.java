@@ -96,9 +96,9 @@ public class SessionResumptionTest {
                 String contentType = exc.getRequest().getHeader().getContentType();
                 if (contentType != null)
                     builder.header(CONTENT_TYPE, contentType);
-                String contentEncoding = exc.getRequest().getHeader().getContentEncoding();
-                if (contentEncoding != null)
-                    builder.header(CONTENT_ENCODING, contentEncoding);
+                final var codings = exc.getRequest().getHeader().getContentCodings();
+                if (!codings.isEmpty())
+                    builder.header(CONTENT_ENCODING, String.join(", ", codings));
                 exc.setResponse(builder.build());
                 exc.getResponse().getHeader().add("Connection", "close");
                 return RETURN;

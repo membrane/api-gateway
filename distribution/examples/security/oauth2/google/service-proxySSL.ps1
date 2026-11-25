@@ -5,7 +5,7 @@ function Start-MembraneService {
 
     $CLASSPATH = "$membrane_home\conf;$membrane_home\lib\*"
     Write-Host "Starting: $membrane_home CL: $CLASSPATH"
-    & java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxiesSSL.xml
+    & java -XX:-UseBASE64Intrinsics -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxiesSSL.xml
 }
 
 function Find-MembraneDirectory {

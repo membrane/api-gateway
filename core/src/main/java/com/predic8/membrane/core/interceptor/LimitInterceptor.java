@@ -16,35 +16,37 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.ReadingBodyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Objects;
-
-import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
-import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
+import static com.predic8.membrane.core.exceptions.BodyFailureProblems.bodyTooLong;
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description Enforces a maximum body size, rejecting oversized messages with a Problem Details 400 response.
+ * @description Enforces a maximum body size. A request over the limit is answered with 413, a response
+ * over the limit is replaced by a 502. Both are Problem Details responses.
  * <p>
- * If a <code>Content-Length</code> header is already present and exceeds the limit, the message is
- * rejected immediately without reading the body. Otherwise body bytes are counted lazily as they
- * stream through; the limit is applied to the <b>decoded</b> (uncompressed) byte count, so
- * Content-Encoding compression (gzip, brotli, deflate) cannot be used to bypass it.
- * When decoding is applied, <code>Content-Encoding</code> and <code>Content-Length</code> are
- * removed from the forwarded message because the decoded size is not known ahead of time.
+ * The body is read into memory before it is passed on, so a message over the limit is rejected before
+ * any part of it is forwarded. Reading stops as soon as the limit is exceeded. A body of known length
+ * without a <code>Content-Encoding</code> is checked against its length and passed on as it arrives.
  * </p>
  * <p>
- * Due to Membrane's streaming architecture, request headers may already have been forwarded to
- * the backend when the limit is exceeded mid-body; in that case the backend connection is closed.
+ * A compressed body (gzip, deflate, brotli) must stay within the limit both as received and once
+ * decoded, so compression cannot be used to bypass it. The body is forwarded as received, still
+ * compressed. A body with a <code>Content-Encoding</code> that Membrane does not decode, or an
+ * XOP/MTOM package, is limited by the bytes received.
+ * </p>
+ * <p>
+ * Messages without content, such as responses to HEAD requests and 304 responses, are not checked.
+ * </p>
+ * <p>
+ * A streamed response, such as server-sent events, is held back until it ends. To limit only the
+ * requests of such an API, place <code>limit</code> in the request flow.
  * </p>
  * <p>See tutorials/security/60-SQL-Injection-Protection.yaml.</p>
  * @topic 3. Security and Validation
@@ -69,12 +71,12 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-		return handleMessage(exc, exc.getRequest());
+		return handleMessage(exc, exc.getRequest(), REQUEST);
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) {
-		return handleMessage(exc, exc.getResponse());
+		return handleMessage(exc, exc.getResponse(), RESPONSE);
 	}
 
 	@Override
@@ -87,7 +89,8 @@ public class LimitInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description Maximum body size in bytes, measured against the decoded (uncompressed) content.
+	 * @description Maximum body size in bytes. A compressed body is checked both as received and once
+	 * decoded. Bodies up to this size are held in memory while they pass.
 	 * Set to <code>-1</code> to disable the limit.
 	 * @default -1
 	 * @example 10485760
@@ -97,148 +100,15 @@ public class LimitInterceptor extends AbstractInterceptor {
 		this.maxBodyLength = maxBodyLength;
 	}
 
-	private Outcome handleMessage(Exchange exc, Message msg) {
+	private Outcome handleMessage(Exchange exc, Message msg, Flow flow) {
 		if (maxBodyLength == -1)
 			return CONTINUE;
 
-		long len = msg.getHeader().getContentLength();
-		if (len != -1 && len > maxBodyLength) {
-			log.info("Message length of {} exceeded limit {}.",len,maxBodyLength);
-			security(router.getConfiguration().isProduction(), getDisplayName())
-					.title("Message is too large.")
-					.detail("Message bodies must be smaller than limit.")
-					.internal("maxBodyLength", maxBodyLength)
-					.buildAndSetResponse(exc);
-			return ABORT;
-		}
+		if (msg.checkBodyLength(maxBodyLength) != TOO_LONG)
+			return CONTINUE;
 
-		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStreamDecoded())));
-		msg.getHeader().removeFields(CONTENT_ENCODING);
-		msg.getHeader().removeFields(CONTENT_LENGTH);
-
-		return CONTINUE;
+		log.info("The {} body is longer than the limit of {} bytes.", flow == REQUEST ? "request" : "response", maxBodyLength);
+		bodyTooLong(router.getConfiguration().isProduction(), getDisplayName(), flow, maxBodyLength).buildAndSetResponse(exc);
+		return ABORT;
 	}
-
-	public class LengthLimitingStream extends InputStream {
-
-		private final InputStream is;
-
-		private long pos;
-
-		/** Set at the end of input, once the decoder has been closed. */
-		private boolean ended;
-
-		public LengthLimitingStream(InputStream is) {
-			this.is = is;
-		}
-
-		/** A failed read ends the body, so the decoder is released here; a failure to close is kept as suppressed. */
-		private void closeAfterFailure(Exception failure) {
-			try {
-				is.close();
-			} catch (IOException e) {
-				failure.addSuppressed(e);
-			}
-		}
-
-		/** Releases the decoder. Later reads must still report the end, not reach the closed decoder. */
-		private int end() throws IOException {
-			ended = true;
-			is.close();
-			return -1;
-		}
-
-		private void checkPosition() throws IOException {
-			if (pos > maxBodyLength) {
-				log.info("Message length >= {} exceeded limit {}.",pos,maxBodyLength);
-				is.close();
-				throw new IOException("Message body too large.");
-			}
-		}
-
-		@Override
-		public int read() throws IOException {
-			if (ended)
-				return -1;
-			int i;
-			try {
-				i = is.read();
-			} catch (IOException | ReadingBodyException e) {
-				closeAfterFailure(e);
-				throw e;
-			}
-			if (i == -1)
-				return end();
-			pos++;
-			checkPosition();
-			return i;
-		}
-
-		@Override
-		public int read(byte[] b) throws IOException {
-			if (ended)
-				return b.length == 0 ? 0 : -1;
-			int l;
-			try {
-				l = is.read(b);
-			} catch (IOException | ReadingBodyException e) {
-				closeAfterFailure(e);
-				throw e;
-			}
-			if (l == -1)
-				return end();
-			pos += l;
-			checkPosition();
-			return l;
-		}
-
-		@Override
-		public int read(byte[] b, int off, int len) throws IOException {
-			if (ended) {
-				Objects.checkFromIndexSize(off, len, b.length);
-				return len == 0 ? 0 : -1;
-			}
-			int l;
-			try {
-				l = is.read(b, off, len);
-			} catch (IOException | ReadingBodyException e) {
-				closeAfterFailure(e);
-				throw e;
-			}
-			if (l == -1)
-				return end();
-			pos += l;
-			checkPosition();
-			return l;
-		}
-
-		@Override
-		public long skip(long n) throws IOException {
-			if (ended)
-				return 0;
-			long l = is.skip(n);
-			if (l == -1) // Is always false
-				return l;
-			pos += l;
-			checkPosition();
-			return l;
-		}
-
-		@Override
-		public int available() throws IOException {
-			if (ended)
-				return 0;
-			return is.available();
-		}
-
-		@Override
-		public String toString() {
-			return "LengthLimitingStream(" + is.toString() + ")";
-		}
-
-		@Override
-		public void close() throws IOException {
-			is.close();
-		}
-    }
 }

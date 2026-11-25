@@ -23,8 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -45,12 +43,9 @@ public class StreamInfo {
     private final PeerFlowControl peerFlowControl;
     private final LinkedTransferQueue<DataFrame> dataFramesReceived = new LinkedTransferQueue<>();
     private final int streamId;
-    private final List<StreamInfo> priorityChildren = new ArrayList<>();
     private final LinkedTransferQueue<Frame> dataFramesToBeSent = new LinkedTransferQueue<>();
     private final Semaphore bufferedDataFrames = new Semaphore(4);
-    private StreamInfo priorityParent = null;
     private StreamState state = StreamState.IDLE;
-    private int weight;
     private Message message;
     private boolean isTrailer;
     private volatile IOException abortCause;
@@ -293,11 +288,26 @@ public class StreamInfo {
 
     private class Http2Body extends AbstractBody {
 
+        /** Captured when the body is created: a violation resets the expectation, the body fails then. */
+        private final long declaredLength = expectedContentLength;
         long streamedLength = 0;
         Header trailer;
 
+        /**
+         * @return the request's content-length. DATA beyond it resets the stream (RFC 9113 §8.1.1), so the
+         *         body never yields more.
+         */
         @Override
-        protected void readLocal() throws IOException {
+        public long getDeclaredLength() {
+            return declaredLength;
+        }
+
+        /**
+         * Reads no further than the frame that takes the body beyond {@code maxLength}.
+         */
+        @Override
+        protected boolean readChunksWithin(long maxLength) throws IOException {
+            long length = 0;
             while(true) {
                 DataFrame df = removeDataFrame();
                 if (df == null)
@@ -308,8 +318,11 @@ public class StreamInfo {
                     for (MessageObserver observer : observers)
                         observer.bodyChunk(chunk);
 
+                length += chunk.getLength();
+                if (length > maxLength)
+                    return false;
                 if (df.isEndStream())
-                    break;
+                    return true;
             }
         }
 
@@ -324,9 +337,12 @@ public class StreamInfo {
 
         @Override
         protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
-            if (getLength() > 0) {
-                byte[] content = getContent();
-                out.write(content, 0, content.length);
+            if (getLength() > 0) { // reads the body if it is not read yet
+                requireContentRetained();
+                // chunk by chunk: copying them into one array would hold the body twice, and fails above 2 GiB
+                for (Chunk chunk : chunks)
+                    if (chunk.getLength() > 0)
+                        out.write(chunk);
             }
             out.finish(trailer);
         }
@@ -398,26 +414,6 @@ public class StreamInfo {
             this.trailer = trailer;
             return true;
         }
-    }
-
-    public List<StreamInfo> getPriorityChildren() {
-        return priorityChildren;
-    }
-
-    public StreamInfo getPriorityParent() {
-        return priorityParent;
-    }
-
-    public void setPriorityParent(StreamInfo priorityParent) {
-        this.priorityParent = priorityParent;
-    }
-
-    public int getWeight() {
-        return weight;
-    }
-
-    public void setWeight(int weight) {
-        this.weight = weight;
     }
 
     /**

@@ -172,6 +172,50 @@ class OAuth2Resource2InterceptorTest {
         assertEquals("/foo?a=b&c=d", withoutOA2RedirectParameter("/foo?a=b&oa2redirect=xyz&c=d", "xyz"));
     }
 
+    /**
+     * A backend that maps "_" and "-" to the same variable, as CGI and many WSGI servers do, would otherwise see the
+     * client's value next to the one of the logged-in user, see Traefik CVE-2026-54763.
+     */
+    @Test
+    void identityHeaderFromTheClientIsRemovedInEverySpelling() throws Exception {
+        oauth2.setCustomHeaderUserPropertyPrefix("header");
+        final var session = validSession();
+        session.put("headerX-Authenticated-Email", "alice@example.com");
+        final var exc = new Request.Builder()
+                .get("/foo")
+                .header("X_Authenticated_Email", "admin@example.com")
+                .header("x-authenticated_email", "admin@example.com")
+                .header("X-Authenticated-Email", "admin@example.com")
+                .header("X-Other", "kept")
+                .buildExchange();
+
+        oauth2.applyBackendAuthorization(exc, session);
+
+        assertEquals(List.of("X-Other: kept", "X-Authenticated-Email: alice@example.com"),
+                exc.getRequest().getHeader().getFields().stream()
+                        .map(field -> field.getHeaderName() + ": " + field.getValue())
+                        .filter(field -> !field.startsWith("Host"))
+                        .toList());
+    }
+
+    @Test
+    void identityHeadersThatDifferOnlyByUnderscoreAreBothKept() throws Exception {
+        oauth2.setCustomHeaderUserPropertyPrefix("header");
+        final var session = validSession();
+        session.put("headerX-User", "alice");
+        session.put("headerX_User", "bob");
+        final var exc = new Request.Builder().get("/foo").buildExchange();
+
+        oauth2.applyBackendAuthorization(exc, session);
+
+        assertEquals(List.of("X-User: alice", "X_User: bob"),
+                exc.getRequest().getHeader().getFields().stream()
+                        .map(field -> field.getHeaderName() + ": " + field.getValue())
+                        .filter(field -> field.startsWith("X"))
+                        .sorted()
+                        .toList());
+    }
+
     private static Exchange requestWith(Session session) throws Exception {
         Exchange exc = new Request.Builder().get("/foo").buildExchange();
         exc.setOriginalRequestUri("/foo");

@@ -14,16 +14,17 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.util.SystemPropertyUtil.getPositiveIntProperty;
 
 /**
  * A message body that is not chunked: framed either by a declared length ({@code Content-Length}) or,
@@ -50,11 +51,22 @@ public class Body extends AbstractBody {
 	private final static int BUFFER_SIZE;
 	private final static int MAX_CHUNK_LENGTH;
 
+	/**
+	 * A G1 region is at least 1 MiB, so from half of that on, an array can be a humongous object, which takes
+	 * whole regions. A piece of a power-of-two size plus its array header would take one more region than its
+	 * content needs, so such pieces leave {@link #ARRAY_HEADER_ROOM} free.
+	 */
+	private static final int HUMONGOUS_PIECE_LENGTH = 512 * 1024;
+
+	/**
+	 * At least the size of an array header, whatever the object layout of the JVM.
+	 */
+	private static final int ARRAY_HEADER_ROOM = 64;
+
 	static {
-		var bufferSize = System.getProperty(MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE);
-		BUFFER_SIZE = bufferSize == null ? MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE_DEFAULT : Integer.parseInt(bufferSize);
-		var maxChunkLength = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
-		MAX_CHUNK_LENGTH = maxChunkLength == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(maxChunkLength);
+		// Positive: a size of zero would make the read loops spin without progress.
+		BUFFER_SIZE = getPositiveIntProperty(MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE, MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE_DEFAULT);
+		MAX_CHUNK_LENGTH = getPositiveIntProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH, MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT);
 	}
 
 	private final InputStream inputStream;
@@ -109,23 +121,60 @@ public class Body extends AbstractBody {
 	}
 
 	/**
-	 * Reads the body into {@link #chunks}, in chunks of at most {@code MAX_CHUNK_LENGTH} bytes, passing
-	 * each chunk to the observers. A body of unknown length is read to the end of the stream as a single
-	 * chunk.
+	 * Reads the body into {@link #chunks}, passing each chunk to the observers. The chunks start at the
+	 * buffer size and double up to {@code MAX_CHUNK_LENGTH}, so memory follows the bytes that arrive, not
+	 * the length the sender announces. Large chunks leave room for the array header, see
+	 * {@link #HUMONGOUS_PIECE_LENGTH}.
+	 * <p>
+	 * A body of known length is not read at all if it is longer than {@code maxLength}, and never beyond
+	 * its length. A body of unknown length is read no further than one byte beyond {@code maxLength}.
 	 *
 	 * @throws EOFException if a body of known length ends early
 	 */
 	@Override
-	protected void readLocal() throws IOException {
-		long l = length;
-		while (l > 0 || l == -1) {
-			int chunkLength = l > MAX_CHUNK_LENGTH ? MAX_CHUNK_LENGTH : (int)l;
-			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkLength));
-			chunks.add(chunk);
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk);
-			l -= chunkLength;
+	protected boolean readChunksWithin(long maxLength) throws IOException {
+		if (length > maxLength)
+			return false;
+
+		final long end;
+		if (length != -1)
+			end = length;
+		else // one byte beyond the limit is enough to tell that the body is too long
+			end = maxLength == Long.MAX_VALUE ? Long.MAX_VALUE : maxLength + 1;
+
+		long read = 0;
+		int capacity = Math.min(BUFFER_SIZE, MAX_CHUNK_LENGTH);
+		while (read < end) {
+			final var pieceCapacity = capacity >= HUMONGOUS_PIECE_LENGTH ? capacity - ARRAY_HEADER_ROOM : capacity;
+			final var pieceLength = (int) Math.min(pieceCapacity, end - read);
+			final var piece = new byte[pieceLength];
+			final var n = inputStream.readNBytes(piece, 0, pieceLength);
+			if (n > 0) {
+				addChunk(new Chunk(n == pieceLength ? piece : Arrays.copyOf(piece, n)));
+				read += n;
+			}
+			if (n < pieceLength) { // end of the stream
+				if (length != -1)
+					throw new EOFException("Body ended %d bytes before the declared length of %d while being read.".formatted(length - read, length));
+				return true;
+			}
+			capacity = (int) Math.min(2L * capacity, MAX_CHUNK_LENGTH);
 		}
+		return read <= maxLength;
+	}
+
+	private void addChunk(Chunk chunk) {
+		chunks.add(chunk);
+		for (MessageObserver observer : observers)
+			observer.bodyChunk(chunk);
+	}
+
+	/**
+	 * @return the length declared when the body was created, or {@code -1} if it ends with the stream
+	 */
+	@Override
+	public long getDeclaredLength() {
+		return length;
 	}
 
 	/**
@@ -192,9 +241,12 @@ public class Body extends AbstractBody {
 	 */
 	@Override
 	protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
-		if (getLength() > 0) {
-			byte[] content = getContent();
-			out.write(content, 0, content.length);
+		if (getLength() > 0) { // reads the body if it is not read yet
+			requireContentRetained();
+			// chunk by chunk: copying them into one array would hold the body twice, and fails above 2 GiB
+			for (Chunk chunk : chunks)
+				if (chunk.getLength() > 0)
+					out.write(chunk);
 		}
 		out.finish(null);
 	}

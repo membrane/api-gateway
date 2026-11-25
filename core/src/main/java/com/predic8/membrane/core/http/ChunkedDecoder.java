@@ -25,6 +25,7 @@ import java.util.HexFormat;
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static com.predic8.membrane.core.util.HttpUtil.MAX_LINE_LENGTH;
+import static com.predic8.membrane.core.util.SystemPropertyUtil.getPositiveIntProperty;
 import static java.util.HexFormat.isHexDigit;
 
 /**
@@ -55,8 +56,7 @@ final class ChunkedDecoder {
     private static int MAX_CHUNK_BYTES;
 
     static {
-        var v = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
-        MAX_CHUNK_BYTES = v == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(v);
+        MAX_CHUNK_BYTES = getPositiveIntProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH, MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT);
     }
 
     private final InputStream in;
@@ -77,10 +77,23 @@ final class ChunkedDecoder {
      * @throws IOException if reading fails or the framing is invalid
      */
     Chunk next() throws IOException {
+        return next(Long.MAX_VALUE);
+    }
+
+    /**
+     * Like {@link #next()}, but checks the chunk size before the chunk is read, so that a sender cannot make
+     * the decoder allocate the chunk, or wait for its data, just by announcing it.
+     *
+     * @param maxLength the maximum length of the chunk in bytes
+     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}, even if its size is beyond
+     *                               what the decoder accepts as well, see {@link #readChunkSize(InputStream, long)}.
+     *                               The stream is then left inside the chunk and cannot be decoded any further.
+     */
+    Chunk next(long maxLength) throws IOException {
         if (done) {
             return null;
         }
-        final var chunkSize = readChunkSize(in);
+        final var chunkSize = readChunkSize(in, maxLength);
         if (chunkSize == 0) {
             trailer = readTrailer(in);
             done = true;
@@ -160,13 +173,23 @@ final class ChunkedDecoder {
      * <pre><code>chunk-size [ chunk-ext ] CRLF
      * chunk-size = 1*HEXDIG</code></pre>
      * The chunk extensions are skipped.
+     *
+     * @param maxLength the maximum length of the chunk in bytes. It is checked before the decoder's own limits
+     *                  on the chunk size, so that a chunk over it is reported as too long, even beyond them. The
+     *                  decoder reads at most 8 hex digits, leading zeros included: a longer chunk size is reported
+     *                  as too long only if the digits up to the 9th already exceed {@code maxLength}, and refused as
+     *                  malformed otherwise, since its size is not known.
+     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}
      */
-    static int readChunkSize(InputStream in) throws IOException {
+    static int readChunkSize(InputStream in, long maxLength) throws IOException {
         final var buffer = new StringBuilder();
 
         int c;
         while (isHexDigit(c = read(in))) {
             if (buffer.length() >= MAX_CHUNK_SIZE_HEX_DIGITS) {
+                // the chunk is at least this long, whatever digits follow
+                if (Long.parseLong(buffer.toString() + (char) c, 16) > maxLength)
+                    throw new ChunkTooLongException();
                 log.info("Chunk-size {} exceeds limit: {}",buffer.length(), MAX_CHUNK_SIZE_HEX_DIGITS);
                 throw new IOException("Chunk-size exceeds limit");
             }
@@ -181,7 +204,7 @@ final class ChunkedDecoder {
         }
         expect(in, LF);
 
-        return parseChunkSize(buffer);
+        return parseChunkSize(buffer, maxLength);
     }
 
     /**
@@ -216,21 +239,28 @@ final class ChunkedDecoder {
         return c;
     }
 
-    static int parseChunkSize(StringBuilder buffer) throws IOException {
+    /**
+     * @param maxLength see {@link #readChunkSize(InputStream, long)}
+     * @throws ChunkTooLongException if the chunk is longer than {@code maxLength}
+     */
+    static int parseChunkSize(StringBuilder buffer, long maxLength) throws IOException {
         final var hex = buffer.toString();
         if (hex.isEmpty()) {
             throw new IOException("Empty chunk-size field");
         }
         if (!hex.chars().allMatch(HexFormat::isHexDigit)) {
-            // Integer.parseInt would also accept a sign
+            // Long.parseLong would also accept a sign
             throw new IOException("Invalid chunk-size value: %s".formatted(hex));
         }
         try {
-            int size = Integer.parseInt(hex, 16);
+            final var size = Long.parseLong(hex, 16);
+            if (size > maxLength) {
+                throw new ChunkTooLongException();
+            }
             if (size > MAX_CHUNK_BYTES) {
                 throw new IOException("Chunk size %d exceeds limit of %d bytes".formatted(size, MAX_CHUNK_BYTES));
             }
-            return size;
+            return (int) size;
         } catch (NumberFormatException e) {
             throw new IOException("Invalid chunk-size value: %s".formatted(hex), e);
         }
@@ -251,6 +281,15 @@ final class ChunkedDecoder {
             throw new EOFException("Stream ended inside a chunked body");
         }
         return c;
+    }
+
+    /**
+     * A chunk is longer than the length the caller of {@link #next(long)} accepts.
+     */
+    static final class ChunkTooLongException extends IOException {
+        ChunkTooLongException() {
+            super("Chunk is longer than the maximum length.");
+        }
     }
 
     /**

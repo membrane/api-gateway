@@ -18,7 +18,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.List;
 
+
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
+import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -142,7 +146,7 @@ public class BodyTest {
 	private static AbstractBody bodyReporting(long length) {
 		return new AbstractBody() {
 			@Override public long getLength() { return length; }
-			@Override protected void readLocal() {}
+			@Override protected boolean readChunksWithin(long maxLength) { return true; }
 			@Override protected void writeAlreadyRead(AbstractBodyTransferer out) {}
 			@Override protected void writeStreamed(AbstractBodyTransferer out) {}
 			@Override protected byte[] getRawLocal() { return new byte[0]; }
@@ -379,6 +383,218 @@ public class BodyTest {
 		Request second = new Request();
 		second.read(in, true);
 		assertEquals("/second", second.getUri());
+	}
+
+	@Test
+	void readUpToReadsABodyWithinTheLimit() {
+		final var body = new Body(new ByteArrayInputStream("small".getBytes(UTF_8)), 5);
+		assertEquals(WITHIN, body.readUpTo(5));
+		assertTrue(body.isRead());
+		assertArrayEquals("small".getBytes(UTF_8), body.getContent());
+	}
+
+	@Test
+	void readUpToFailsABodyOfKnownLengthAboveTheLimitWithoutReadingIt() {
+		final var in = new ByteArrayInputStream("small".getBytes(UTF_8));
+		final var body = new Body(in, 5);
+		assertEquals(TOO_LONG, body.readUpTo(4));
+		assertTrue(body.hasFailed());
+		assertEquals(4, assertInstanceOf(BodyLengthExceededException.class, body.getObservedException().getCause()).getMaxLength());
+		assertEquals(5, in.available());
+	}
+
+	/**
+	 * Read in chunks that grow from the buffer size, so a short body does not get a large array.
+	 */
+	@Test
+	void bodyOfUnknownLengthIsReadInGrowingChunks() {
+		final var content = new byte[30_000];
+		new java.util.Random(0).nextBytes(content);
+		final var body = new Body(new ByteArrayInputStream(content));
+		body.read();
+		assertArrayEquals(content, body.getContent());
+		assertEquals(List.of(8192, 16384, 30_000 - 8192 - 16384), body.chunks.stream().map(Chunk::getLength).toList());
+	}
+
+	/**
+	 * Like {@link #bodyOfUnknownLengthIsReadInGrowingChunks()}, up to the declared length and not beyond.
+	 */
+	@Test
+	void bodyOfKnownLengthIsReadInGrowingChunks() {
+		final var content = new byte[30_000];
+		new java.util.Random(0).nextBytes(content);
+		final var in = new ByteArrayInputStream(concat(content, "NEXT".getBytes(UTF_8)));
+		final var body = new Body(in, content.length);
+		body.read();
+		assertArrayEquals(content, body.getContent());
+		assertEquals(List.of(8192, 16384, 30_000 - 8192 - 16384), body.chunks.stream().map(Chunk::getLength).toList());
+		assertEquals("NEXT".length(), in.available(), "only the body itself may be consumed");
+	}
+
+	/**
+	 * From 512 KiB on, a piece can be a humongous object on G1, which takes whole regions. A piece of a
+	 * power-of-two size plus its array header would take one more region than its content needs.
+	 */
+	@Test
+	void largePiecesLeaveRoomForTheArrayHeader() {
+		final var body = new Body(new ByteArrayInputStream(new byte[2 * 1024 * 1024]), 2 * 1024 * 1024);
+		body.read();
+		assertEquals(List.of(8192, 16384, 32768, 65536, 131072, 262144, 524288 - 64, 1048576 - 64, 8320),
+				body.chunks.stream().map(Chunk::getLength).toList());
+	}
+
+	/**
+	 * Memory follows the bytes that arrive, not the length the sender announces: a client announcing a large
+	 * body and sending a few bytes must not make Membrane allocate the whole length.
+	 */
+	@Test
+	void announcedLengthIsNotAllocatedUpFront() {
+		final var in = new LargestArrayRecordingStream("part".getBytes(UTF_8));
+		final var body = new Body(in, 10_000_000);
+
+		assertInstanceOf(EOFException.class, assertThrows(ReadingBodyException.class, body::read).getCause());
+		assertTrue(in.largestArray <= 8192, "largest array: " + in.largestArray);
+	}
+
+	private static byte[] concat(byte[] first, byte[] second) {
+		final var result = Arrays.copyOf(first, first.length + second.length);
+		System.arraycopy(second, 0, result, first.length, second.length);
+		return result;
+	}
+
+	/**
+	 * Records the largest array a reader handed to it to be filled.
+	 */
+	private static class LargestArrayRecordingStream extends FilterInputStream {
+		int largestArray;
+
+		LargestArrayRecordingStream(byte[] content) {
+			super(new ByteArrayInputStream(content));
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			largestArray = Math.max(largestArray, b.length);
+			return super.read(b, off, len);
+		}
+	}
+
+	/**
+	 * Copying the chunks into one array would need the body twice in memory, and fails above 2 GiB.
+	 */
+	@Test
+	void bodyInMemoryIsWrittenChunkByChunk() throws IOException {
+		final var body = new Body(List.of(new Chunk("ab".getBytes(UTF_8)), new Chunk("cd".getBytes(UTF_8))));
+		final var out = new ByteArrayOutputStream();
+		body.write(new ChunkedBodyTransferer(out), true);
+		assertEquals("2\r\nab\r\n2\r\ncd\r\n0\r\n\r\n", out.toString(UTF_8));
+	}
+
+	/**
+	 * Requesting the body would send "100 Continue" to a client that waits for it before sending the body.
+	 */
+	@Test
+	void readUpToDoesNotRequestABodyKnownToBeLonger() {
+		final var body = new Body(new ByteArrayInputStream("small".getBytes(UTF_8)), 5);
+		final var requested = new boolean[1];
+		body.addObserver(new AbstractMessageObserver() {
+			@Override
+			public void bodyRequested(AbstractBody b) {
+				requested[0] = true;
+			}
+		});
+		assertEquals(TOO_LONG, body.readUpTo(4));
+		assertFalse(requested[0]);
+		assertTrue(body.hasFailed());
+	}
+
+	@Test
+	void readUpToStopsReadingABodyOfUnknownLengthAfterTheLimit() {
+		final var in = new ByteArrayInputStream(new byte[100]);
+		final var body = new Body(in);
+		final var observer = new RecordingObserver();
+		body.addObserver(observer);
+		assertEquals(TOO_LONG, body.readUpTo(10));
+		assertTrue(body.hasFailed());
+		assertTrue(observer.failed);
+		assertEquals(89, in.available());
+	}
+
+	@Test
+	void readUpToReadsABodyOfUnknownLengthWithinTheLimit() {
+		final var body = new Body(new ByteArrayInputStream("small".getBytes(UTF_8)));
+		final var observed = new ByteArrayOutputStream();
+		body.addObserver(new AbstractMessageObserver() {
+			@Override
+			public void bodyChunk(Chunk chunk) {
+				observed.writeBytes(chunk.content());
+			}
+		});
+		assertEquals(WITHIN, body.readUpTo(5));
+		assertTrue(body.isRead());
+		assertEquals("small", observed.toString(UTF_8));
+		assertArrayEquals("small".getBytes(UTF_8), body.getContent());
+	}
+
+	@Test
+	void readUpToChecksTheLengthOfABodyInMemoryWithoutFailingIt() {
+		final var body = new Body("small".getBytes(UTF_8));
+		assertEquals(WITHIN, body.readUpTo(5));
+		assertEquals(TOO_LONG, body.readUpTo(4));
+		assertFalse(body.hasFailed());
+	}
+
+	@Test
+	void readUpToOfEmptyBody() {
+		assertEquals(WITHIN, new EmptyBody().readUpTo(0));
+	}
+
+	/**
+	 * A discarded body is read but holds nothing, so measuring it would pass any body off as within the limit.
+	 */
+	@Test
+	void readUpToRejectsADiscardedBody() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.discard();
+
+		assertThrows(IllegalStateException.class, () -> body.readUpTo(0));
+	}
+
+	@Test
+	void readUpToRethrowsTheFailureOfABody() {
+		final var body = new Body(new ByteArrayInputStream("four".getBytes(UTF_8)), 10);
+		final var failure = assertThrows(ReadingBodyException.class, body::read);
+
+		assertSame(failure, assertThrows(ReadingBodyException.class, () -> body.readUpTo(100)));
+	}
+
+	/**
+	 * With <code>retries: 0</code> the request body is sent without keeping a copy. The error has to tell
+	 * how to keep it readable for the response flow.
+	 */
+	@Test
+	void bodyStreamedWithoutCopyCannotBeReadAndTellsHowToKeepIt() {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.write(new PlainBodyTransferer(new ByteArrayOutputStream()), false);
+
+		final var e = assertThrows(IllegalStateException.class, body::getContent);
+		assertTrue(e.getMessage().contains("read it in the request flow"), e.getMessage());
+	}
+
+	/**
+	 * Reading the request body in the request flow, e.g. in a script, keeps it readable in the response
+	 * flow, even when it is sent without keeping a copy.
+	 */
+	@Test
+	void bodyReadBeforeItIsSentWithoutCopyStaysReadable() throws IOException {
+		final var body = new Body(new ByteArrayInputStream("content".getBytes(UTF_8)), "content".length());
+		body.getContent();
+		final var out = new ByteArrayOutputStream();
+
+		body.write(new PlainBodyTransferer(out), false);
+
+		assertEquals("content", out.toString(UTF_8));
+		assertEquals("content", new String(body.getContent(), UTF_8));
 	}
 
 	private static class RecordingObserver extends AbstractMessageObserver {

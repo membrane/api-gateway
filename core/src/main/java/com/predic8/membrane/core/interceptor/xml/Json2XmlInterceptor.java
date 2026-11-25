@@ -43,7 +43,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @description <p>Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
  * UTF-8 encoded, begins with an XML prolog, and the Content-Type is set to <code>application/xml</code>. If the body
- * cannot be converted, the exchange is aborted.</p>
+ * cannot be converted, the exchange is aborted. The body must be exactly one standard JSON value; an empty body is
+ * rejected, except in a response that has no body by HTTP, such as a 304 or the response to a HEAD request.</p>
  * <p>Given an XML Schema, the document follows the schema instead: the single key of the JSON
  * object names the root element, and the fields are written in the order and namespace the schema
  * declares.</p>
@@ -126,7 +127,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
 
     private Outcome handleInternal(Exchange exchange, Flow flow) {
         Message msg = exchange.getMessage(flow);
-        if (!msg.isJSON())
+        if (!msg.isJSON() || hasNoBodyByHttp(exchange, flow))
             return CONTINUE;
 
         final var mapping = schemaMapping;
@@ -147,9 +148,16 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    /**
+     * A 1xx, 204, 205 or 304 response, or the response to a HEAD request, keeps the Content-Type of the representation
+     * but has no body to convert. Any other empty body is not JSON and is rejected.
+     */
+    private static boolean hasNoBodyByHttp(Exchange exc, Flow flow) {
+        return flow == RESPONSE
+               && (exc.getResponse().shouldNotContainBody() || exc.getRequest().isHEADRequest());
+    }
+
     private Outcome convertWithSchema(Exchange exc, Flow flow, Message msg, XmlSchemaMapping mapping) {
-        if (msg.isBodyEmpty())
-            return CONTINUE;
         final byte[] xml;
         try {
             xml = mapping.toXml(msg.getBodyAsStringDecoded());

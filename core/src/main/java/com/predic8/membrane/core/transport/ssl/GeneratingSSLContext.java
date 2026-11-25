@@ -22,6 +22,7 @@ import com.oracle.util.ssl.SSLCapabilities;
 import com.oracle.util.ssl.SSLExplorer;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -69,6 +70,10 @@ public class GeneratingSSLContext extends SSLContext {
     private long validFrom, validUntil;
 
     public GeneratingSSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
+        // The generated contexts would validate client certificates with the JDK's trust store instead of the
+        // configured one, and SSLContext.admitsSessionOf could not enforce the client authentication on a shared port
+        if (sslParser.getClientAuth() != null)
+            throw new ConfigurationException("clientAuth='%s' cannot be used together with keyGenerator. Remove clientAuth, or configure a keystore or key instead of keyGenerator.".formatted(sslParser.getClientAuth()));
         this.sslParser = sslParser;
         try {
             KeyStore ks = KeyStore.getInstance("PKCS12");

@@ -24,6 +24,9 @@
     - Send the right Content-Type (`curl -d` sends form data); an empty body or one that is no XML/JSON at all is evaluated as an empty document, a broken XML/JSON body gives 400/502 whatever its Content-Type
     - Write fail-closed XPath guards: `not(/a = 'admin')` instead of `/a != 'admin'`. It is also true when `<a>` is missing, so a request without `<a>` counts as "not admin". `/a != 'admin'` is false then, which lets such a request slip past the guard
     - Check expected content-type at the beginning (Maybe an Interceptor like enforceContent)
+- Add a streaming tutorial
+  - Set retries: 0
+  - Show that request.body is not available in the response
 
 ## Priority 2
 - Add performance tutorial or tuning guide
@@ -41,6 +44,11 @@
   - Keep the `redis` attributes as they are: `host`, `port`, `dbNumber`, `user`, `password`, `ssl`, `timeout`, `connectionNumber`, `minIdleConnection`, `useSentinels`, `masterName`.
   - Check the sentinel case: `getJedisWithDb()` authenticates sentinel connections by hand and calls `select(dbNumber)` on every borrowed connection; the new API may take both in the client configuration.
   - Test against a real Redis (plain, password, user + password, TLS, sentinel); the unit tests only use a map-backed fake.
+- Remove the `-XX:-UseBASE64Intrinsics` workaround for CVE-2026-114938 ("Java4Shell") (#3814)
+  - Story: #3814 turns off the Base64 intrinsics of the JVM, a mitigation for a memory corruption in the AVX-512 Base64 decoder of JDK 17, 21, 25 and 27 on x86-64. It costs Base64 performance on CPUs with AVX-512 and is not needed once the JDK is fixed (Oracle JDK 17.0.21.1, 21.0.13.1, 25.0.5.1, 27.0.1.1, Corretto 17.0.21.1.2, Temurin builds to follow).
+  - When: the Docker images ship a fixed JDK (`eclipse-temurin:25-jdk` in `distribution/docker/Dockerfile`, `amazoncorretto-21` in `Dockerfile`), and fixed builds of all Java versions Membrane supports have been out long enough to be widely installed.
+  - Undo #3814: the flag in `distribution/scripts/start_router.sh` and `start_router.cmd` (including their comments), `wrapper.java.additional.1` in `distribution/examples/deployment/windows-service/wrapper.conf`, and the `java` calls in `distribution/examples/security/oauth2/{github,google}/service-proxySSL.{sh,ps1}`.
+  - Add a release note saying the flag was removed, and that operators on an unpatched JDK can keep it with `-XX:-UseBASE64Intrinsics` in `JAVA_OPTS`.
 
 ## Priority 3
 - OpenAPI: validate `in: cookie` parameters
@@ -111,6 +119,11 @@
 
 ## Membrane 8.0.0 (Java 25)
 
+- Make ForgetFulExchangeStore the default 
+  - LimitedMemoryExchangeStore is the default.
+  - It stores every message in memory. And evicts older ones.
+  - It is only used for the calls of the admin console
+  - Maybe we could make so that it is only used when the admin console is configured. By program or by documentation.
 - Remove Interceptors:
   - StatisticsCSVInterceptor, StatisticsJDBCInterceptor: They are obsolete; use Prometheus metrics or the access log instead.
 - change all maven packages to membrane-api.io
@@ -123,6 +136,7 @@
     - globalInbound
     - globalOutbound
 - Remove deprecated finalize blocks
+  - Remove `Header.getContentEncoding()` (deprecated in #3819): it reads only the first `Content-Encoding` field line. Callers, including scripts, use `getContentCodings()`.
 - Remove XML configuration
 - configure log4j with YAML
 - Remove SOAP2REST XSLT Interceptor (?):
@@ -187,10 +201,10 @@
   - Related: a start hook after all APIs are initialized. `KafkaConsumerProxy` starts the consumer from `init()`, before the interceptors of its flow are initialized, so the Kafka extension has to wait itself until the router is running.
 - Lifecycle for APIs: stop an API when it is removed or replaced
   - Story: `Proxy` only has `init()`. `@PreDestroy` runs only when the bean registry is closed (`BeanRegistryImplementation.close()`, on router stop or reload). Deleting or changing an API by hot deployment (`DefaultRouter.handleBeanEvent`), in the Admin Console, over JMX, or replacing it with a clone in `RuleReinitializer` (retryInit) goes through `RuleManager.removeRule()`/`replaceRule()`, which never stop the old instance. The registry keeps the old bean's callback until shutdown.
-  - Affected: `kafkaConsumer` (`KafkaConsumerProxy`). A removed or replaced consumer keeps receiving messages and delivering them to its old target until Membrane stops. For now `kafkaConsumer` refuses to start when hot deployment is on.
+  - Affected: `kafkaConsumer` (`KafkaConsumerProxy`) and `jmsConsumer` (`JmsConsumerProxy`). A removed or replaced consumer keeps receiving messages and delivering them to its old target until Membrane stops. Hot deployment of a changed `apis.yaml` is not affected: it reloads the whole configuration and closes the bean registry, which stops the old consumers. Affected are changes from the Kubernetes watcher, the Admin Console and JMX.
   - Also `kafkaConsumer` with retryInit: the consumer starts in `init()`, before the interceptors of the flow. If one of them fails, the API stays inactive with a running consumer that reads without delivering. Every retry replaces the API with a clone, and `clone()` and `replaceRule()` both initialize it, so the consumer is restarted twice per retry and the consumer group rebalances. Also, without the Kafka extension Membrane starts anyway with an inactive API, although the docs say it does not start. For now `kafkaConsumer` refuses to start when retryInit is on, but `AbstractProxy.init` swallows that exception under retryInit, so Membrane starts anyway with the API inactive and retries it forever.
   - Idea: `Proxy.destroy()`, called by `RuleManager.removeRule()` and by `replaceRule()` on the old API **before** `newProxy.init()`. A clone shares the consumer reference with the original, so stopping the old API after the clone was initialized would stop the clone's consumer. Stopping first also keeps two consumers of the same group from running at once.
-  - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow hotDeploy and retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
+  - Then look at `kafkaConsumer` again: drop the shared `AtomicReference` that clones need for `@PreDestroy`, allow retryInit again, and check what happens when `newProxy.init()` fails after the old consumer was stopped.
 - `groovy`: serialize a returned `List` to a JSON body like a `Map`
   - Story: since 7.9 the `javascript` plugin turns a returned array into a JSON body (`isListSerializedToJson()` in `AbstractScriptInterceptor`). `groovy` still ignores a returned `List`, so the two languages differ.
   - **Breaking**: `list.each {...}`, `collect` or `findAll` as the last statement returns a list, which then replaces the body. Name ending the script with `CONTINUE` in the release notes. Then remove the hook.
@@ -303,7 +317,7 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   | client sends last body byte | 1,831 | 1,834 |
   | backend receives last body byte | 1,831 | 1,837 |
 
-- Dropping the copy is not an option. #3705 stopped keeping it for POST and PATCH, which was safe for retries: `RetryHandler` repeats a non-idempotent method only after a failure before anything was written (RFC 9110 §9.2.2). But then the request body could no longer be read in the response flow (scripts, templates, expressions): 500 `Cannot read body after it was streamed.` instead of 200. People writing an `apis.yaml` can't be expected to know about streaming, so the request body stays readable by default (#3750, decision 1). The code stays on branch `perf/stream-non-idempotent-request-bodies` (806dddb5c).
+- Dropping the copy is not an option. #3705 stopped keeping it for POST and PATCH, which was safe for retries: `RetryHandler` repeats a non-idempotent method only after a failure before anything was written (RFC 9110 §9.2.2). But then the request body could no longer be read in the response flow (scripts, templates, expressions): 500 `Cannot read body after it was streamed.` instead of 200. People writing an `apis.yaml` can't be expected to know about streaming, so the request body stays readable by default (#3750, decision 1). With `retries: 0` it is still streamed without a copy; the `retries` reference and the error message say to read it in the request flow to use it in the response flow (#3750, decisions 2 and 3). The code stays on branch `perf/stream-non-idempotent-request-bodies` (806dddb5c).
 - Idea: keep the chunks while writing ("tee"). Each chunk read from the incoming stream is stored first and then written. The backend gets the first byte right away. Once the transfer is complete, the body is fully in memory, as it is today, so memory use does not change. Bodies written without a copy (responses to the client) stay unbuffered.
   - `enum BodyRetention { NONE, READABLE, REPLAYABLE }` and `AbstractBody.write(out, BodyRetention)`. The `boolean` overloads become `final` and delegate.
   - A hook `writeKeepingCopy()`. The default reads first, as today. `Body` and `ChunkedBody` tee.
@@ -320,11 +334,39 @@ Avoid expanding unrelated unsupported WSDL features. Use the repository’s targ
   - A chunked body keeps its trailer when it is sent again.
   - HTTP/2 (`StreamInfo`, `writeMessageBody`) uses the same mechanism.
 - To decide:
-  - Whether `retries: 0` keeps meaning "no copy" or also keeps one, with streaming without a copy as an explicit opt-out (#3750, decisions 2 and 3).
   - #3706 wants to read a retained request body completely before the header fields are sent, so that a request over the limit never reaches the backend. Tee sends the header fields first. Choose between "nothing over the limit reaches the backend" and "first byte early" (#3750, decision 4).
 - Tests:
   - Plain and chunked bodies: a successful write followed by a read; a write that fails partway, followed by a second write, by a read and by a discard; a read failure during the write (stays sticky, like `Failed`); observer events fire exactly once.
   - Incremental forwarding: a body source that holds back its second chunk until the first chunk has reached the backend. `wasStreamed()` alone does not prove this, since it is set before anything is written.
   - `Expect: 100-continue` with a streamed body and default retries.
   - Idempotent request, tee write fails partway, `RetryHandler` retries: with the interim design the failure surfaces, with `Partial` the retry succeeds.
-  
+
+### Redesign of `call`
+
+- Story: `call` sends a request built from the current message (method from the `method` attribute, all header fields except `Connection`, `Keep-Alive`, `Proxy-Connection`, `TE`, `Trailer` and `Upgrade`, and the body for `POST`, `PUT` and `PATCH`) and merges the answer back into the current message: the response body replaces the message body, and the response header fields overwrite the message's fields of the same name. Since #3842 it works on the response in the response flow. The callout's status code is not kept anywhere.
+- Problems:
+  - **Everything is copied out.** `Authorization`, `Cookie`, API keys and any other field the client sent go to the callout endpoint, which the client never addressed and which may belong to someone else. In the response flow, the backend response's fields (`Set-Cookie` with session IDs, internal fields) go out too. Fields named in `Connection` are sent as well, so the client cannot remove fields the gateway added. The user has to know this and remove fields beforehand, which also removes them from the message that goes on to the backend.
+  - **Everything is merged back.** Fields of the callout response overwrite those of the message: a callout `Content-Type` replaces the request's, and a callout `Set-Cookie` lands on a request, where it means nothing (tutorial `orchestration/40-Authentication-Call.yaml` has to copy it to `Cookie` and then remove it). `setValue` keeps only the last of several fields with the same name, so the backend's `Set-Cookie` plus two from the callout leaves one.
+  - **The message body is lost.** The callout body replaces the message body, so the original body is gone unless it was saved before (e.g. with `setProperty`). Combining the original body with the callout result in a `template` needs that workaround.
+  - **Errors fail open.** A 401, 404 or 500 from the callout is merged like a 200 and the flow continues with the error body as message body. Only failures to get or decode the callout response (network errors, unknown host, undecodable body) abort with 500. The status code is not available to `if`, so the flow cannot react to it.
+  - **Request flow and response flow behave differently** (since #3842), which is hard to see in the configuration. A `call` directly under `flow`, next to a target, runs twice and the second run replaces the target's response.
+  - **No limits.** The outbound body is decoded with `MessageUtil.getContent` and the callout response is read with `readAllBytes`, both without the decompression and size limits that apply elsewhere (MEM-38).
+  - **The request can't be built freely.** The body is always the current body, the method is fixed per element, and header fields can only be changed on the current message before the call.
+- Options:
+  - **A. Keep the merge, copy no header fields by default.** The callout gets only fields that are listed, e.g. `forwardHeaders: [Authorization, X-Request-Id]`, plus framing fields for the body. The body and the merge back stay as today. Smallest change; fixes the leak, not the merge or the errors.
+  - **B. Keep the merge, but merge selectively.** Like A, plus a list of the callout response fields to copy back (default: none, or only `Content-Type` together with the body), `Set-Cookie` handled with `add` instead of `setValue`, and a status check: by default a callout status of 400 or above aborts with 502, with `failOnError: false` to opt out.
+  - **C. Separate the callout completely.** `call` builds its own request (method, URL, header fields and body, each with expressions; nothing copied unless written) and stores the answer under a name, e.g. `call: { name: user, url: ..., headers: {...}, body: ... }`. Expressions read `calls.user.status`, `calls.user.header['X']`, `calls.user.json.id`. The current message stays unchanged; `setBody`, `setHeader` or `template` take what they need. This also removes the request/response flow difference.
+  - **D. C with a convenience mode.** Like Azure APIM's `mode="new|copy"`: `new` (default) as C, `copy` starts from the current message's fields (without hop-by-hop fields and credentials). The result is always stored under the name; merging stays an explicit step.
+- Prior art:
+  - Azure APIM `send-request`: `mode="new"` (default) or `copy`, the answer is stored in `response-variable-name`, `ignore-error` controls failures.
+  - Apigee ServiceCallout: separate request and response variables; the request is built explicitly; `continueOnError` for failures.
+  - Kong `request-callout`: named callouts, `headers.forward` and `body.forward` default to `false`, results under `kong.ctx.shared.callouts.<name>`.
+  - Envoy `ext_authz`: allow lists for the fields sent to the authorization service and for the fields copied back.
+- To decide:
+  - A/B (keeps today's merge model; breaks configurations that rely on forwarded or merged fields, or on error statuses passing through) or C/D (new model, breaking).
+  - Default reaction to a callout error status: abort (which status for the client, 502?) or continue with the status exposed.
+  - Name and syntax for accessing results in expressions (SpEL, Groovy, JSONPath, templates), and how long they live (exchange property).
+  - Size limit for the callout response and for the decoded outbound body.
+  - Whether `call` in the response flow needs anything special once results no longer merge.
+  - Migration: the orchestration tutorials (`distribution/tutorials/orchestration/`) and the `call` reference docs.
+- **Breaking** with C/D, and with A/B for configurations that rely on header fields being sent or merged, and with B for configurations that rely on error statuses passing through.

@@ -20,6 +20,8 @@ import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.common.ExceptionUtil;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Map;
 
@@ -528,6 +530,65 @@ public class YAMLParsingErrorTest {
         assertNotNull(params);
         assertEquals("MethodParams", params.getClass().getSimpleName());
         assertEquals("tmp.schema.json", params.getClass().getMethod("getLocation").invoke(params));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"orderId: ~", "orderId: null"})
+    void otherAttributesNullValue(String entry) {
+        assertNullValueRejected(compileNullValueSources(), """
+                demo:
+                  properties:
+                    %s
+                """.formatted(entry), "$.demo.properties", "orderId");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"name", "flag", "count"})
+    void attributeNullValue(String attribute) {
+        assertNullValueRejected(compileNullValueSources(), """
+                demo:
+                  %s: ~
+                """.formatted(attribute), "$.demo", attribute);
+    }
+
+    private static void assertNullValueRejected(CompilerResult result, String yaml, String path, String key) {
+        var e = assertThrows(RuntimeException.class, () -> parseYAML(result, yaml));
+        var c = assertInstanceOf(ConfigurationParsingException.class, ExceptionUtil.getRootCause(e));
+        assertEquals("Value of '%s' must not be null.".formatted(key), c.getMessage());
+        var pc = c.getParsingContext();
+        assertNotNull(pc);
+        assertEquals(path, pc.getPath());
+        assertEquals(key, pc.getKey());
+    }
+
+    private static CompilerResult compileNullValueSources() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                @MCElement(name="demo", topLevel=true, component=false)
+                public class DemoElement {
+                    @MCAttribute
+                    public void setName(String name) { }
+                    @MCAttribute
+                    public void setFlag(boolean flag) { }
+                    @MCAttribute
+                    public void setCount(int count) { }
+                    @MCChildElement
+                    public void setProperties(PropertiesElement properties) { }
+                }
+                ---
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                import java.util.Map;
+                @MCElement(name="properties", component=false)
+                public class PropertiesElement {
+                    @MCOtherAttributes
+                    public void setProperties(Map<String, String> properties) { }
+                }
+                """);
+        var result = compile(sources, false);
+        assertCompilerResult(true, result);
+        return result;
     }
 
     private static CompilerResult compileMethodMapSources() {

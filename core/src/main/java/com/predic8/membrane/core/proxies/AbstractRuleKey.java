@@ -19,6 +19,8 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.util.StompUtil.STOMP_VERSION;
+
 public abstract class AbstractRuleKey implements RuleKey {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractRuleKey.class.getName());
@@ -179,7 +181,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 
     @Override
     public boolean matchesVersion(String version) {
-        return !"STOMP".equals(version);
+        return !STOMP_VERSION.equals(version);
     }
 
     public boolean complexMatch(Exchange exc) {

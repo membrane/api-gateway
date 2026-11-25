@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.StringList.parseToList;
 import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -159,6 +160,7 @@ public class Header {
 
     private static final Pattern timeoutPattern = compile("timeout\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
     private static final Pattern maxPattern = compile("max\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
+    private static final Pattern NON_ALPHANUMERIC = compile("[^A-Za-z0-9]");
 
     private final List<HeaderField> fields = new ArrayList<>();
 
@@ -236,19 +238,6 @@ public class Header {
             return new HeaderField(line);
         log.debug("Stripping whitespace between field name and colon in header line \"{}\".", maskNonPrintableCharacters(truncateAfter(line.substring(0, colon), 80)));
         return new HeaderField(line.substring(0, end) + line.substring(colon));
-    }
-
-    /**
-     * Whether the first {@code end} characters of the line form an RFC 9110 &sect;5.6.2 token:
-     * 1*tchar. Works on the line in place, as it runs for every header line.
-     */
-    private static boolean isToken(String line, int end) {
-        if (end == 0)
-            return false;
-        for (int i = 0; i < end; i++)
-            if (!isTchar(line.charAt(i)))
-                return false;
-        return true;
     }
 
     /**
@@ -346,6 +335,24 @@ public class Header {
 
     public void removeFields(String name) {
         fields.removeIf(hf -> hf.getHeaderName().hasName(name));
+    }
+
+    /**
+     * Removes the fields named {@code name}, ignoring case, and those that only differ from it in characters
+     * other than letters and digits, like "X_User" or "X.User" for "X-User".
+     * <p>
+     * CGI (RFC 3875 4.1.18), and following it PHP and many WSGI servers, turn "-" into "_", so "X-User" and
+     * "X_User" become the same variable. lighttpd turns every character other than a letter or digit into "_".
+     * Before Membrane sets a header that a backend trusts, such as the identity of a logged-in user, it must remove
+     * every spelling a client could have sent, or the backend may see the client's value.
+     */
+    public void removeFieldsAndUnderscoreAliases(String name) {
+        final var canonical = toCgiVariableName(name);
+        fields.removeIf(hf -> toCgiVariableName(hf.getHeaderName().toString()).equalsIgnoreCase(canonical));
+    }
+
+    private static String toCgiVariableName(String headerName) {
+        return NON_ALPHANUMERIC.matcher(headerName).replaceAll("_");
     }
 
     /**
@@ -647,8 +654,27 @@ public class Header {
         return getFirstValue(X_FORWARDED_PROTO);
     }
 
+    /**
+     * Returns the value of the first <tt>Content-Encoding</tt> field line only, which misses codings
+     * on further field lines.
+     *
+     * @deprecated Use {@link #getContentCodings()}. To be removed in 8.0.
+     */
+    @Deprecated(forRemoval = true)
     public String getContentEncoding() {
         return getFirstValue(CONTENT_ENCODING);
+    }
+
+    /**
+     * Returns the content codings of all <tt>Content-Encoding</tt> field lines, in the order they
+     * were applied. Several field lines form one list (RFC 9110 &sect;5.3), so
+     * <tt>Content-Encoding: gzip</tt> plus <tt>Content-Encoding: br</tt> yields <tt>[gzip, br]</tt>.
+     * Empty list elements are dropped (RFC 9110 &sect;5.6.1).
+     *
+     * @return an immutable list, empty if the message has no content coding
+     */
+    public List<String> getContentCodings() {
+        return List.copyOf(parseToList(getNormalizedValue(CONTENT_ENCODING)));
     }
 
     public String getCharset() {

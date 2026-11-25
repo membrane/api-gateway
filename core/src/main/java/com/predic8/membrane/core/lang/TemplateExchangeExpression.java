@@ -53,7 +53,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
         if (tokens.isEmpty()) {
-            return null;
+            return type.cast("");
         }
         if (tokens.size() == 1) {
             if (type.getName().equals(String.class.getName())) {

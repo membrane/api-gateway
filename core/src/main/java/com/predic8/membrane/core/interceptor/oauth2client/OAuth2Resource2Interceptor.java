@@ -268,17 +268,18 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return exc.getOriginalRelativeURI().startsWith("/favicon.ico");
     }
 
-    private void applyBackendAuthorization(Exchange exc, Session s) {
+    void applyBackendAuthorization(Exchange exc, Session s) {
         if (customHeaderUserPropertyPrefix == null)
             return;
         Header h = exc.getRequest().getHeader();
-        for (Map.Entry<String, Object> e : s.get().entrySet()) {
-            if (e.getKey().startsWith(customHeaderUserPropertyPrefix)) {
-                String headerName = e.getKey().substring(customHeaderUserPropertyPrefix.length());
-                h.removeFields(headerName);
-                h.add(headerName, e.getValue().toString());
-            }
-        }
+        final var headers = s.get().entrySet().stream()
+                .filter(e -> e.getKey().startsWith(customHeaderUserPropertyPrefix))
+                .toList();
+        // Remove all spellings first, so that one header does not remove another that only differs by "_" or "-"
+        for (final var e : headers)
+            h.removeFieldsAndUnderscoreAliases(e.getKey().substring(customHeaderUserPropertyPrefix.length()));
+        for (final var e : headers)
+            h.add(e.getKey().substring(customHeaderUserPropertyPrefix.length()), e.getValue().toString());
     }
 
     public Outcome respondWithRedirect(Exchange exc, FlowContext flowContext) throws Exception {

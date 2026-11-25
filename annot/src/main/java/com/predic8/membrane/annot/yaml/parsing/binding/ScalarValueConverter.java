@@ -46,6 +46,9 @@ public final class ScalarValueConverter {
      * Converts a YAML scalar node to the setter target type or resolves a reference.
      */
     public Object coerceScalarOrReference(ParsingContext<?> ctx, Method setter, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
+        if (node.isNull())
+            throw nullValue(ctx, key);
+
         if (wanted.equals(String.class))
             return node.isTextual() ? spelEvaluator.resolve(node.asText(), String.class) : node.asText();
 
@@ -257,6 +260,17 @@ public final class ScalarValueConverter {
                 || wanted == Long.class
                 || wanted == Float.class
                 || wanted == Double.class;
+    }
+
+    /**
+     * YAML {@code ~} or {@code null}. Without this check a String setter would get the text "null",
+     * a boolean false and an {@code @MCOtherAttributes} map a NullPointerException from {@code Map.of}.
+     */
+    private static ConfigurationParsingException nullValue(ParsingContext<?> ctx, String key) {
+        var e = new ConfigurationParsingException("Value of '%s' must not be null.".formatted(key));
+        if (ctx != null)
+            e.setParsingContext(ctx.key(key));
+        return e;
     }
 
     private static ConfigurationParsingException unsupported(Class<?> wanted, String key, JsonNode node) {

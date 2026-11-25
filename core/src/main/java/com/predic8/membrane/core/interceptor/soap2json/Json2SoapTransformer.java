@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.soap2json;
 import com.predic8.membrane.core.util.xml.schema.XsdToSchema;
 import com.predic8.membrane.core.util.xml.schema.Json2XmlTransformer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.wsdl.parser.Operation.Direction;
@@ -30,9 +29,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.core.util.json.JsonUtil.readSingleValue;
 import static com.predic8.membrane.core.util.xml.schema.Json2XmlTransformer.documentToBytes;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 
@@ -46,8 +45,6 @@ import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion
  * — see {@link Json2XmlTransformer}.
  */
 public class Json2SoapTransformer {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper().enable(FAIL_ON_TRAILING_TOKENS);
 
     private final String operationName;
     private final Direction direction;
@@ -93,7 +90,7 @@ public class Json2SoapTransformer {
     }
 
     public byte[] transform(String jsonBody) throws Exception {
-        JsonNode jsonNode = MAPPER.readTree(jsonBody);
+        final var jsonNode = readSingleValue(jsonBody);
 
         if (bodyElement == null) {
             throw new IllegalArgumentException(unusableReason);

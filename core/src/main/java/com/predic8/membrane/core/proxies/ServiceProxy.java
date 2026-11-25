@@ -62,4 +62,9 @@ public class ServiceProxy extends AbstractServiceProxy {
 		((ServiceProxyKey)key).setMethod(method);
 	}
 
+	@Override
+	public String getKindLabel() {
+		return "Service:";
+	}
+
 }

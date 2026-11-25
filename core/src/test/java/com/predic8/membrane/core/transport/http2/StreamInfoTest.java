@@ -128,6 +128,21 @@ class StreamInfoTest {
         assertSame(cause, assertThrows(ReadingBodyException.class, body::read).getCause());
     }
 
+    /**
+     * DATA beyond the content-length resets the stream, so the body never yields more than it declares.
+     */
+    @Test
+    void bodyDeclaresTheContentLength() {
+        streamInfo.expectContentLength(4);
+
+        assertEquals(4, streamInfo.createBody().getDeclaredLength());
+    }
+
+    @Test
+    void bodyWithoutContentLengthDeclaresNoLength() {
+        assertEquals(-1, streamInfo.createBody().getDeclaredLength());
+    }
+
     @Test
     void withoutContentLengthAnyBodyIsKept() {
         assertTrue(streamInfo.keepsContentLength(100, true));

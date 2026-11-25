@@ -52,6 +52,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
+
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
+import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.ChunksBuilder.chunks;
@@ -412,6 +415,64 @@ public class ChunkedBodyTest {
         assertThrows(IllegalStateException.class, () -> body.write(new ChunkedBodyTransferer(out), false));
         assertThrows(IllegalStateException.class, () -> body.write(new ChunkedBodyTransferer(out), true));
         assertEquals(0, out.size());
+    }
+
+    @Test
+    void readUpToReadsAChunkedBodyWithinTheLimit() {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("sma").add("ll").build()));
+        assertEquals(WITHIN, body.readUpTo(5));
+        assertTrue(body.isRead());
+        assertArrayEquals("small".getBytes(US_ASCII), body.getContent());
+    }
+
+    @Test
+    void readUpToStopsAtTheSizeOfTheChunkThatExceedsTheLimit() {
+        final var in = new ByteArrayInputStream(chunks().add("first").add("second").add("third").build());
+        final var body = new ChunkedBody(in);
+        assertEquals(TOO_LONG, body.readUpTo(8));
+        assertTrue(body.hasFailed());
+        assertEquals(("second" + CRLF + "5" + CRLF + "third" + CRLF + "0" + CRLF + CRLF).length(), in.available());
+    }
+
+    /**
+     * A sender cannot make the gateway allocate a large chunk, nor wait for its data, by announcing it.
+     */
+    @Test
+    void readUpToRejectsAChunkLongerThanTheLimitBeforeReadingIt() {
+        final var in = new ByteArrayInputStream(("6400000" + CRLF).getBytes(US_ASCII));
+        final var body = new ChunkedBody(in);
+        assertEquals(TOO_LONG, body.readUpTo(1024));
+        assertTrue(body.hasFailed());
+    }
+
+    @Test
+    void readUpToCountsAPartialReadThatAlreadyExceedsTheLimit() throws IOException {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").build()));
+        assertEquals('f', body.getContentAsStream().read());
+
+        assertEquals(TOO_LONG, body.readUpTo(3));
+        assertTrue(body.hasFailed());
+    }
+
+    /**
+     * The chunks read before belong to the body: they count, and they are kept.
+     */
+    @Test
+    void readUpToContinuesAPartialRead() throws IOException {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").add("second").build()));
+        assertEquals('f', body.getContentAsStream().read());
+
+        assertEquals(WITHIN, body.readUpTo(11));
+        assertArrayEquals("firstsecond".getBytes(US_ASCII), body.getContent());
+    }
+
+    @Test
+    void readUpToCountsTheChunksOfAPartialRead() throws IOException {
+        final var body = new ChunkedBody(new ByteArrayInputStream(chunks().add("first").add("second").build()));
+        assertEquals('f', body.getContentAsStream().read());
+
+        assertEquals(TOO_LONG, body.readUpTo(10));
+        assertTrue(body.hasFailed());
     }
 
     @Test

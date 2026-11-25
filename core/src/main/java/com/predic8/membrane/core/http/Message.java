@@ -29,6 +29,8 @@ import java.nio.charset.StandardCharsets;
 
 import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
+import static com.predic8.membrane.core.http.BodyLengthCheck.TOO_LONG;
+import static com.predic8.membrane.core.http.BodyLengthCheck.WITHIN;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
@@ -174,6 +176,52 @@ public abstract class Message {
 			return new String(MessageUtil.getContent(this), getCharsetOrDefault());
 		} catch (Exception e) {
 			throw new ReadingBodyException(e);
+		}
+	}
+
+	/**
+	 * Checks that the body is at most {@code maxLength} bytes long, as received and, for a Content-Encoding
+	 * Membrane decodes (gzip, deflate, Brotli), also once decoded. The body is read into memory for the
+	 * check, up to the limit, and stays as received: compressed, with its header fields unchanged.
+	 * <p>
+	 * A body whose {@linkplain AbstractBody#getDeclaredLength() declared length} is within the limit and
+	 * that is not decoded is not read: it is passed on as it arrives. Any other Content-Encoding and an
+	 * XOP/MTOM package are limited by the bytes received. See {@link AbstractBody#readUpTo(long)} for what
+	 * happens to a body that is longer.
+	 *
+	 * @throws ReadingBodyException if reading or decoding the body fails, or reading it failed earlier
+	 * @throws IllegalStateException if the body was discarded
+	 */
+	public BodyLengthCheck checkBodyLength(long maxLength) {
+		final var declaredLength = body.getDeclaredLength();
+		// Only an unread body is vouched for by its declared length: a failed or discarded one is not usable.
+		if (body.isUnread() && !isContentEncodingDecoded() && declaredLength != -1 && declaredLength <= maxLength)
+			return WITHIN;
+
+		final var check = body.readUpTo(maxLength);
+		// An empty body is not decoded: one labelled gzip, e.g. a HEAD response, would fail to.
+		if (check == TOO_LONG || !isContentEncodingDecoded() || body.getLength() == 0)
+			return check;
+
+		return isDecodedLongerThan(maxLength) ? TOO_LONG : WITHIN;
+	}
+
+	/**
+	 * Decodes the body, which is in memory by now, only to count its bytes.
+	 */
+	private boolean isDecodedLongerThan(long maxLength) {
+		try (final var decoded = MessageUtil.getContentAsStream(this)) {
+			final var buffer = new byte[8192];
+			long length = 0;
+			int n;
+			while ((n = decoded.read(buffer)) != -1) {
+				length += n;
+				if (length > maxLength)
+					return true;
+			}
+			return false;
+		} catch (IOException e) {
+			throw new ReadingBodyException(e, this);
 		}
 	}
 
@@ -372,17 +420,10 @@ public abstract class Message {
 		final boolean writeBody = prepareBodyForWrite();
 		final boolean chunked = header.isChunked();
 
-		// RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding, and a
-		// receiver - Membrane included, see rejectIfChunkedWithContentLength - may reject one that has both.
-		// setBodyContent keeps the two consistent, but not every path goes through it: Http2Client presets
-		// chunked on a backend response and then adds the backend's content-length, and setBody or plain
-		// header edits leave the framing fields to the caller.
-		if (writeBody && chunked)
-			header.removeFields(CONTENT_LENGTH);
+		if (writeBody)
+			removeContentLengthIfChunked();
 
-		writeStartLine(out);
-		header.write(out);
-		out.write(CRLF_BYTES);
+		writeHead(out);
 
 		if (header.is100ContinueExpected()) {
 			out.flush();
@@ -403,7 +444,41 @@ public abstract class Message {
 	}
 
 	/**
-	 * Called by {@link #write(OutputStream, boolean)} before the header is written.
+	 * Writes the start line and the header fields, but not the body: for a response to a HEAD request, which the
+	 * client ends after the header fields, whatever they announce (RFC 9110 §9.3.2, RFC 9112 §6.3). The framing
+	 * fields stay, because they describe the content a GET gets. The body is still consumed, as in
+	 * {@link #write(OutputStream, boolean)} for a message that must not have one.
+	 */
+	public final void writeWithoutBody(OutputStream out) throws IOException {
+		if (prepareBodyForWrite())
+			removeContentLengthIfChunked();
+
+		writeHead(out);
+		out.flush();
+		discardBody();
+	}
+
+	/**
+	 * RFC 9112 §6.2: a sender must not send Content-Length in a message with Transfer-Encoding, and a
+	 * receiver - Membrane included, see rejectIfChunkedWithContentLength - may reject one that has both.
+	 * setBodyContent keeps the two consistent, but not every path goes through it: Http2Client presets
+	 * chunked on a backend response and then adds the backend's content-length, and setBody or plain
+	 * header edits leave the framing fields to the caller.
+	 */
+	private void removeContentLengthIfChunked() {
+		if (header.isChunked())
+			header.removeFields(CONTENT_LENGTH);
+	}
+
+	private void writeHead(OutputStream out) throws IOException {
+		writeStartLine(out);
+		header.write(out);
+		out.write(CRLF_BYTES);
+	}
+
+	/**
+	 * Called by {@link #write(OutputStream, boolean)} and {@link #writeWithoutBody(OutputStream)} before the header
+	 * is written.
 	 *
 	 * @return false if the body must not go on the wire. The implementation then adjusts the framing
 	 *         header fields to match; the body is still consumed.
@@ -524,23 +599,43 @@ public abstract class Message {
 	 * encoded rather than silently treated as plain.
 	 */
 	public boolean isEncoded() {
-		return header.getContentEncoding() != null || header.isMultipart();
+		return !header.getContentCodings().isEmpty() || header.isMultipart();
 	}
 
 	/**
 	 * True for "gzip" and, as RFC 9110 8.4.1.3 asks of recipients, its legacy alias "x-gzip".
 	 */
 	public boolean isGzip() {
-		final var contentEncoding = header.getContentEncoding();
-		return "gzip".equalsIgnoreCase(contentEncoding) || "x-gzip".equalsIgnoreCase(contentEncoding);
+		final var coding = getSoleContentCoding();
+		return "gzip".equalsIgnoreCase(coding) || "x-gzip".equalsIgnoreCase(coding);
 	}
 
 	public boolean isDeflate() {
-		return "deflate".equalsIgnoreCase(header.getContentEncoding());
+		return "deflate".equalsIgnoreCase(getSoleContentCoding());
 	}
 
 	public boolean isBrotli() {
-		return "br".equalsIgnoreCase(header.getContentEncoding());
+		return "br".equalsIgnoreCase(getSoleContentCoding());
+	}
+
+	/**
+	 * Membrane decodes a body only if exactly one content coding was applied to it. Several codings,
+	 * e.g. <tt>gzip, br</tt> or <tt>Content-Encoding: gzip</tt> plus <tt>Content-Encoding: br</tt>,
+	 * are treated like a coding Membrane does not decode.
+	 *
+	 * @return the only content coding, or null if there is none or more than one
+	 */
+	private String getSoleContentCoding() {
+		final var codings = header.getContentCodings();
+		return codings.size() == 1 ? codings.getFirst() : null;
+	}
+
+	/**
+	 * Whether {@link MessageUtil#getContentAsStream(Message)} and {@link MessageUtil#getContent(Message)}
+	 * decode this message's Content-Encoding. For any other coding they return the encoded bytes.
+	 */
+	public boolean isContentEncodingDecoded() {
+		return isGzip() || isDeflate() || isBrotli();
 	}
 
 	/**
