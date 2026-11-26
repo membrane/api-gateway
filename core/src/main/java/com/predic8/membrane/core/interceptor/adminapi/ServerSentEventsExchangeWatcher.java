@@ -96,7 +96,8 @@ public class ServerSentEventsExchangeWatcher implements IExchangesStoreListener 
     private class LiveCallsBody extends AbstractBody {
 
         @Override
-        protected void readLocal() {
+        protected boolean readChunksWithin(long maxLength) {
+            return true;
         }
 
         @Override

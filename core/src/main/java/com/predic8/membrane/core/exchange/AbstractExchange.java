@@ -293,6 +293,16 @@ public abstract class AbstractExchange {
 		this.tResReceived = tResReceived;
 	}
 
+	private String getDestinationHost() {
+		if (getDestinations().isEmpty())
+			return null;
+		try {
+			return new URI(getDestinations().getFirst()).getHost();
+		} catch (URISyntaxException e) {
+			return null;
+		}
+	}
+
 	public String getOriginalRequestUri() {
 		return originalRequestUri;
 	}
@@ -314,8 +324,9 @@ public abstract class AbstractExchange {
 			}
 			return getOriginalRequestUri();
 		}
-		if (getProxy() instanceof AbstractServiceProxy) {
-			return ((AbstractServiceProxy) getProxy()).getTargetHost();
+		if (getProxy() instanceof AbstractServiceProxy sp) {
+			// A target configured by url has no host of its own; the destination the request was sent to has.
+			return sp.getTargetHost() != null ? sp.getTargetHost() : getDestinationHost();
 		}
 		return "";
 	}

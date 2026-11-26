@@ -204,6 +204,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			newEx.setRequest(ex.getRequest());
 			newEx.setProxy(ex.getProxy());
 			newEx.setRemoteAddr(ex.getRemoteAddr());
+			newEx.setDestinations(new ArrayList<>(ex.getDestinations()));
 			newEx.setTime(ex.getTime());
 			newEx.setTimeReqSent(ex.getTimeReqSent() != 0 ? ex.getTimeReqSent() : ex.getTimeReqReceived());
 			newEx.setTimeResReceived(System.currentTimeMillis());

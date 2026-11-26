@@ -183,9 +183,55 @@ public class AbstractExchangeStoreTest {
                 "?after=1000_x",
                 "?after=" + cursor + "&before=" + cursor,
                 "?offset=1&after=" + cursor,
-                "?sort=method&after=" + cursor)) {
+                "?after=1000_1000_GET",
+                "?sort=statusCode&after=1000_1000_ok",
+                "?sort=reqContentType&after=" + cursor)) {
             assertThrows(InvalidExchangeQueryException.class, () -> query(store, query), query);
         }
+    }
+
+    @Test
+    void cursorPagesBySortValueThenTime() throws Exception {
+        final var store = new LimitedMemoryExchangeStore();
+        snapAt(store, 1000, 1, 404);
+        snapAt(store, 2000, 2, 200);
+        snapAt(store, 3000, 3, 500);
+        snapAt(store, 4000, 4, 200);
+        snapAt(store, 5000, 5, 404);
+
+        final var firstPage = query(store, "?sort=statusCode&max=2");
+        assertEquals(List.of(3L, 5L), ids(firstPage));
+
+        snapAt(store, 6000, 6, 500);
+
+        final var cursor = ExchangeCursor.of(firstPage.getLast(), ExchangeSortKey.STATUS_CODE).encode();
+        assertEquals("5000_5_404", cursor);
+        assertEquals(List.of(1L, 4L, 2L), ids(query(store, "?sort=statusCode&after=" + cursor)));
+        assertEquals(List.of(6L, 3L), ids(query(store, "?sort=statusCode&before=" + cursor)));
+        assertEquals(List.of(1L, 5L, 3L, 6L), ids(query(store, "?sort=statusCode&order=asc&after=4000_4_200")));
+    }
+
+    @Test
+    void cursorOfAnEvictedExchangePagesBySortValue() throws Exception {
+        final var store = new LimitedMemoryExchangeStore();
+        snapAt(store, 1000, 1, 200);
+        snapAt(store, 2000, 2, 404);
+        snapAt(store, 3000, 3, 500);
+
+        assertEquals(List.of(2L, 1L), ids(query(store, "?sort=statusCode&after=9000_9_404")));
+    }
+
+    @Test
+    void exchangesWithoutResponseSortFirstAscending() throws Exception {
+        final var store = new LimitedMemoryExchangeStore();
+        snapAt(store, 1000, 1, 200);
+        final var inFlight = exchangeAt(2000, 2);
+        store.snap(inFlight, REQUEST);
+
+        assertEquals(List.of(2L, 1L), ids(query(store, "?sort=duration&order=asc")));
+        final var cursor = ExchangeCursor.of(inFlight, ExchangeSortKey.DURATION).encode();
+        assertEquals("2000_2", cursor);
+        assertEquals(List.of(1L), ids(query(store, "?sort=duration&order=asc&after=" + cursor)));
     }
 
     private static LimitedMemoryExchangeStore storeWithExchangesAt(long... times) {
@@ -197,16 +243,25 @@ public class AbstractExchangeStoreTest {
     }
 
     private static void snapAt(LimitedMemoryExchangeStore store, long time, long id) {
+        snapAt(store, time, id, 200);
+    }
+
+    private static void snapAt(LimitedMemoryExchangeStore store, long time, long id, int statusCode) {
+        final var exc = exchangeAt(time, id);
+        exc.setResponse(Response.statusCode(statusCode).build());
+        store.snap(exc, REQUEST);
+        store.snap(exc, RESPONSE);
+    }
+
+    private static Exchange exchangeAt(long time, long id) {
         try {
             final var exc = Request.get("/calls/" + id).buildExchange();
-            exc.setResponse(Response.ok().build());
             exc.setProxy(new APIProxy());
             exc.setId(id);
             final var calendar = Calendar.getInstance();
             calendar.setTimeInMillis(time);
             exc.setTime(calendar);
-            store.snap(exc, REQUEST);
-            store.snap(exc, RESPONSE);
+            return exc;
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

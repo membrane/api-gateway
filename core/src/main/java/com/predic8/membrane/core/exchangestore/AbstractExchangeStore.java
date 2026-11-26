@@ -128,19 +128,20 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 		final var sort = params.getString("sort", "time");
 		final var order = params.getString("order", "desc");
-		// Sorting by time breaks ties by id, so offset and cursor pages see the same total order.
-		exchanges.sort("time".equals(sort)
-				? ExchangeCursor.exchangeOrder("desc".equals(order))
+		final var key = ExchangeSortKey.find(sort).orElse(null);
+		// Sort keys break ties by time and id, so offset and cursor pages see the same total order.
+		exchanges.sort(key != null
+				? ExchangeCursor.exchangeOrder(key, "desc".equals(order))
 				: getAbstractExchangeComparator(sort, order));
 
-		return new ExchangeQueryResult(getPage(params, exchanges, sort, order), exchanges.size(), lm);
+		return new ExchangeQueryResult(getPage(params, exchanges, sort, key, order), exchanges.size(), lm);
 	}
 
 	/**
 	 * Pages by {@code offset}, or by cursor: {@code after} returns the exchanges following the cursor in list
 	 * order, {@code before} those preceding it. Unlike offsets, cursors don't shift when exchanges are added.
 	 */
-	private static List<AbstractExchange> getPage(QueryParameter params, List<AbstractExchange> exchanges, String sort, String order) {
+	private static List<AbstractExchange> getPage(QueryParameter params, List<AbstractExchange> exchanges, String sort, ExchangeSortKey key, String order) {
 		final var after = params.getString("after");
 		final var before = params.getString("before");
 		if (after == null && before == null)
@@ -150,18 +151,18 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 			throw new InvalidExchangeQueryException("Use either 'after' or 'before', not both.");
 		if (params.has("offset"))
 			throw new InvalidExchangeQueryException("'offset' cannot be combined with 'after' or 'before'.");
-		if (!"time".equals(sort))
-			throw new InvalidExchangeQueryException("'after' and 'before' require sorting by time.");
+		if (key == null)
+			throw new InvalidExchangeQueryException("'after' and 'before' are not supported when sorting by '%s'.".formatted(sort));
 
 		final var cursorOrder = ExchangeCursor.order("desc".equals(order));
 		final int max = getMax(params, exchanges);
 		if (after != null) {
-			final var cursor = ExchangeCursor.parse(after);
-			final int from = firstIndex(exchanges, e -> cursorOrder.compare(ExchangeCursor.of(e), cursor) > 0);
+			final var cursor = ExchangeCursor.parse(after, key);
+			final int from = firstIndex(exchanges, e -> cursorOrder.compare(ExchangeCursor.of(e, key), cursor) > 0);
 			return exchanges.subList(from, Math.min(from + max, exchanges.size()));
 		}
-		final var cursor = ExchangeCursor.parse(before);
-		final int to = firstIndex(exchanges, e -> cursorOrder.compare(ExchangeCursor.of(e), cursor) >= 0);
+		final var cursor = ExchangeCursor.parse(before, key);
+		final int to = firstIndex(exchanges, e -> cursorOrder.compare(ExchangeCursor.of(e, key), cursor) >= 0);
 		return exchanges.subList(Math.max(0, to - max), to);
 	}
 

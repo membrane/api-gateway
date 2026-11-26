@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeCursor;
 import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
+import com.predic8.membrane.core.exchangestore.ExchangeSortKey;
 import com.predic8.membrane.core.exchangestore.InvalidExchangeQueryException;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -37,9 +38,12 @@ import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -47,6 +51,7 @@ import java.util.stream.IntStream;
 import static com.bornium.http.util.UriUtil.queryToParameters;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exchangestore.ExchangeSortKey.TIME;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -54,6 +59,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2_SERVER;
+import static com.predic8.membrane.core.util.URLUtil.getPortFromURL;
 import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -259,13 +265,14 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         ExchangeQueryResult res;
         try {
             QueryParameter qp = new QueryParameter(queryToParameters(new URI(exc.getRequest().getUri()).getQuery()), null);
+            final var sortKey = getSortKey(qp);
             res = getRouter().getExchangeStore().getFilteredSortedPaged(qp, false);
 
             StringWriter writer = new StringWriter();
             JsonGenerator gen = om.getFactory().createGenerator(writer);
             gen.writeStartArray();
             for (AbstractExchange e : res.getExchanges()) {
-                writeExchange(e, gen);
+                writeExchange(e, gen, sortKey);
             }
             gen.writeEndArray();
             gen.close();
@@ -310,11 +317,31 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         }
     }
 
+    /**
+     * The calls API sorts only by the fields that support cursor paging.
+     */
+    private static ExchangeSortKey getSortKey(QueryParameter qp) {
+        final var order = qp.getString("order", "desc");
+        if (!"asc".equals(order) && !"desc".equals(order))
+            throw new InvalidExchangeQueryException("Invalid order '%s', use 'asc' or 'desc'.".formatted(order));
+        final var sort = qp.getString("sort", TIME.getParameterValue());
+        return ExchangeSortKey.find(sort).orElseThrow(() -> new InvalidExchangeQueryException(
+                "Cannot sort calls by '%s', use one of %s.".formatted(sort,
+                        Arrays.stream(ExchangeSortKey.values()).map(ExchangeSortKey::getParameterValue).toList())));
+    }
+
     static void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
+        writeExchange(exc, gen, TIME);
+    }
+
+    /**
+     * @param sortKey the sort of the list the exchange is written to; its cursor pages within that list
+     */
+    static void writeExchange(AbstractExchange exc, JsonGenerator gen, ExchangeSortKey sortKey) throws IOException {
         gen.writeStartObject();
 
         gen.writeNumberField("id", exc.getId());
-        gen.writeStringField("cursor", ExchangeCursor.of(exc).encode());
+        gen.writeStringField("cursor", ExchangeCursor.of(exc, sortKey).encode());
         gen.writeStringField("api", exc.getProxy().toString());
 
         gen.writeObjectFieldStart("request");
@@ -426,7 +453,16 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     }
 
     private static int getServerPort(AbstractExchange exc) {
-        return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
+        if (!(exc.getProxy() instanceof AbstractServiceProxy sp))
+            return -1;
+        // Like AbstractExchange.getServer(): a target configured by url has its port in the destination.
+        if (sp.getTargetHost() != null || exc.getDestinations().isEmpty())
+            return sp.getTargetPort();
+        try {
+            return getPortFromURL(new URI(exc.getDestinations().getFirst()).toURL());
+        } catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
+            return -1;
+        }
     }
 
     public MemoryWatcher getMemoryWatcher() {

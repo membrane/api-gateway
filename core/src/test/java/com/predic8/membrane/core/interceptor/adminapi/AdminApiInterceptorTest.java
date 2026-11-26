@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.adminapi;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeCursor;
+import com.predic8.membrane.core.exchangestore.ExchangeSortKey;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.http.AbstractBodyTransferer;
 import com.predic8.membrane.core.http.Chunk;
@@ -23,6 +24,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.NullProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.Target;
 import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -37,6 +39,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,6 +50,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -159,6 +164,57 @@ class AdminApiInterceptorTest {
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertEquals(400, exc.getResponse().getStatusCode());
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Invalid cursor"));
+    }
+
+    @Test
+    void sortedCallsCarryTheSortValueInTheirCursor() throws Exception {
+        final var call = get("/shop/sorted-paging").buildExchange();
+        call.setProxy(sp);
+        router.getExchangeStore().snap(call, REQUEST);
+        final var next = get("/shop/sorted-paging/next").buildExchange();
+        next.setProxy(sp);
+        router.getExchangeStore().snap(next, REQUEST);
+        final var cursor = ExchangeCursor.of(call, ExchangeSortKey.PATH).encode();
+        assertTrue(cursor.endsWith("_/shop/sorted-paging"), cursor);
+
+        final var sorted = get("/admin/calls?sort=path&order=asc").buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(sorted));
+        assertEquals(200, sorted.getResponse().getStatusCode());
+        assertTrue(sorted.getResponse().getBodyAsStringDecoded().contains("\"cursor\":\"%s\"".formatted(cursor)));
+
+        final var after = get("/admin/calls?sort=path&order=asc&after=" + encode(cursor, UTF_8)).buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(after));
+        assertEquals(200, after.getResponse().getStatusCode());
+        assertFalse(after.getResponse().getBodyAsStringDecoded().contains("\"/shop/sorted-paging\""));
+        assertTrue(after.getResponse().getBodyAsStringDecoded().contains("\"/shop/sorted-paging/next\""));
+    }
+
+    @Test
+    void callsShowTheDestinationOfAUrlTarget() throws Exception {
+        final var target = new Target();
+        target.setUrl("http://backend.example.com:3001");
+        final var api = new ServiceProxy();
+        api.setTarget(target);
+        final var call = get("/shop/url-target").buildExchange();
+        call.setProxy(api);
+        // Like the dispatcher, which replaces the request URI with the target's URL.
+        call.setDestinations(new ArrayList<>(List.of("http://backend.example.com:3001/shop/url-target")));
+        router.getExchangeStore().snap(call, REQUEST);
+
+        final var exc = get("/admin/calls?server=backend.example.com").buildExchange();
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("\"target\":{\"host\":\"backend.example.com\",\"port\":3001}"), body);
+        assertTrue(body.contains("/shop/url-target"), body);
+    }
+
+    @Test
+    void unsupportedSortIsABadRequest() throws Exception {
+        for (final var query : List.of("sort=reqContentType", "sort=method&order=sideways")) {
+            final var exc = get("/admin/calls?" + query).buildExchange();
+            assertEquals(RETURN, interceptor.handleRequest(exc));
+            assertEquals(400, exc.getResponse().getStatusCode(), query);
+        }
     }
 
     @Test

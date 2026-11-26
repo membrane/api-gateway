@@ -18,13 +18,17 @@ import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.proxies.Target;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AbstractExchangeTest {
@@ -59,6 +63,37 @@ class AbstractExchangeTest {
                 },
                 Exchange::setResponse
         );
+    }
+
+    @Test
+    void serverOfAUrlTargetIsTheHostOfTheDestination() {
+        final var target = new Target();
+        target.setUrl("http://backend.example.com:3001");
+        final var exc = exchangeTo(target);
+        exc.getDestinations().add("http://backend.example.com:3001/orders?id=7");
+
+        assertEquals("backend.example.com", exc.getServer());
+    }
+
+    @Test
+    void serverOfAHostTargetIsTheTargetHost() {
+        final var exc = exchangeTo(new Target("backend.example.com", 8080));
+        exc.getDestinations().add("http://other.example.com/");
+
+        assertEquals("backend.example.com", exc.getServer());
+    }
+
+    @Test
+    void serverIsUnknownWithoutTargetOrDestination() {
+        assertNull(exchangeTo(new Target()).getServer());
+    }
+
+    private static Exchange exchangeTo(Target target) {
+        final var api = new APIProxy();
+        api.setTarget(target);
+        final var exc = new Exchange(null);
+        exc.setProxy(api);
+        return exc;
     }
 
     @Test
