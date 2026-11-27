@@ -88,9 +88,10 @@ public class HttpClient implements AutoCloseable {
         var outConType = connectionFactory.getConnection(exc, hcp, attempt);
         setRequestURI(exc.getRequest(), target, outConType.con());
 
-        if (configuration.getProxy() != null && configuration.getProxy().isAuthentication() && outConType.sslProvider() == null) {
+        var proxy = outConType.con().getProxyConfiguration();
+        if (proxy != null && proxy.isAuthentication() && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-            exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
+            exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
         } else {
             restoreInboundProxyAuthorization(exc, inboundProxyAuthorization);
         }
@@ -118,7 +119,7 @@ public class HttpClient implements AutoCloseable {
         }
     }
 
-    // A retry to an HTTPS target goes through a TLS tunnel to the backend, after a plain HTTP attempt
+    // A retry can go direct (noProxy) or through a TLS tunnel after a proxied plain HTTP attempt, which
     // replaced the header with the proxy credentials.
     private static void restoreInboundProxyAuthorization(Exchange exc, @Nullable String inboundProxyAuthorization) {
         final var header = exc.getRequest().getHeader();
@@ -182,7 +183,7 @@ public class HttpClient implements AutoCloseable {
         }
 
         // Use complete URL with protocol and host. The proxy needs to know where to forward
-        if (configuration.getProxy() != null && !con.isTunneled()) {
+        if (con.getProxyConfiguration() != null && !con.isTunneled()) {
             req.setUri(dest);
             return;
         }

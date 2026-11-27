@@ -241,6 +241,27 @@ public class GenericYamlParserTest {
                         }
                 ),
                 ok(
+                        "call_proxy_noProxy_list",
+                        """
+                        flow:
+                          - call:
+                              url: http://localhost:3000
+                              httpClientConfig:
+                                proxy:
+                                  host: proxy.example.com
+                                  port: 3128
+                                  noProxy:
+                                    - localhost
+                                    - 10.0.0.0/8
+                        """,
+                        a -> {
+                            final var proxy = ((CallInterceptor) a.getFlow().getFirst()).getHttpClientConfig().getProxy();
+                            assertEquals(List.of("localhost", "10.0.0.0/8"), proxy.getNoProxy());
+                            assertTrue(proxy.isBypassed("10.1.2.3"));
+                            assertFalse(proxy.isBypassed("example.com"));
+                        }
+                ),
+                ok(
                         "basicAuth_user_attributes_map",
                         """
                         flow:

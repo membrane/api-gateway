@@ -18,6 +18,8 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProxyConfigurationTest {
@@ -59,5 +61,33 @@ class ProxyConfigurationTest {
 
         assertDoesNotThrow(() -> proxy.validate());
         assertEquals("Basic YWxpY2U6c2VjcmV0", proxy.getCredentials());
+    }
+
+    @Test
+    void nothingIsBypassedWithoutNoProxy() {
+        assertFalse(proxy.isBypassed("localhost"));
+    }
+
+    @Test
+    void hostsInNoProxyAreBypassed() {
+        proxy.setNoProxy(List.of("localhost", ".internal.example.com"));
+
+        assertTrue(proxy.isBypassed("localhost"));
+        assertTrue(proxy.isBypassed("orders.internal.example.com"));
+        assertFalse(proxy.isBypassed("www.example.com"));
+    }
+
+    @Test
+    void invalidNoProxyIsRejected() {
+        assertThrows(ConfigurationException.class, () -> proxy.setNoProxy(List.of("10.0.0.0/33")));
+    }
+
+    @Test
+    void invalidNoProxyKeepsPreviousValue() {
+        proxy.setNoProxy(List.of("localhost"));
+        assertThrows(ConfigurationException.class, () -> proxy.setNoProxy(List.of("10.0.0.0/33")));
+
+        assertEquals(List.of("localhost"), proxy.getNoProxy());
+        assertTrue(proxy.isBypassed("localhost"));
     }
 }

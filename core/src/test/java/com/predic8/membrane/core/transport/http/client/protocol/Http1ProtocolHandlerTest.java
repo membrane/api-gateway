@@ -104,7 +104,8 @@ class Http1ProtocolHandlerTest {
         @Test
         void connectRequest() throws Exception {
             Exchange exc = connect("/foo").buildExchange();
-            handler.handle(exc, null, new HostColonPort("localhost", 8080));
+            handler.handle(exc, getConnectionType(getInputStreamFor(""), new CollectingOutputStream()),
+                    new HostColonPort("localhost", 8080));
 
             Response res = exc.getResponse();
             assertEquals(200, res.getStatusCode());
@@ -139,11 +140,10 @@ class Http1ProtocolHandlerTest {
         }
 
         private static Exchange sendConnectThroughProxy(OutgoingConnectionType ct) throws Exception {
-            HttpClientConfiguration configuration = new HttpClientConfiguration();
-            configuration.setProxy(new ProxyConfiguration());
+            when(ct.con().getProxyConfiguration()).thenReturn(new ProxyConfiguration());
 
             Exchange exc = connect("/foo").buildExchange();
-            new Http1ProtocolHandler(configuration, null).handle(exc, ct, new HostColonPort("localhost", 8080));
+            new Http1ProtocolHandler(new HttpClientConfiguration(), null).handle(exc, ct, new HostColonPort("localhost", 8080));
             return exc;
         }
     }
