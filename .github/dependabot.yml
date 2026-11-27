@@ -13,3 +13,15 @@ updates:
     open-pull-requests-limit: 0
     schedule:
       interval: "daily"
+
+  # Third-party actions are pinned to commit SHAs, for which GitHub raises no security alerts. Version updates
+  # keep the pins current instead, all actions in one pull request per month.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "master"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns:
+          - "*"

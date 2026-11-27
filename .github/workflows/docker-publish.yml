@@ -70,22 +70,22 @@ jobs:
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign
         if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v3.4.0
+        uses: sigstore/cosign-installer@e1523de7571e31dbe865fd2e80c5c7c23ae71eb4 # v3.4.0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         # possible optimization
 #        with:
 #          platforms: ${{ matrix.platform }}
 
       - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
       - name: Log into registry ${{ env.REGISTRY }}
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKER_HUB_USER }}
@@ -101,7 +101,7 @@ jobs:
       # the enable= condition on the raw tag below.
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           flavor: |
@@ -113,7 +113,7 @@ jobs:
             type=raw,value=latest,enable=${{ (github.event_name == 'workflow_dispatch' && inputs.latest) || (github.event_name == 'release' && ! github.event.release.prerelease) }}
             type=sha,enable=false
 
-      - uses: robinraju/release-downloader@v1.13
+      - uses: robinraju/release-downloader@28fc21f50d76778e7023361aa1f863e717d3d56f # v1.13
         with:
           tag: "${{ steps.release_version.outputs.release_tag }}"
           fileName: "membrane-api-gateway-${{ steps.release_version.outputs.tag }}.zip"
@@ -127,7 +127,7 @@ jobs:
       # which release builds would restore.
       - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: distribution/docker
           platforms: linux/amd64,linux/arm64
@@ -150,7 +150,7 @@ jobs:
         run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign -y {}@${{ steps.build-and-push.outputs.digest }}
 
       - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v5
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
         with:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASS }}
