@@ -32,6 +32,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
+import static com.predic8.membrane.test.TestAppender.captureLog;
 import static com.predic8.membrane.test.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -88,22 +89,45 @@ public class RuleManagerTest {
 	}
 
 	@Test
-	@DisplayName("An API whose path matches the same requests as a registered one is not added")
+	@DisplayName("An API whose path matches the same requests as a registered one is not added, the warning names the registered one")
 	void apiWithPathInSameRoutingFormIsNotAdded() throws Exception {
-		final var plain = serviceProxyWithPath("/eu/orders");
+		final var plain = serviceProxyWithPath("orders", "/eu/orders");
 		manager.addProxyAndOpenPortIfNew(plain);
 
-		manager.addProxyAndOpenPortIfNew(serviceProxyWithPath("/eu//orders"));
+		final var log = captureLog(() -> {
+			manager.addProxyAndOpenPortIfNew(serviceProxyWithPath("orders-duplicate", "/eu//orders"));
+			return null;
+		});
 
 		assertEquals(5, manager.getRules().size());
 		assertSame(plain, manager.getRules().getLast());
+		// The path of the registered API, not the one of the ignored API, which is written differently
+		assertTrue(log.contains("Ignoring API 'orders-duplicate': API 'orders' is already configured for localhost:3018 /eu/orders."),
+				log.getMessages().toString());
 	}
 
-	private ServiceProxy serviceProxyWithPath(String path) {
+	@Test
+	@DisplayName("The warning about an unreachable API names the earlier API with its path")
+	void unreachableApiWarningNamesEarlierApi() throws Exception {
+		manager.addProxy(serviceProxyWithPath("orders", "/eu/orders"), RuleManager.RuleDefinitionSource.MANUAL);
+		manager.addProxy(serviceProxyWithPath("orders-duplicate", "/eu//orders"), RuleManager.RuleDefinitionSource.MANUAL);
+
+		final var log = captureLog(() -> {
+			manager.warnAboutUnreachableProxies();
+			return null;
+		});
+
+		// The path of the earlier API, not the one of the unreachable API, which is written differently
+		assertTrue(log.contains("API 'orders-duplicate' can never be reached: API 'orders' is already configured for localhost:3018 /eu/orders."),
+				log.getMessages().toString());
+	}
+
+	private ServiceProxy serviceProxyWithPath(String name, String path) {
 		final var key = new ServiceProxyKey("localhost", "*", path, 3018);
 		key.setPathRegExp(false);
 		key.setUsePathPattern(true);
 		final var proxy = new ServiceProxy(key, "localhost", 80);
+		proxy.setName(name);
 		proxy.init(router);
 		return proxy;
 	}

@@ -155,10 +155,12 @@ public class RuleManager {
      * lost API. Only safe for proxies that are already initialized, see {@link #addProxy(Proxy, RuleDefinitionSource)}.
      */
     private boolean skipDuplicate(Proxy proxy) {
-        if (!exists(proxy.getKey()))
+        final var registered = getRule(proxy.getKey());
+        if (registered == null)
             return false;
-        log.warn("Ignoring API '{}': another API is already configured for {}. Give them different ports, hosts or paths.",
-                proxy.getName(), proxy.getKey());
+        // The key of the registered API, since equal keys can be written differently, e.g. "/a//b" and "/a/b"
+        log.warn("Ignoring API '{}': API '{}' is already configured for {}. Give them different ports, hosts or paths.",
+                proxy.getName(), registered.getName(), registered.getKey());
         return true;
     }
 
@@ -173,8 +175,9 @@ public class RuleManager {
             Proxy proxy = proxies.get(i);
             for (Proxy earlier : proxies.subList(0, i)) {
                 if (earlier.getKey().equals(proxy.getKey())) {
+                    // The key of the earlier API, since equal keys can be written differently, e.g. "/a//b" and "/a/b"
                     log.warn("API '{}' can never be reached: API '{}' is already configured for {}. Give them different ports, hosts, paths ...",
-                            proxy.getName(), earlier.getName(), proxy.getKey());
+                            proxy.getName(), earlier.getName(), earlier.getKey());
                     break;
                 }
             }
