@@ -106,6 +106,7 @@ public abstract class AbstractExchange {
 
 	public void setRequest(Request request) {
 
+		if (this.request == request) return; // Setting the current message again changes nothing and must keep its body.
 		if (this.request != null) this.request.discardBody(); // Drain the previous message body to avoid unread bytes on keep-alive connections.
 
 		this.request = request;
@@ -124,6 +125,7 @@ public abstract class AbstractExchange {
 
 	public void setResponse(Response res) {
 
+		if (response == res) return; // Setting the current message again changes nothing and must keep its body.
 		if (response != null) response.discardBody(); // Drain the previous message body to avoid unread bytes on keep-alive connections.
 
 		response = res;
