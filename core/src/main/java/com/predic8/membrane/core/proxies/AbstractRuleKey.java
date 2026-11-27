@@ -70,6 +70,8 @@ public abstract class AbstractRuleKey implements RuleKey {
     /**
      * Identity of a rule key is its port, ip and path. Subclasses add their own discriminators
      * (host, method, base paths, ...) on top and must call super.equals() first.
+     * A path that is no regular expression is compared in routing form: "/a//b" and "/a/b" match the
+     * same requests, so an API for one of them makes an API for the other unreachable.
      */
     @Override
     public boolean equals(Object obj) {
@@ -81,12 +83,16 @@ public abstract class AbstractRuleKey implements RuleKey {
                && pathRegExp == other.pathRegExp
                && usePathPattern == other.usePathPattern
                && Objects.equals(ip, other.ip)
-               && Objects.equals(path, other.path);
+               && Objects.equals(getComparedPath(), other.getComparedPath());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(port, pathRegExp, usePathPattern, ip, path);
+        return Objects.hash(port, pathRegExp, usePathPattern, ip, getComparedPath());
+    }
+
+    private String getComparedPath() {
+        return pathRegExp ? path : pathInRoutingForm;
     }
 
     public String getHost() {

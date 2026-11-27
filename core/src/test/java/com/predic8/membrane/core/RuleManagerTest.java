@@ -88,6 +88,27 @@ public class RuleManagerTest {
 	}
 
 	@Test
+	@DisplayName("An API whose path matches the same requests as a registered one is not added")
+	void apiWithPathInSameRoutingFormIsNotAdded() throws Exception {
+		final var plain = serviceProxyWithPath("/eu/orders");
+		manager.addProxyAndOpenPortIfNew(plain);
+
+		manager.addProxyAndOpenPortIfNew(serviceProxyWithPath("/eu//orders"));
+
+		assertEquals(5, manager.getRules().size());
+		assertSame(plain, manager.getRules().getLast());
+	}
+
+	private ServiceProxy serviceProxyWithPath(String path) {
+		final var key = new ServiceProxyKey("localhost", "*", path, 3018);
+		key.setPathRegExp(false);
+		key.setUsePathPattern(true);
+		final var proxy = new ServiceProxy(key, "localhost", 80);
+		proxy.init(router);
+		return proxy;
+	}
+
+	@Test
 	@DisplayName("Internal proxies are told apart by identity, not by their key")
 	void internalProxiesAreNotDeduplicated() {
 		var second = new InternalProxy();

@@ -119,6 +119,29 @@ public class ServiceProxyKeyTest {
 	}
 
 	@Test
+	@DisplayName("Keys whose paths match the same requests are equal, so a duplicate API is recognized")
+	void noRegExpPathsWithSameRoutingFormAreEqual() {
+		final var withDuplicateSlash = noRegExpKey("/eu;v=1/ws//resource");
+		final var plain = noRegExpKey("/eu/ws/resource");
+
+		assertEquals(withDuplicateSlash, plain);
+		assertEquals(withDuplicateSlash.hashCode(), plain.hashCode());
+		assertEquals("/eu;v=1/ws//resource", withDuplicateSlash.getPath());
+	}
+
+	@Test
+	void regExpPathsAreComparedAsWritten() {
+		assertNotEquals(new ServiceProxyKey("localhost", METHOD_POST, "/eu/ws//resource", 3000),
+				new ServiceProxyKey("localhost", METHOD_POST, "/eu/ws/resource", 3000));
+	}
+
+	private static ServiceProxyKey noRegExpKey(String path) {
+		final var key = new ServiceProxyKey("localhost", METHOD_POST, path, 3000);
+		key.setPathRegExp(false);
+		return key;
+	}
+
+	@Test
 	void testRegularExpressionMatchesPath() {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));

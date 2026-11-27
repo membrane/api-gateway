@@ -17,6 +17,8 @@ package com.predic8.membrane.core.proxies;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
+import java.util.*;
+
 import static com.predic8.membrane.core.util.NetworkUtil.hostWithoutPort;
 
 /**
@@ -197,7 +199,6 @@ public class ServiceProxyKey extends AbstractRuleKey {
         int result = super.hashCode();
         result = prime * result + ((host == null) ? 0 : host.hashCode());
         result = prime * result + ((method == null) ? 0 : method.hashCode());
-        result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
         return result;
     }
 
@@ -215,13 +216,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
                 return false;
         } else if (!host.equals(other.host))
             return false;
-        if (method == null) {
-            if (other.method != null)
-                return false;
-        } else if (!method.equals(other.method))
-            return false;
-        if (getPath() == null) {
-            return other.getPath() == null;
-        } else return getPath().equals(other.getPath());
+        // The path is compared by super.equals()
+        return Objects.equals(method, other.method);
     }
 }
