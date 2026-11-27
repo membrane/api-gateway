@@ -70,6 +70,8 @@ public class WSDLValidatorTest {
     public static final String REQUIRED_HEADERS_WSDL = "src/test/resources/ws/required-soap-headers.wsdl";
     public static final String MESSAGE_WITHOUT_PART_WSDL = "src/test/resources/ws/message-without-part.wsdl";
     public static final String HEADER_ONLY_REQUEST_WSDL = "src/test/resources/ws/header-only-request.wsdl";
+    public static final String SAME_NAMESPACE_IMPORTS_WSDL = "src/test/resources/ws/import/same-namespace-imports.wsdl";
+    public static final String SAME_NAMESPACE_DUPLICATES_WITH_REDEFINE_WSDL = "src/test/resources/ws/import/same-namespace-duplicates-with-redefine.wsdl";
 
     private static final String PING_HEADER = """
             <p:PingHeader xmlns:p="https://example.com/ping">42</p:PingHeader>
@@ -202,6 +204,55 @@ public class WSDLValidatorTest {
         Outcome actual = createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE);
         dumpResonseBody(exc);
         assertEquals(CONTINUE, actual);
+    }
+
+    @Test
+    void sameNamespaceImportsFirstSchemaElement() throws Exception {
+        final var exc = getRequestExchange(soap11("""
+                <t:findRequest xmlns:t="https://example.com/same-namespace/types">
+                    <t:category>Boat</t:category>
+                </t:findRequest>
+                """));
+
+        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_IMPORTS_WSDL, null, false).validateMessage(exc, REQUEST));
+    }
+
+    @Test
+    void sameNamespaceImportsSecondSchemaElement() throws Exception {
+        final var exc = getResponseExchange(soap11("""
+                <t:findResponse xmlns:t="https://example.com/same-namespace/types">
+                    <t:category>Boat</t:category>
+                    <t:category>Car</t:category>
+                </t:findResponse>
+                """));
+
+        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_IMPORTS_WSDL, null, false).validateMessage(exc, RESPONSE));
+    }
+
+    @Test
+    void sameNamespaceImportsSecondSchemaElementInvalid() throws Exception {
+        final var exc = getResponseExchange(soap11("""
+                <t:findResponse xmlns:t="https://example.com/same-namespace/types">
+                    <t:category>Plane</t:category>
+                </t:findResponse>
+                """));
+
+        assertEquals(ABORT, createValidator(SAME_NAMESPACE_IMPORTS_WSDL, null, false).validateMessage(exc, RESPONSE));
+        final var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("Plane"), body);
+        assertFalse(body.contains("cvc-elt.1.a"), body);
+    }
+
+    @Test
+    void sameNamespaceImportsWithDuplicateDeclarationsAndRedefine() throws Exception {
+        final var exc = getRequestExchange(soap11("""
+                <r:item xmlns:r="https://example.com/redefine">
+                    <r:name>Anchor</r:name>
+                    <r:note>redefined</r:note>
+                </r:item>
+                """));
+
+        assertEquals(CONTINUE, createValidator(SAME_NAMESPACE_DUPLICATES_WITH_REDEFINE_WSDL, null, false).validateMessage(exc, REQUEST));
     }
 
     @Test

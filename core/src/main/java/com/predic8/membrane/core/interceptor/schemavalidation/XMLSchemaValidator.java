@@ -22,7 +22,6 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
-import com.predic8.membrane.core.util.xml.parser.HardenedSchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -34,12 +33,9 @@ import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
 import java.util.List;
-
-import static com.predic8.membrane.annot.Constants.XSD_NS;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
@@ -65,8 +61,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected List<Schema> compileSchemas() {
-        SchemaFactory sf = HardenedSchemaFactory.newInstance(XSD_NS);
-        sf.setResourceResolver(resolver.toLSResourceResolver());
+        final var sf = newSchemaFactory();
         log.debug("Compiling schema: {}", location);
         StreamSource ss;
         try {

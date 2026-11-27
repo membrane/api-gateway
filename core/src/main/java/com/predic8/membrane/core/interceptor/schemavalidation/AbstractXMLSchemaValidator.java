@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.transform.Source;
@@ -52,6 +54,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidator {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
+
+    /** Xerces feature: load every {@code <xs:import>} of a namespace, not only the first. */
+    private static final String HONOUR_ALL_SCHEMA_LOCATIONS = "http://apache.org/xml/features/honour-all-schemaLocations";
+
+    /** Xerces feature: accept a global declaration repeated in another schema document. */
+    private static final String TOLERATE_DUPLICATES = "http://apache.org/xml/features/internal/tolerate-duplicates";
+
     protected final XOPReconstitutor xopr;
     protected final String location;
     protected final ResolverMap resolver;
@@ -299,8 +308,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      * Compiles the schemas validated against. Runs once, during {@link #init()}.
      */
     protected List<Schema> compileSchemas() {
-        var sf = HardenedSchemaFactory.newInstance(XSD_NS);
-        sf.setResourceResolver(getResourceResolver());
+        final var sf = newSchemaFactory();
         var compiled = new ArrayList<Schema>();
         var schemas = getSchemas();
         for (int i = 0; i < schemas.size(); i++) {
@@ -308,6 +316,40 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             compiled.add(compileSchema(schemas.get(i), sf));
         }
         return List.copyOf(compiled);
+    }
+
+    /**
+     * Creates the hardened factory the schemas are compiled with, using {@link #getResourceResolver()}.
+     * <p>
+     * It loads every document a schema imports for a namespace, not only the first: Xerces ignores
+     * a later {@code <xs:import>} of a namespace it has already loaded, so a schema that imports
+     * one namespace from several documents (e.g. request and response types in separate files)
+     * would lose the declarations of all but the first. Declarations repeated across those
+     * documents (e.g. a local copy of a shared schema) are tolerated, as a best effort for
+     * schema sets that are invalid XSD; which copy is used is not specified, so the copies
+     * should be identical. A declaration repeated within one document is still an error.
+     * <p>
+     * If the JAXP implementation does not support both Xerces features, falls back to a factory
+     * with neither and logs a warning: with only the first, schema sets that repeat declarations
+     * across documents would no longer compile.
+     */
+    protected SchemaFactory newSchemaFactory() {
+        final var sf = newHardenedSchemaFactory();
+        try {
+            sf.setFeature(HONOUR_ALL_SCHEMA_LOCATIONS, true);
+            sf.setFeature(TOLERATE_DUPLICATES, true);
+            return sf;
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+            log.warn("Schema factory {} does not support loading every imported schema document; a namespace imported from several documents is validated against the first one only. Cause: {}",
+                    sf.getClass().getName(), e.getMessage());
+            return newHardenedSchemaFactory();
+        }
+    }
+
+    private SchemaFactory newHardenedSchemaFactory() {
+        final var sf = HardenedSchemaFactory.newInstance(XSD_NS);
+        sf.setResourceResolver(getResourceResolver());
+        return sf;
     }
 
     /**
