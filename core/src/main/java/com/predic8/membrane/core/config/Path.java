@@ -81,7 +81,9 @@ public class Path {
 	}
 
 	/**
-	 * @description The path prefix, URI template or regular expression to match.
+	 * @description The path prefix, URI template or regular expression to match. Duplicate slashes and path
+	 * parameters (<code>;...</code>) are ignored in the request and in a prefix or URI template, so
+	 * <code>/a//b</code> matches <code>/a/b</code> and <code>/a//b</code>. A regular expression is matched as written.
 	 * @example /shop
 	 */
 	@MCTextContent

@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.util.StompUtil.STOMP_VERSION;
+import static com.predic8.membrane.core.util.URIUtil.toRoutingPath;
 
 public abstract class AbstractRuleKey implements RuleKey {
 
@@ -32,6 +33,11 @@ public abstract class AbstractRuleKey implements RuleKey {
     protected int port;
 
     private String path;
+
+    /**
+     * {@link #path} in the form that routing compares, see {@link #getRoutingPath()}.
+     */
+    private String routingPath;
 
     protected volatile Pattern pathPattern;
 
@@ -49,6 +55,7 @@ public abstract class AbstractRuleKey implements RuleKey {
     public AbstractRuleKey(RuleKey key) {
         port = key.getPort();
         path = key.getPath();
+        routingPath = toRoutingPathOrNull(path);
         usePathPattern = key.isUsePathPattern();
         ip = key.getIp();
 
@@ -130,6 +137,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 
     public void setPath(String path) {
         this.path = path;
+        routingPath = toRoutingPathOrNull(path);
         pathPattern = null;
     }
 
@@ -137,10 +145,24 @@ public abstract class AbstractRuleKey implements RuleKey {
         return path;
     }
 
+    /**
+     * Returns the configured path without path parameters and with merged slashes, the form in which the
+     * RuleManager passes the path of the request, see {@link com.predic8.membrane.core.http.Request#getRoutingPath()}.
+     * Otherwise a path like "/api//admin" would never match, not even the request "/api//admin". A regular
+     * expression is not changed, so use {@link #getPath()} for it.
+     */
+    protected String getRoutingPath() {
+        return routingPath;
+    }
+
+    private static String toRoutingPathOrNull(String path) {
+        return path == null ? null : toRoutingPath(path);
+    }
+
     public boolean matchesPath(String path) {
         if (isPathRegExp())
             return matchesPathPattern(path);
-        return path.startsWith(this.path);
+        return path.startsWith(routingPath);
     }
 
     private boolean matchesPathPattern(String path) {

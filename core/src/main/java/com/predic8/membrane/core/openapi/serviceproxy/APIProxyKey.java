@@ -187,7 +187,7 @@ public class APIProxyKey extends ServiceProxyKey {
             return true;
         log.debug("Path {} doesn't match {}", path,getPath());
         // A regular expression is not compared as text, see issue #3621.
-        return !isPathRegExp() && path.startsWith(getPath());
+        return !isPathRegExp() && path.startsWith(getRoutingPath());
     }
 
     /**
@@ -218,7 +218,7 @@ public class APIProxyKey extends ServiceProxyKey {
     private UriTemplate getPathTemplate() {
         var template = pathTemplate;
         if (template == null) {
-            template = UriTemplate.of(getPath(), isPathRegExp());
+            template = UriTemplate.of(isPathRegExp() ? getPath() : getRoutingPath(), isPathRegExp());
             pathTemplate = template;
         }
         return template;

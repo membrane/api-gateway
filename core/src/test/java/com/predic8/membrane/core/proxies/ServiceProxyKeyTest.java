@@ -102,6 +102,23 @@ public class ServiceProxyKeyTest {
 	}
 
 	@Test
+	void noRegExpPathIsComparedInRoutingForm() {
+		final var key = new ServiceProxyKey("localhost", METHOD_POST, "/eu;v=1/ws//resource", 3000);
+		key.setPathRegExp(false);
+
+		// The RuleManager passes the routing path of the request: no path parameters, merged slashes
+		assertTrue(key.matchesPath("/eu/ws/resource/x"));
+		assertEquals("/eu;v=1/ws//resource", key.getPath());
+	}
+
+	@Test
+	void regExpPathIsNotChanged() {
+		final var key = new ServiceProxyKey("localhost", METHOD_POST, "/eu/ws//resource", 3000);
+
+		assertFalse(key.matchesPath("/eu/ws/resource"));
+	}
+
+	@Test
 	void testRegularExpressionMatchesPath() {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
