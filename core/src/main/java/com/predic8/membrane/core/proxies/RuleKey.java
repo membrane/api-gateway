@@ -79,7 +79,11 @@ public interface RuleKey {
 
 	void setPath(String path);
 
-	boolean matchesPath(String path);
+	/**
+	 * @param requestRoutingPath the path of the request as routing compares it, see
+	 *                           {@link com.predic8.membrane.core.http.Request#getRoutingPath()}
+	 */
+	boolean matchesPath(String requestRoutingPath);
 
 	/**
 	 * IP address to bind to, or null to bind to 0.0.0.0 (=any local address).

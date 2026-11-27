@@ -35,9 +35,9 @@ public abstract class AbstractRuleKey implements RuleKey {
     private String path;
 
     /**
-     * {@link #path} in the form that routing compares, see {@link #getRoutingPath()}.
+     * {@link #path} in the form that routing compares, see {@link #getPathInRoutingForm()}.
      */
-    private String routingPath;
+    private String pathInRoutingForm;
 
     protected volatile Pattern pathPattern;
 
@@ -55,7 +55,7 @@ public abstract class AbstractRuleKey implements RuleKey {
     public AbstractRuleKey(RuleKey key) {
         port = key.getPort();
         path = key.getPath();
-        routingPath = toRoutingPathOrNull(path);
+        pathInRoutingForm = toRoutingPathOrNull(path);
         usePathPattern = key.isUsePathPattern();
         ip = key.getIp();
 
@@ -137,7 +137,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 
     public void setPath(String path) {
         this.path = path;
-        routingPath = toRoutingPathOrNull(path);
+        pathInRoutingForm = toRoutingPathOrNull(path);
         pathPattern = null;
     }
 
@@ -151,18 +151,18 @@ public abstract class AbstractRuleKey implements RuleKey {
      * Otherwise a path like "/api//admin" would never match, not even the request "/api//admin". A regular
      * expression is not changed, so use {@link #getPath()} for it.
      */
-    protected String getRoutingPath() {
-        return routingPath;
+    protected String getPathInRoutingForm() {
+        return pathInRoutingForm;
     }
 
     private static String toRoutingPathOrNull(String path) {
         return path == null ? null : toRoutingPath(path);
     }
 
-    public boolean matchesPath(String path) {
+    public boolean matchesPath(String requestRoutingPath) {
         if (isPathRegExp())
-            return matchesPathPattern(path);
-        return path.startsWith(routingPath);
+            return matchesPathPattern(requestRoutingPath);
+        return requestRoutingPath.startsWith(pathInRoutingForm);
     }
 
     private boolean matchesPathPattern(String path) {
