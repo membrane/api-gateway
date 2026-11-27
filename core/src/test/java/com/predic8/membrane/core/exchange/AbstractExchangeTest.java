@@ -77,7 +77,7 @@ class AbstractExchangeTest {
     void setRequest_keepsBodyWhenSameMessageIsSetAgain() {
         assertSameMessageKeepsBody(
                 b -> {
-                    Request request = new Request() {{setBody(b);}};
+                    final var request = new Request() {{setBody(b);}};
                     request.getHeader().setContentLength(PAYLOAD.length);
                     return request;
                 },
@@ -89,7 +89,7 @@ class AbstractExchangeTest {
     void setResponse_keepsBodyWhenSameMessageIsSetAgain() {
         assertSameMessageKeepsBody(
                 b -> {
-                    Response response = Response.ok().build();
+                    final var response = Response.ok().build();
                     response.setBody(b);
                     response.getHeader().setContentLength(PAYLOAD.length);
                     return response;
@@ -110,7 +110,7 @@ class AbstractExchangeTest {
     void setResponse_discardsBodyWhenCleared() {
         assertBodyDiscardedWhenCleared(
                 b -> {
-                    Response response = Response.ok().build();
+                    final var response = Response.ok().build();
                     response.setBody(b);
                     return response;
                 },
@@ -119,9 +119,9 @@ class AbstractExchangeTest {
     }
 
     private static <M extends Message> void assertSameMessageKeepsBody(Function<Body, M> msgFactory, BiConsumer<Exchange, M> setter) {
-        Exchange exc = new Exchange(null);
-        Body body = new Body(new ByteArrayInputStream(PAYLOAD), PAYLOAD.length);
-        M message = msgFactory.apply(body);
+        final var exc = new Exchange(null);
+        final var body = new Body(new ByteArrayInputStream(PAYLOAD), PAYLOAD.length);
+        final var message = msgFactory.apply(body);
         setter.accept(exc, message);
 
         assertFalse(body.isRead());
@@ -134,8 +134,8 @@ class AbstractExchangeTest {
     }
 
     private static <M extends Message> void assertBodyDiscardedWhenCleared(Function<Body, M> msgFactory, BiConsumer<Exchange, M> setter) {
-        Exchange exc = new Exchange(null);
-        Body body = body("old");
+        final var exc = new Exchange(null);
+        final var body = body("old");
         setter.accept(exc, msgFactory.apply(body));
 
         assertFalse(body.isRead());
