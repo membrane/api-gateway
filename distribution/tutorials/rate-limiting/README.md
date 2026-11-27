@@ -15,3 +15,5 @@ Membrane config you run.
    requests by a field of the JSON body, e.g. to protect a password reset.
 4. [40-Tiered-Rate-Limits.yaml](40-Tiered-Rate-Limits.yaml) — give every API key
    its own quota, and keys with a premium scope a higher one.
+5. [redis/instance-a.yaml](redis/instance-a.yaml) — let several Membrane instances
+   share one limit by keeping the counts in Redis.

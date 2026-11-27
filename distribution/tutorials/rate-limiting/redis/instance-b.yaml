@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.8.1.json
+#
+# Second instance of the tutorial in instance-a.yaml. Follow the steps there.
+
+components:
+  redis:
+    redis:
+      host: localhost
+      port: 6379
+
+---
+api:
+  name: Instance B
+  port: 2001
+  flow:
+    - rateLimiter:
+        requestLimit: 3
+        requestLimitDuration: PT1M
+        redisRateLimitStore:
+          connector: '#/components/redis'
+    - static:
+        src: Instance B
+    - return:
+        status: 200

@@ -25,17 +25,20 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwt.JwtClaims;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,7 +54,6 @@ import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitIntercept
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static java.lang.Long.parseLong;
 import static java.lang.Thread.sleep;
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.IntStream.range;
@@ -110,18 +112,15 @@ public class RateLimitInterceptorTest {
 		interceptor.setKeyExpression("headers['X-Api-Key']");
 		interceptor.init(new DummyTestRouter());
 
-		// LazyRateLimit currently shares one reset time across all keys, masking issue #3387.
+		// MemoryRateLimitStore currently shares one reset time across all keys, masking issue #3387.
 		// Keep its real request counting, but distinguish the API-key and remote-IP reset times.
-		final var keyDeadline = LocalDateTime.now().plusSeconds(42);
-		var strategy = new LazyRateLimit(ofMinutes(1), 1) {
+		final var keyDeadline = Instant.now().plusSeconds(42);
+		interceptor.setStore(new MemoryRateLimitStore() {
 			@Override
-			public RequestCount countRequest(String key) {
-				return new RequestCount(super.countRequest(key).count(), "key:customer-a".equals(key) ? keyDeadline : LocalDateTime.now());
+			public RequestCount countRequest(String key, Duration period) {
+				return new RequestCount(super.countRequest(key, period).count(), "key:customer-a".equals(key) ? keyDeadline : Instant.now());
 			}
-		};
-		var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
-		strategyField.setAccessible(true);
-		strategyField.set(interceptor, strategy);
+		});
 
 		var exc = new Request.Builder()
 				.header("X-Api-Key", "customer-a")
@@ -238,13 +237,11 @@ public class RateLimitInterceptorTest {
 	void resetTimeIsCountedDownWhileTheBackendIsCalled() throws Exception {
 		final var router = new DummyTestRouter();
 		final var limiter = limiter(router, 3);
-		final var deadline = LocalDateTime.now().plusSeconds(10);
-		final var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
-		strategyField.setAccessible(true);
-		strategyField.set(limiter, new LazyRateLimit(ofMinutes(1), 3) {
+		final var deadline = Instant.now().plusSeconds(10);
+		limiter.setStore(new MemoryRateLimitStore() {
 			@Override
-			public RequestCount countRequest(String key) {
-				return new RequestCount(super.countRequest(key).count(), deadline);
+			public RequestCount countRequest(String key, Duration period) {
+				return new RequestCount(super.countRequest(key, period).count(), deadline);
 			}
 		});
 		final var slowBackend = new AbstractInterceptor() {
@@ -263,32 +260,6 @@ public class RateLimitInterceptorTest {
 		final var exc = sendThroughFlow(router, limiter, slowBackend);
 
 		assertTrue(parseLong(exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_RESET)) <= 8);
-	}
-
-	@Test
-	void resetTimeIsTakenFromThePeriodTheRequestWasCountedIn() throws Exception {
-		final var limiter = new RateLimitInterceptor(ofMinutes(1), 1);
-		limiter.init(new DummyTestRouter());
-		final var strategyField = RateLimitInterceptor.class.getDeclaredField("strategy");
-		strategyField.setAccessible(true);
-		strategyField.set(limiter, new LazyRateLimit(ofMinutes(1), 1) {
-			@Override
-			public RequestCount countRequest(String key) {
-				final var requestCount = super.countRequest(key);
-				// Another thread starts a new, longer period right after the rejected request was counted
-				if (requestCount.count() > 1)
-					setRequestLimitDuration(ofHours(1));
-				return requestCount;
-			}
-		});
-
-		final var exc = new Request.Builder().buildExchange();
-		exc.setRemoteAddrIp("192.0.2.1");
-		limiter.handleRequest(exc);
-		limiter.handleRequest(exc);
-
-		assertEquals(429, exc.getResponse().getStatusCode());
-		assertTrue(parseLong(exc.getResponse().getHeader().getFirstValue(RETRY_AFTER)) <= 60);
 	}
 
 	@Test
@@ -350,6 +321,86 @@ public class RateLimitInterceptorTest {
 				() -> assertEquals("0", h.getFirstValue(X_RATELIMIT_REMAINING)),
 				() -> assertNotNull(h.getFirstValue(RETRY_AFTER))
 		);
+	}
+
+	@Test
+	void unreachableStoreLetsRequestPass() {
+		final var router = new DummyTestRouter();
+		final var limiter = new RateLimitInterceptor(ofMinutes(1), 1);
+		limiter.setStore(unreachableStore());
+		limiter.init(router);
+
+		final var exc = sendThroughFlow(router, limiter, backend());
+
+		assertEquals(200, exc.getResponse().getStatusCode());
+		assertNull(exc.getResponse().getHeader().getFirstValue(X_RATELIMIT_REMAINING));
+	}
+
+	@Test
+	void unreachableStoreRejectsRequestWithoutFailOpen() {
+		final var limiter = new RateLimitInterceptor(ofMinutes(1), 1);
+		limiter.setStore(unreachableStore());
+		limiter.setFailOpen(false);
+		limiter.init(new DummyTestRouter());
+
+		final var exc = new Request.Builder().buildExchange();
+		exc.setRemoteAddrIp("192.0.2.1");
+
+		assertEquals(RETURN, limiter.handleRequest(exc));
+		assertEquals(503, exc.getResponse().getStatusCode());
+	}
+
+	@Test
+	void limitersSharingAStoreShareTheLimit() {
+		final var store = new MemoryRateLimitStore();
+		final var instanceA = new RateLimitInterceptor(ofMinutes(1), 3);
+		final var instanceB = new RateLimitInterceptor(ofMinutes(1), 3);
+		instanceA.setStore(store);
+		instanceB.setStore(store);
+		instanceA.init(new DummyTestRouter());
+		instanceB.init(new DummyTestRouter());
+
+		final var outcomes = new ArrayList<Outcome>();
+		for (final var limiter : List.of(instanceA, instanceB, instanceA, instanceB)) {
+			final var exc = new Request.Builder().buildExchange();
+			exc.setRemoteAddrIp("192.0.2.1");
+			outcomes.add(limiter.handleRequest(exc));
+		}
+
+		assertEquals(List.of(CONTINUE, CONTINUE, CONTINUE, RETURN), outcomes);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"PT0S", "PT0.0001S", "-PT1M"})
+	void durationBelowOneMillisecondIsRejected(String duration) {
+		final var limiter = new RateLimitInterceptor();
+		limiter.setRequestLimitDuration(duration);
+		limiter.setStore(new RedisRateLimitStore());
+
+		assertThrows(ConfigurationException.class, () -> limiter.init(new DummyTestRouter()));
+	}
+
+	@ParameterizedTest
+	@CsvSource({"100, 1", "1000, 1", "1100, 2", "0, 0", "-500, 0"})
+	void secondsUntilRoundsUpPartialSecond(long millisLeft, String expected) {
+		// Within one second, so whole seconds would yield 0 for 100 ms
+		final var now = Instant.parse("2026-11-18T10:00:00.800Z");
+
+		assertEquals(expected, secondsUntil(now.plusMillis(millisLeft), now));
+	}
+
+	@Test
+	void storeIsInMemoryByDefault() {
+		final var limiter = new RateLimitInterceptor();
+		limiter.init(new DummyTestRouter());
+
+		assertInstanceOf(MemoryRateLimitStore.class, limiter.getStore());
+	}
+
+	private static RateLimitStore unreachableStore() {
+		return (key, period) -> {
+			throw new RateLimitStoreException("Cannot count request in Redis.", new RuntimeException("Connection refused"));
+		};
 	}
 
 	private static RateLimitInterceptor limiter(DummyTestRouter router, int requestLimit) {

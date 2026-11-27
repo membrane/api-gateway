@@ -15,7 +15,10 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
 import redis.clients.jedis.*;
@@ -23,7 +26,7 @@ import redis.clients.jedis.*;
 import java.util.Set;
 
 @MCElement(name = "redis", component = true)
-public class RedisConnector  implements InitializingBean {
+public class RedisConnector  implements InitializingBean, DisposableBean {
     private JedisPool pool;
     private JedisSentinelPool sentinelPool;
     private String host = "localhost";
@@ -42,6 +45,8 @@ public class RedisConnector  implements InitializingBean {
     private String masterName = "mymaster";
 
 
+    // YAML configurations call only @PostConstruct, Spring calls the method once either way
+    @PostConstruct
     @Override
     public void afterPropertiesSet() throws Exception {
         GenericObjectPoolConfig jedisPoolConfig = new GenericObjectPoolConfig();
@@ -70,20 +75,34 @@ public class RedisConnector  implements InitializingBean {
 
 
 
+    @PreDestroy
+    @Override
+    public void destroy() {
+        if (pool != null)
+            pool.close();
+        if (sentinelPool != null)
+            sentinelPool.close();
+    }
+
     public Jedis getJedisWithDb() {
-        Jedis jedis;
-        if (sentinelPool != null) {
-            jedis = sentinelPool.getResource();
-            if (password != null)
+        final var jedis = sentinelPool != null ? sentinelPool.getResource() : pool.getResource();
+        try {
+            if (sentinelPool != null && password != null)
                 if (user != null)
                     jedis.auth(user, password);
                 else
                     jedis.auth(password);
-        } else {
-            jedis = pool.getResource();
+            jedis.select(dbNumber);
+            return jedis;
+        } catch (RuntimeException e) {
+            // Returns the connection to the pool
+            try {
+                jedis.close();
+            } catch (RuntimeException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
         }
-        jedis.select(dbNumber);
-        return jedis;
     }
 
 

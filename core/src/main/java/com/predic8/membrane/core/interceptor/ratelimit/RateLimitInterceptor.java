@@ -15,29 +15,32 @@
 package com.predic8.membrane.core.interceptor.ratelimit;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
+import com.predic8.membrane.core.interceptor.ratelimit.RateLimitStore.RequestCount;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.Header.RETRY_AFTER;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitStrategy.secondsUntil;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
 import static java.lang.String.join;
@@ -52,8 +55,9 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.throwableOfType;
  * <code>X-RateLimit-Reset</code> (seconds until the counts are reset) and <code>X-RateLimit-Duration</code>. A rejected
  * request also gets <code>Retry-After</code>. When several limiters apply to a request, the headers describe the one
  * with the fewest requests left.</p>
- * <p>The counts of all clients are reset together. They are kept in memory, so every Membrane instance counts on its
- * own.</p>
+ * <p>By default, the counts are kept in memory, so every Membrane instance counts on its own, and the counts of all
+ * clients are reset together. With another store, e.g. <code>redisRateLimitStore</code>, the counts are kept centrally
+ * and shared by all instances using it.</p>
  * <p>Behind a load balancer or reverse proxy, the client address can be taken from the <code>X-Forwarded-For</code>
  * header. Trust it only if Membrane cannot be reached directly; otherwise a client can choose its own address.</p>
  * <p>See tutorials/rate-limiting/10-Rate-Limit-by-Client-IP.yaml.</p>
@@ -98,7 +102,10 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     private static final String KEY_PREFIX_EXPRESSION = "key:";
     private static final String KEY_PREFIX_CLIENT_IP = "ip:";
 
-    private final RateLimitStrategy strategy;
+    private RateLimitStore store;
+    private int requestLimit;
+    private Duration requestLimitDuration;
+    private boolean failOpen = true;
 
     private List<String> trustedProxyList;
 
@@ -115,9 +122,20 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
-        strategy = new LazyRateLimit(requestLimitDuration, requestLimit);
+        this.requestLimitDuration = requestLimitDuration;
+        this.requestLimit = requestLimit;
         name = "rate limiter";
         setAppliedFlow(REQUEST_RESPONSE_FLOW);
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        if (requestLimitDuration.compareTo(Duration.ofMillis(1)) < 0)
+            throw new ConfigurationException("requestLimitDuration must be at least 1 millisecond, but is %s.".formatted(requestLimitDuration));
+        if (store == null)
+            store = new MemoryRateLimitStore();
+        store.init(router);
     }
 
     @Override
@@ -142,8 +160,13 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
                     .buildAndSetResponse(exc);
             return RETURN;
         }
-        final var requestCount = strategy.countRequest(key);
-        final var quota = new Quota(getRequestLimit(), Math.max(0, getRequestLimit() - requestCount.count()), requestCount.resetAt(), strategy.getLimitDurationPeriod());
+        final RequestCount requestCount;
+        try {
+            requestCount = store.countRequest(key, requestLimitDuration);
+        } catch (RateLimitStoreException e) {
+            return handleStoreFailure(exc, e);
+        }
+        final var quota = new Quota(getRequestLimit(), Math.max(0, getRequestLimit() - requestCount.count()), requestCount.resetAt(), getRequestLimitDuration());
         if (requestCount.count() <= getRequestLimit()) {
             reportIfMostRestrictive(exc, quota);
             return CONTINUE;
@@ -164,6 +187,23 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         setQuotaHeaders(exc, quota, reset);
         exc.getResponse().getHeader().setValue(RETRY_AFTER, reset);
 
+        return RETURN;
+    }
+
+    private Outcome handleStoreFailure(Exchange exc, RateLimitStoreException e) {
+        if (failOpen) {
+            log.warn("Cannot count request, letting it pass without rate limit: {}", e.getMessage(), e);
+            return CONTINUE;
+        }
+        log.warn("Cannot count request, rejecting it: {}", e.getMessage(), e);
+        // TODO
+        internal(router.getConfiguration().isProduction(), getDisplayName())
+                .status(503)
+                .title("Rate limit cannot be checked.")
+                .addSubType("rate-limit")
+                .detail("The store of the rate limiter cannot be reached.")
+                .exception(e)
+                .buildAndSetResponse(exc);
         return RETURN;
     }
 
@@ -189,6 +229,18 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         exc.setProperty(QUOTA_PROPERTY, quota);
     }
 
+    private static String secondsUntil(Instant deadline) {
+        return secondsUntil(deadline, Instant.now());
+    }
+
+    /**
+     * @return seconds from now until the deadline, rounded up so a client does not retry too early, 0 if it has passed
+     */
+    static String secondsUntil(Instant deadline, Instant now) {
+        final var millis = Duration.between(now, deadline).toMillis();
+        return Long.toString(Math.max(0, Math.ceilDiv(millis, 1000)));
+    }
+
     private static void setQuotaHeaders(Exchange exc, Quota quota, String reset) {
         final var h = exc.getResponse().getHeader();
         h.setValue(X_RATELIMIT_LIMIT, Integer.toString(quota.limit()));
@@ -200,7 +252,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     /**
      * @param resetAt when the counts are reset. The seconds until then are computed when the headers are written.
      */
-    private record Quota(int limit, int remaining, LocalDateTime resetAt, String duration) {
+    private record Quota(int limit, int remaining, Instant resetAt, String duration) {
     }
 
     /**
@@ -309,7 +361,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
 
     @SuppressWarnings("unused")
     public int getRequestLimit() {
-        return strategy.requestLimit;
+        return requestLimit;
     }
 
     /**
@@ -319,11 +371,11 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
      */
     @MCAttribute
     public void setRequestLimit(int limit) {
-        strategy.setRequestLimit(limit);
+        this.requestLimit = limit;
     }
 
     public String getRequestLimitDuration() {
-        return strategy.requestLimitDuration.toString();
+        return requestLimitDuration.toString();
     }
 
     /**
@@ -338,7 +390,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     }
 
     public void setRequestLimitDuration(Duration duration) {
-        strategy.setRequestLimitDuration(duration);
+        this.requestLimitDuration = duration;
     }
 
     /**
@@ -408,8 +460,38 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         this.trustForwardedFor = trustForwardedFor;
     }
 
+    public RateLimitStore getStore() {
+        return store;
+    }
+
+    /**
+     * @description Where the request counts are kept. Use <code>redisRateLimitStore</code> to share the counts between
+     * several Membrane instances.
+     * @default in memory, counted by each instance on its own
+     */
+    @MCChildElement(allowForeign = true)
+    public void setStore(RateLimitStore store) {
+        this.store = store;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isFailOpen() {
+        return failOpen;
+    }
+
+    /**
+     * @description What to do with a request when the store cannot confirm the count, e.g. because Redis is down or
+     * does not answer in time: let it pass without checking the limit (true), or reject it with 503 Service
+     * Unavailable (false). The request may still have been counted, e.g. if Redis counted it but the answer was lost.
+     * @default true
+     */
+    @MCAttribute
+    public void setFailOpen(boolean failOpen) {
+        this.failOpen = failOpen;
+    }
+
     @Override
     public String getShortDescription() {
-        return "Limits incoming requests to %s requests every %s.".formatted(strategy.getRequestLimit(), strategy.getRequestLimitDuration());
+        return "Limits incoming requests to %s requests every %s.".formatted(requestLimit, requestLimitDuration);
     }
 }
