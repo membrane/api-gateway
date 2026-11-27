@@ -54,7 +54,7 @@ jobs:
           cd ..
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           branch: v${{ github.event.inputs.version }}
           commit-message: "Release ${{ github.event.inputs.version }}"
