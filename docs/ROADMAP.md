@@ -124,6 +124,10 @@
   - It stores every message in memory. And evicts older ones.
   - It is only used for the calls of the admin console
   - Maybe we could make so that it is only used when the admin console is configured. By program or by documentation.
+- Remove `ExchangeStore.removeAllExchanges(AbstractExchange[])`
+  - Story: nothing in Membrane calls it since #3353 removed the last caller, a test. All stores still implement it: `MemoryExchangeStore`, `LimitedMemoryExchangeStore`, `FileExchangeStore`, `MongoDBExchangeStore`, `ElasticSearchExchangeStore`, `LokiExchangeStore` and `ForgetfulExchangeStore`.
+  - Remove it from the interface and from all stores. `removeAllExchanges(Proxy)` stays: `RuleManager.removeRule()` and `replaceRule()` use it.
+  - **Breaking** for code outside Membrane that calls it, and for custom stores that implement it with `@Override`.
 - Remove Interceptors:
   - StatisticsCSVInterceptor, StatisticsJDBCInterceptor: They are obsolete; use Prometheus metrics or the access log instead.
 - change all maven packages to membrane-api.io
