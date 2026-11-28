@@ -224,8 +224,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     public void removeAllExchanges(Proxy proxy) {
-        throw new RuntimeException(
-                "Method removeAllExchanges() is not supported by FileExchangeStore");
+        // ignore: files are not stored per API, maxDays cleans them up
     }
 
     public StatisticCollector getStatistics(RuleKey ruleKey) {
