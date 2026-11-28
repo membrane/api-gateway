@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.DecodingException;
+import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import org.brotli.dec.BrotliInputStream;
@@ -39,6 +40,8 @@ public class MessageUtil {
 	 */
 	public static InputStream getContentAsStream(Message msg) {
 		try {
+			if (isBodyless(msg))
+				return msg.getBodyAsStream();
 			if (msg.isGzip()) {
 				return associateDecodingFailures(new GZIPInputStream(msg.getBodyAsStream()), msg);
 			}
@@ -62,6 +65,8 @@ public class MessageUtil {
 	 */
 	public static byte[] getContent(Message msg) {
 		try {
+			if (isBodyless(msg))
+				return msg.getBody().getContent();
 			if (msg.isGzip()) {
 				try (var is = msg.getBodyAsStream();
 					 var decoded = new GZIPInputStream(is)) {
@@ -83,6 +88,14 @@ public class MessageUtil {
 		} catch (IOException e) {
 			throw decodingFailure(msg, e);
 		}
+	}
+
+	/**
+	 * A message without content, e.g. a 304 or a HEAD response, may still carry Content-Encoding as
+	 * metadata (RFC 9110 8.4, 15.4.5). Empty content that was announced as encoded is still decoded and rejected.
+	 */
+	private static boolean isBodyless(Message msg) {
+		return msg.getBody() instanceof EmptyBody;
 	}
 
 	/**
