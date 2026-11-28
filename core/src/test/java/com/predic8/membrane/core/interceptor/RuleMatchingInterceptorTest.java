@@ -276,6 +276,53 @@ class RuleMatchingInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+            "/eu/ws//resource",
+            "/eu/ws//resource/x",
+            "/eu/ws/resource",
+            "//eu//ws///resource",
+            "/eu;v=1/ws//resource",
+    })
+    @DisplayName("A configured path with duplicate slashes is compared with them merged, like the request")
+    void configuredPathWithDuplicateSlashesMatches(String uri) {
+        final var api = addApi("/eu/ws//resource");
+        // Request.get() would parse "//eu" as a URL with the host "eu", the HTTP parser keeps the target as sent
+        final var exc = new Request.Builder().method("GET").uri(uri).buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(api, exc.getProxy());
+        assertEquals(uri, exc.getRequest().getUri());
+    }
+
+    @Test
+    @DisplayName("A configured path with path parameters is compared without them, like the request")
+    void configuredPathWithPathParametersMatches() throws Exception {
+        final var api = addApi("/eu;v=1/ws");
+        final var exc = get("/eu;v=1/ws/resource").buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        assertSame(api, exc.getProxy());
+        assertEquals("/eu;v=1/ws/resource", exc.getRequest().getUri());
+    }
+
+    /**
+     * Adds an API in front of the catch-all API, so a request that doesn't match it goes to the catch-all API.
+     */
+    private APIProxy addApi(String path) {
+        final var api = new APIProxy();
+        api.setName(path);
+        api.setPath(new Path(false, path));
+        api.init(router);
+        final var ruleManager = router.getRuleManager();
+        ruleManager.removeRule(catchAll);
+        ruleManager.addProxy(api, MANUAL);
+        ruleManager.addProxy(catchAll, MANUAL);
+        return api;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
             "/;x/admin",
             "/;/admin",
             "/api/;x/admin",

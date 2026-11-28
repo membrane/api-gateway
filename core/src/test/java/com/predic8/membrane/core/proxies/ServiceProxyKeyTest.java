@@ -102,6 +102,46 @@ public class ServiceProxyKeyTest {
 	}
 
 	@Test
+	void noRegExpPathIsComparedInRoutingForm() {
+		final var key = new ServiceProxyKey("localhost", METHOD_POST, "/eu;v=1/ws//resource", 3000);
+		key.setPathRegExp(false);
+
+		// The RuleManager passes the routing path of the request: no path parameters, merged slashes
+		assertTrue(key.matchesPath("/eu/ws/resource/x"));
+		assertEquals("/eu;v=1/ws//resource", key.getPath());
+	}
+
+	@Test
+	void regExpPathIsNotChanged() {
+		final var key = new ServiceProxyKey("localhost", METHOD_POST, "/eu/ws//resource", 3000);
+
+		assertFalse(key.matchesPath("/eu/ws/resource"));
+	}
+
+	@Test
+	@DisplayName("Keys whose paths match the same requests are equal, so a duplicate API is recognized")
+	void noRegExpPathsWithSameRoutingFormAreEqual() {
+		final var withDuplicateSlash = noRegExpKey("/eu;v=1/ws//resource");
+		final var plain = noRegExpKey("/eu/ws/resource");
+
+		assertEquals(withDuplicateSlash, plain);
+		assertEquals(withDuplicateSlash.hashCode(), plain.hashCode());
+		assertEquals("/eu;v=1/ws//resource", withDuplicateSlash.getPath());
+	}
+
+	@Test
+	void regExpPathsAreComparedAsWritten() {
+		assertNotEquals(new ServiceProxyKey("localhost", METHOD_POST, "/eu/ws//resource", 3000),
+				new ServiceProxyKey("localhost", METHOD_POST, "/eu/ws/resource", 3000));
+	}
+
+	private static ServiceProxyKey noRegExpKey(String path) {
+		final var key = new ServiceProxyKey("localhost", METHOD_POST, path, 3000);
+		key.setPathRegExp(false);
+		return key;
+	}
+
+	@Test
 	void testRegularExpressionMatchesPath() {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));

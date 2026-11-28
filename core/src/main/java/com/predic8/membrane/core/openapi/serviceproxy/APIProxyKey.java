@@ -179,15 +179,15 @@ public class APIProxyKey extends ServiceProxyKey {
     }
 
     @Override
-    public boolean matchesPath(String path) {
+    public boolean matchesPath(String requestRoutingPath) {
         // OpenAPI docs stay reachable even when a custom path is configured, see issue #3173.
-        if (matchesApiDocsPath(path))
+        if (matchesApiDocsPath(requestRoutingPath))
             return true;
-        if (getPath() == null || getPathTemplate().matches(path))
+        if (getPath() == null || getPathTemplate().matches(requestRoutingPath))
             return true;
-        log.debug("Path {} doesn't match {}", path,getPath());
+        log.debug("Path {} doesn't match {}", requestRoutingPath,getPath());
         // A regular expression is not compared as text, see issue #3621.
-        return !isPathRegExp() && path.startsWith(getPath());
+        return !isPathRegExp() && requestRoutingPath.startsWith(getPathInRoutingForm());
     }
 
     /**
@@ -218,7 +218,7 @@ public class APIProxyKey extends ServiceProxyKey {
     private UriTemplate getPathTemplate() {
         var template = pathTemplate;
         if (template == null) {
-            template = UriTemplate.of(getPath(), isPathRegExp());
+            template = UriTemplate.of(isPathRegExp() ? getPath() : getPathInRoutingForm(), isPathRegExp());
             pathTemplate = template;
         }
         return template;

@@ -21,10 +21,12 @@ import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.util.*;
 
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class APIProxyKeyTest {
 
@@ -83,6 +85,16 @@ public class APIProxyKeyTest {
             .get("http://localhost:3000")
         .then()
             .body(containsString("Foobar"));
+    }
+
+    @Test
+    void pathTemplateWithDuplicateSlashesMatchesRoutingPath() {
+        final var key = new APIProxyKey("127.0.0.1", "localhost", 3000, "/eu//items/{id}", "*", null, false);
+        key.setPathRegExp(false);
+
+        // The RuleManager passes the routing path of the request: no path parameters, merged slashes
+        assertTrue(key.matchesPath("/eu/items/42"));
+        assertEquals(Optional.of(Map.of("id", "42")), key.matchPathTemplate("/eu/items/42"));
     }
 
     private static void registerApiProxy(String path, String body) throws IOException {
